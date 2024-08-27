@@ -3,27 +3,25 @@ races:
     scale: 0.95
     reach: 5.0
     effects:
-      - Jump_Boost
-    equipmentEnchants:
-      FEET:
-        LEATHER_BOOTS:
+      - Speed
+    equipment:
+      BOOTS:
+        Default: LEATHER_BOOTS
+        Enchants:
           Feather_Falling: 2
-    desc: From the Western Deserts come the Katari, cat-folk who have arrived in Teramith. Being at home in the desert, it is the desert biome that they have claimed for themselves. The Katari are naturally more agile, as well.
   Ursine:
     scale: 1.8
     reach: 6.0
     effects:
       - Strength
       - Health_Boost
-    desc: From the harsh wintery Eastern Lands come the Ursine, bear-folk who have made a home for themselves in the snowy corner of Teramith. Ursine are tall, very tall, and have a particularly strong fortitude.
   Zora:
-    scale: 1.1
+    scale: 1.2
     reach: 4.0
     effects:
       - Conduit_Power
       - Dolphins_Grace
       - Slowness
-    desc: From the Coral Ocean come the Zora, fish-folk who now also live in the waters around Teramith. Zora can breathe underwater and very fast swimmers, but on land they are slow and awkward. They also have good vision underwater and glean sea resources easier.
   Arathim:
     scale: 0.75
     reach: 4.0
@@ -31,22 +29,60 @@ races:
       - Weaving
       - Night_Vision
       - Weakness
-    desc: From the depths of the earth so deep, no one knows how deep, crawl out the Arathim, spider-folk who made Teramith their home long before anyone else realized. Arathim are the smallest of the races, and are very well adapted to the darkness below.
+    startItems:
+      COBWEB: 64
   Human:
     scale: 1.0
     reach: 5.0
     effects:
       - Hero_of_the_Village
-    desc: TBD
+  Elven:
+    scale: 1.1
+    reach: 6
+    equipment:
+      #Elven Bow, mending and unbreaking 3 and power 1.
+      BOW:
+        Default: BOW
+        Enchants:
+          Mending: 1
+          Unbreaking: 3
+          Power: 1
+    startItems:
+      SPECTRAL_ARROW: 64
+  Dwarven:
+    scale: 0.8
+    reach: 4
+    equipment:
+      #Dwarven pick, mending,  fortune 1 and unbreaking 3, iron.
+      PICKAXE:
+        Default: IRON_PICKAXE
+        Enchants:
+          Mending: 1
+          Unbreaking: 3
+          Fortune: 1
+  Aven:
+    scale: 0.9
+    reach: 3
+    equipment:
+      #Aven Wings, Unbreaking 3, Mending, Curse Of Binding.
+      CHESTPLATE:
+        Default: ELYTRA
+        Enchants:
+          Mending: 1
+          Unbreaking: 3
+          Binding_Curse: 1
+    repeatItems:
+      FIREWORK_ROCKET:
+        Max: 64
+        QtyPer: 1
+        TimeSec: 60
 MOBS:
   SKELETON:
-    Armor:
-      HEAD: PIGLIN_HEAD
-      CHEST: LEATHER_CHESTPLATE
-      LEGS: LEATHER_LEGGINGS
-      FEET: LEATHER_BOOTS
-    Color: 255,255,255
-  ZOMBIE:
-    Armor:
-      HAND: WOODEN_SWORD
+    #HEAD: PIGLIN_HEAD
+    #CHEST: LEATHER_CHESTPLATE
+    #LEGS: LEATHER_LEGGINGS
+    #FEET: LEATHER_BOOTS
+    #HAND: WOODEN_SWORD
+    #OFF_HAND: WOODEN_SWORD
+
 
