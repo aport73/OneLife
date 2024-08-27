@@ -58,10 +58,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         });
     }
 
-    public void reload() {
-        getConfig();
-    }
-
     @Override
     public void onDisable() {
         // Plugin shutdown logic
@@ -478,7 +474,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         }
         if (args.length == 1 && args[0].equalsIgnoreCase("reload")) {
             if (stack.getSender().isOp()) {
-                reload();
+                reloadConfig();
                 stack.getSender().sendRichMessage("One Life Plugin Reloaded");
             } else {
                 stack.getSender().sendRichMessage("You don't have the need permission to reload the plugin");
