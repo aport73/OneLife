@@ -25,6 +25,7 @@ races:
   Arathim:
     scale: 0.75
     reach: 4.0
+    climbingEnabled: true
     effects:
       - Weaving
       - Night_Vision
@@ -78,10 +79,10 @@ races:
         TimeSec: 60
 MOBS:
   SKELETON:
-    #HEAD: PIGLIN_HEAD
-    #CHEST: LEATHER_CHESTPLATE
-    #LEGS: LEATHER_LEGGINGS
-    #FEET: LEATHER_BOOTS
+    HEAD: PIGLIN_HEAD
+    CHEST: LEATHER_CHESTPLATE
+    LEGS: LEATHER_LEGGINGS
+    FEET: LEATHER_BOOTS
     #HAND: WOODEN_SWORD
     #OFF_HAND: WOODEN_SWORD
 

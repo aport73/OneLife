@@ -14,6 +14,11 @@ import net.kyori.adventure.text.Component;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.Material;
+import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
+import org.bukkit.block.BlockState;
+import org.bukkit.block.TileState;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.enchantments.Enchantment;
@@ -35,6 +40,8 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.bukkit.scheduler.BukkitRunnable;
@@ -61,6 +68,51 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent ev) {
+        //Code for Wall Climbing
+        Boolean climbingEnabled = getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".climbingEnabled");
+        if(climbingEnabled) {
+            Block b1 = ev.getPlayer().getLocation().getBlock();
+
+            if (b1.getType() != Material.AIR) {
+                return;
+            }
+
+            Block b2 = b1.getRelative(BlockFace.UP);
+            Location l = ev.getPlayer().getLocation();
+
+            Vector vec = ev.getTo().clone().subtract(ev.getFrom().clone()).toVector();
+            double x = vec.getX();
+            double z = vec.getZ();
+            double Vy = vec.getY();
+            String direction;
+            if (Math.abs(x) > Math.abs(z)) {
+                direction = x > 0.0 ? "EAST" : "WEST";
+            } else {
+                direction = z > 0.0 ? "SOUTH" : "NORTH";
+            }
+            if (b1.getRelative(BlockFace.valueOf(direction)).getType().isCollidable() || (Vy != 0
+                    && (b1.getRelative(BlockFace.NORTH).getType().isCollidable()
+                    || b1.getRelative(BlockFace.SOUTH).getType().isCollidable()
+                    || b1.getRelative(BlockFace.WEST).getType().isCollidable()
+                    || b1.getRelative(BlockFace.EAST).getType().isCollidable()))) {
+                double y = l.getY();
+                BlockData vine = Material.VINE.createBlockData("[up=true]");
+                ev.getPlayer().sendBlockChange(b1.getLocation(), vine);
+                if (y % 1 > .40 && b2.getType() == Material.AIR) {
+                    ev.getPlayer().sendBlockChange(b2.getLocation(), vine);
+                }
+                if(ev.getFrom().getBlockX() != ev.getTo().getBlockX()
+                        || ev.getFrom().getBlockZ() != ev.getTo().getBlockZ()
+                        || ev.getFrom().getBlockY() != ev.getTo().getBlockY()) {
+                    ev.getPlayer().sendBlockChange(ev.getFrom().getBlock().getLocation(), ev.getFrom().getBlock().getBlockData());                    ev.getPlayer().sendBlockChange(ev.getFrom().getBlock().getRelative(BlockFace.UP).getLocation(), ev.getFrom().getBlock().getRelative(BlockFace.UP).getBlockData());
+                }
+
+            }
+        }
     }
 
     @EventHandler
