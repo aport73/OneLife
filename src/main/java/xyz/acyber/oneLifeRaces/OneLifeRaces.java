@@ -21,6 +21,8 @@ import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
+import org.bukkit.damage.DamageEffect;
+import org.bukkit.damage.DamageSource;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
@@ -185,6 +187,14 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
+        if (event.getEntity().getType() == EntityType.PLAYER) {
+            //Cancel Snow Damage for Ursine
+            Player player = (Player) event.getEntity();
+            String race = getPlayerRace(player);
+            if(event.getCause().equals(EntityDamageEvent.DamageCause.FREEZE) && race.equals("Ursine")) {
+                event.setCancelled(true);
+            }
+        }
         NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-totalDamageTaken");
         if (event.getEntity() instanceof Player player) {
             double damage = event.getDamage();
