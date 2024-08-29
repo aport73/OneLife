@@ -1,36 +1,29 @@
 package xyz.acyber.oneLifeRaces;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import com.destroystokyo.paper.event.server.ServerTickEndEvent;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
-import io.papermc.paper.event.player.PlayerInventorySlotChangeEvent;
-import io.papermc.paper.event.player.PlayerItemFrameChangeEvent;
-import io.papermc.paper.event.player.PlayerPickItemEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
+import io.papermc.paper.registry.event.RegistryFreezeEventImpl;
 import net.kyori.adventure.text.Component;
+import net.minecraft.world.damagesource.DamageSource;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
-import org.bukkit.block.BlockState;
-import org.bukkit.block.TileState;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.command.CommandSender;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.damage.DamageEffect;
-import org.bukkit.damage.DamageSource;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.EntityPickupItemEvent;
-import org.bukkit.event.entity.EntitySpawnEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
+import org.bukkit.event.entity.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
@@ -41,8 +34,8 @@ import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
-import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -76,7 +69,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     public void onPlayerMove(PlayerMoveEvent ev) {
         //Code for Wall Climbing
         Boolean climbingEnabled = getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".climbingEnabled");
-        if(climbingEnabled) {
+        if(climbingEnabled && getPlayerClimbs(ev.getPlayer())) {
             Block b1 = ev.getPlayer().getLocation().getBlock();
 
             if (b1.getType() != Material.AIR) {
@@ -104,15 +97,36 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                 double y = l.getY();
                 BlockData vine = Material.VINE.createBlockData("[up=true]");
                 ev.getPlayer().sendBlockChange(b1.getLocation(), vine);
+                setPlayerClimbVines(ev.getPlayer(), getPlayerClimbVines(ev.getPlayer()) + b1.getLocation().blockX() + ","+b1.getLocation().blockY() + "," + b1.getLocation().blockZ() + "/");
                 if (y % 1 > .40 && b2.getType() == Material.AIR) {
                     ev.getPlayer().sendBlockChange(b2.getLocation(), vine);
+                    setPlayerClimbVines(ev.getPlayer(), getPlayerClimbVines(ev.getPlayer()) + b2.getLocation().blockX() + ","+b2.getLocation().blockY() + "," + b2.getLocation().blockZ() + "/");
                 }
                 if(ev.getFrom().getBlockX() != ev.getTo().getBlockX()
                         || ev.getFrom().getBlockZ() != ev.getTo().getBlockZ()
                         || ev.getFrom().getBlockY() != ev.getTo().getBlockY()) {
-                    ev.getPlayer().sendBlockChange(ev.getFrom().getBlock().getLocation(), ev.getFrom().getBlock().getBlockData());                    ev.getPlayer().sendBlockChange(ev.getFrom().getBlock().getRelative(BlockFace.UP).getLocation(), ev.getFrom().getBlock().getRelative(BlockFace.UP).getBlockData());
+                    for (String xyz: getPlayerClimbVines(ev.getPlayer()).split("/")) {
+                        if (xyz != "" && xyz != null) {
+                            int xVine = Integer.parseInt(xyz.split(",")[0]);
+                            int yVine = Integer.parseInt(xyz.split(",")[1]);
+                            int zVine = Integer.parseInt(xyz.split(",")[2]);
+                            Location loc = new Location(ev.getFrom().getWorld(), xVine, yVine, zVine);
+                            if (loc != b1.getLocation() && loc != b2.getLocation()) {
+                                ev.getPlayer().sendBlockChange(loc, loc.getBlock().getBlockData());
+                                setPlayerClimbVines(ev.getPlayer(), getPlayerClimbVines(ev.getPlayer()).replaceAll(xyz +"/",""));
+                            }
+                        }
+                    }
                 }
 
+            }
+        }
+
+        if(getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".slowOnLand")) {
+            if(ev.getTo().getBlock().isLiquid()) {
+                ev.getPlayer().removePotionEffect(PotionEffectType.SLOWNESS);
+            } else {
+                ev.getPlayer().addPotionEffect(PotionEffectType.SLOWNESS.createEffect(-1,1));
             }
         }
     }
@@ -138,6 +152,10 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
+        List<ItemStack> drops = event.getDrops();
+        for (ItemStack item : drops) {
+            raceItemChecks(item);
+        }
         NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-totalDeathsTaken");
         Player player = event.getEntity();
         PersistentDataContainer playerContainer = player.getPersistentDataContainer();
@@ -187,14 +205,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
-        if (event.getEntity().getType() == EntityType.PLAYER) {
-            //Cancel Snow Damage for Ursine
-            Player player = (Player) event.getEntity();
-            String race = getPlayerRace(player);
-            if(event.getCause().equals(EntityDamageEvent.DamageCause.FREEZE) && race.equals("Ursine")) {
-                event.setCancelled(true);
-            }
-        }
         NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-totalDamageTaken");
         if (event.getEntity() instanceof Player player) {
             double damage = event.getDamage();
@@ -203,9 +213,29 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                 damage += playerContainer.get(key, PersistentDataType.DOUBLE);
             }
             playerContainer.set(key, PersistentDataType.DOUBLE, damage);
+            String race = getPlayerRace(player);
+
+            //Adjust Fall Damage Aven
+            if (event.getCause().equals(EntityDamageEvent.DamageCause.FALL) && race.equals("Aven")) {
+                event.setDamage(damage * getConfig().getDouble("races." + race + ".fallDamage"));
+            }
+
+            //Slow Burn Damage Dwarven
+            if ((event.getCause().equals(EntityDamageEvent.DamageCause.FIRE) || event.getCause().equals(EntityDamageEvent.DamageCause.LAVA))  && race.equalsIgnoreCase("Dwarven")) {
+                if (damage > 0.5)
+                    event.setDamage(0.5);
+            }
+        }
+
+        if (event.getDamageSource().getCausingEntity() instanceof Player player) {
+            if (player.isFlying()) {
+                Double multiplier = getConfig().getDouble("races." + getPlayerRace(player) + ".flyingAttackDamage");
+                if (multiplier != null)
+                    multiplier = 1.0;
+                event.setDamage(event.getDamage() * multiplier);
+            }
         }
     }
-
 
     @EventHandler
     public void playerItemConsume(PlayerItemConsumeEvent event) {
@@ -250,8 +280,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                                 event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY)
                 );
                 raceItemChecks(item);
-                if ((event.getClickedInventory().getType().equals(InventoryType.PLAYER) ||
-                        event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY) && event.getAction() != InventoryAction.SWAP_WITH_CURSOR) {
+                if (event.getClickedInventory().getType().equals(InventoryType.PLAYER) &&
+                        event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
                     applyRaceEffects(player, item);
                 }
             }
@@ -382,6 +412,38 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             return playerContainer.get(key, PersistentDataType.INTEGER);
         } else {
             return 0;
+        }
+    }
+
+    public void setPlayerClimbs(Player player, Boolean climbOn) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-climbOn");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        playerContainer.set(key, PersistentDataType.BOOLEAN, climbOn);
+    }
+
+    public Boolean getPlayerClimbs(Player player) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-climbOn");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        if (playerContainer.has(key)) {
+            return playerContainer.get(key, PersistentDataType.BOOLEAN);
+        } else {
+            return true;
+        }
+    }
+
+    public void setPlayerClimbVines(Player player, String climbed) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-climbed");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        playerContainer.set(key, PersistentDataType.STRING, climbed);
+    }
+
+    public String getPlayerClimbVines(Player player) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-climbed");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        if (playerContainer.has(key)) {
+            return playerContainer.get(key, PersistentDataType.STRING);
+        } else {
+            return "";
         }
     }
 
@@ -525,6 +587,10 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                     }
                 }
             }
+            if (raceConfig.getBoolean("lockFreezeTicks")) {
+                player.setFreezeTicks(0);
+            }
+            player.lockFreezeTicks(raceConfig.getBoolean("lockFreezeTicks"));
         }
     }
 
@@ -542,6 +608,17 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                 stack.getSender().sendRichMessage("You don't have the need permission to reload the plugin");
             }
         }
+        if (args.length == 1 && args[0].equalsIgnoreCase("climb")) {
+            if (getPlayerRace((Player) stack.getSender()).equalsIgnoreCase("Arathim")) {
+                if (getPlayerClimbs((Player) stack.getSender())) {
+                    setPlayerClimbs((Player) stack.getSender(), false);
+                    stack.getSender().sendRichMessage("Climbing Turned Off");
+                } else {
+                    setPlayerClimbs((Player) stack.getSender(), true);
+                    stack.getSender().sendRichMessage("Climbing Turned On");
+                }
+            }
+        }
         if (args.length == 2 && args[0].equalsIgnoreCase("races")) {
             stack.getSender().sendRichMessage(args[1] + "'s race: further work to be done");
         }
@@ -557,6 +634,13 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (args.length == 4 && args[0].equalsIgnoreCase("races") && args[2].equalsIgnoreCase("setRace")) {
             Player player = Bukkit.getPlayer(args[1]);
             if (stack.getSender().isOp()) {
+                for (ItemStack i : player.getInventory().getStorageContents()) {
+                    if (isRaceItem(i)) {
+                        player.getInventory().remove(i);
+                    } else {
+                        raceItemChecks(i);
+                    }
+                }
                 setPlayerTasks(player,0);
                 setPlayerRace(player, args[3]);
                 applyRaceEffects(player, null);
@@ -571,6 +655,17 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                 sendMsgOps(stack.getSender().getName() + " tried to change their race.");
             }
         }
+        if (args.length == 4 && args[0].equalsIgnoreCase("races") && args[2].equalsIgnoreCase("abilities")) {
+            Player player = Bukkit.getPlayer(args[1]);
+            if (stack.getSender().isOp()) {
+                if (args[3].equalsIgnoreCase("ClimbOn")); {
+                    setPlayerClimbs(player, true);
+                }
+                if (args[3].equalsIgnoreCase("ClimbOff")) {
+                    setPlayerClimbs(player, false);
+                }
+            }
+        }
     }
 
     @Override
@@ -579,6 +674,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (args.length <= 1) {
             if (stack.getSender().isOp()) {
                 sug.add("reload");
+            } else if (getPlayerRace((Player) stack.getSender()).equalsIgnoreCase("Arathim")) {
+                sug.add("climb");
             }
             sug.add("races");
             sug.add("help");
@@ -609,6 +706,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             sug.add("setRace");
             if (stack.getSender().isOp()) {
                 sug.add("resetStartItems");
+                sug.add("abilities");
             }
             return sug;
         }
@@ -622,6 +720,11 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                     }
                 }
             }
+            return sug;
+        }
+        if (args.length <= 4 && args[0].equalsIgnoreCase("races") && args[2].equalsIgnoreCase("abilities")) {
+            sug.add("ClimbOn");
+            sug.add("ClimbOff");
             return sug;
         }
         return Collections.emptyList();

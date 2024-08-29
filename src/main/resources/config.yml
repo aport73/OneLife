@@ -15,6 +15,7 @@ races:
     effects:
       - Strength
       - Health_Boost
+    lockFreezeTicks: true
   Zora:
     scale: 1.2
     reach: 4.0
@@ -22,6 +23,7 @@ races:
       - Conduit_Power
       - Dolphins_Grace
       - Slowness
+    slowOnLand: true
   Arathim:
     scale: 0.75
     reach: 4.0
@@ -30,8 +32,11 @@ races:
       - Weaving
       - Night_Vision
       - Weakness
-    startItems:
-      COBWEB: 64
+    repeatItems:
+      COBWEB:
+        Max: 64
+        QtyPer: 1
+        TimeSec: 120
   Human:
     scale: 1.0
     reach: 5.0
@@ -48,8 +53,11 @@ races:
           Mending: 1
           Unbreaking: 3
           Power: 1
-    startItems:
-      SPECTRAL_ARROW: 64
+    repeatItems:
+      SPECTRAL_ARROW:
+        Max: 64
+        QtyPer: 1
+        TimeSec: 120
   Dwarven:
     scale: 0.8
     reach: 4
@@ -64,6 +72,8 @@ races:
   Aven:
     scale: 0.9
     reach: 3
+    fallDamage: 1.5
+    flyingAttackDamage: 1.5
     equipment:
       #Aven Wings, Unbreaking 3, Mending, Curse Of Binding.
       CHESTPLATE:
@@ -85,5 +95,3 @@ MOBS:
     FEET: LEATHER_BOOTS
     #HAND: WOODEN_SWORD
     #OFF_HAND: WOODEN_SWORD
-
-
