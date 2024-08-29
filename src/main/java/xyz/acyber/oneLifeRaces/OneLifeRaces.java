@@ -479,7 +479,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                                 if (player.getInventory().getBoots() != null) item = player.getInventory().getBoots();
                                 break;
                             default:
-                                for (ItemStack i : player.getInventory().getStorageContents()) {
+                                for (ItemStack i : player.getInventory().getContents()) {
                                     if (i != null && i.getType().toString().endsWith(key.toUpperCase())) {
                                         item = i;
                                     }
@@ -505,18 +505,23 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                     if (!exists) {
                         switch (key) {
                             case "HELMET":
+                                setIsRaceItem(item, true);
                                 player.getInventory().setHelmet(item);
                                 break;
                             case "CHESTPLATE":
+                                setIsRaceItem(item, true);
                                 player.getInventory().setChestplate(item);
                                 break;
                             case "LEGGINGS":
+                                setIsRaceItem(item, true);
                                 player.getInventory().setLeggings(item);
                                 break;
                             case "BOOTS":
+                                setIsRaceItem(item, true);
                                 player.getInventory().setBoots(item);
                                 break;
                             default:
+                                setIsRaceItem(item, true);
                                 player.getInventory().addItem(item);
                                 break;
                         }
@@ -548,37 +553,25 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                                 if (getPlayerTasks(player) <= 0) {
                                     this.cancel();
                                 }
-                                int offHandCount = 0;
                                 int inventoryCount = 0;
                                 ItemStack inv = null;
-                                ItemStack oHand = null;
                                 Boolean exist = false;
-                                for (ItemStack i : player.getInventory().getStorageContents()) {
+                                for (ItemStack i : player.getInventory().getContents()) {
                                     if (i != null && i.getType() == repeatItem.getType()) {
-                                        inventoryCount = i.getAmount();
+                                        inventoryCount += i.getAmount();
                                         setIsRaceItem(i, true);
-                                        inv = i;
+                                        if (!exist)
+                                            inv = i;
                                         exist = true;
                                         break;
                                     }
-                                }
-                                ItemStack offHand = player.getInventory().getItemInOffHand();
-                                if (offHand != null && offHand.getType() == repeatItem.getType()) {
-                                    offHandCount = offHand.getAmount();
-                                    setIsRaceItem(offHand, true);
-                                    oHand = offHand;
-                                    exist = true;
                                 }
                                 if (!exist) {
                                     repeatItem.setAmount(QtyPer);
                                     player.getInventory().addItem(repeatItem);
                                 } else {
-                                    if (offHandCount + inventoryCount < Max) {
-                                        if (oHand != null) {
-                                            oHand.setAmount(oHand.getAmount() + QtyPer);
-                                        } else {
-                                            inv.setAmount(inv.getAmount() + QtyPer);
-                                        }
+                                    if (inventoryCount < Max) {
+                                        inv.setAmount(inv.getAmount() + QtyPer);
                                     }
                                 }
                             }
@@ -634,11 +627,10 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (args.length == 4 && args[0].equalsIgnoreCase("races") && args[2].equalsIgnoreCase("setRace")) {
             Player player = Bukkit.getPlayer(args[1]);
             if (stack.getSender().isOp()) {
-                for (ItemStack i : player.getInventory().getStorageContents()) {
+                for (ItemStack i : player.getInventory().getContents()) {
+                    raceItemChecks(i);
                     if (isRaceItem(i)) {
-                        player.getInventory().remove(i);
-                    } else {
-                        raceItemChecks(i);
+                        player.getInventory().removeItemAnySlot(i);
                     }
                 }
                 setPlayerTasks(player,0);
@@ -674,7 +666,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (args.length <= 1) {
             if (stack.getSender().isOp()) {
                 sug.add("reload");
-            } else if (getPlayerRace((Player) stack.getSender()).equalsIgnoreCase("Arathim")) {
+            }
+            if (getPlayerRace((Player) stack.getSender()).equalsIgnoreCase("Arathim")) {
                 sug.add("climb");
             }
             sug.add("races");

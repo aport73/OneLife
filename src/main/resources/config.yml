@@ -82,6 +82,7 @@ races:
           Mending: 1
           Unbreaking: 3
           Binding_Curse: 1
+          VANISHING_CURSE: 1
     repeatItems:
       FIREWORK_ROCKET:
         Max: 64
