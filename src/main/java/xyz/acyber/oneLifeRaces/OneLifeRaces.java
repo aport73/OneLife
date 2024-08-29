@@ -111,6 +111,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         stack.getSender().sendMessage("Ravenger Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.RAVAGER) + ", Points: " + RavengerKilled);
         stack.getSender().sendMessage("Withers Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.WITHER) + ", Points: " + WithersKilled);
         stack.getSender().sendMessage("Piglin Brutes Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.PIGLIN_BRUTE) + ", Points: " + PiglinBrutesKilled);
+        stack.getSender().sendMessage("Elder Guardians Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.ELDER_GUARDIAN) + ", Points: " + ElderGuardiansKilled);
         stack.getSender().sendMessage("Mobs Killed: " + player.getStatistic(Statistic.MOB_KILLS) + ", Points: " + MobKilled);
         stack.getSender().sendMessage("Blocks Placed: " + getPlayerBlocksPlaced(player) + ", Points: " + BlocksPlaced);
         stack.getSender().sendMessage("Blocks Mined: " + getPlayerBlocksMined(player) + ", Points: " + BlocksMined);
