@@ -8,7 +8,13 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
+import net.minecraft.advancements.AdvancementTree;
+import net.minecraft.advancements.AdvancementType;
+import net.minecraft.stats.Stat;
+import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.MobSpawnType;
 import org.bukkit.*;
+import org.bukkit.advancement.Advancement;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
@@ -20,6 +26,8 @@ import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.*;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.block.BlockBreakEvent;
+import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.entity.*;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.*;
@@ -59,6 +67,55 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    @EventHandler
+    public void blockPlaced(BlockPlaceEvent event) {
+        Player player = event.getPlayer();
+        setPlayerBlocksPlaced(player, getPlayerBlocksPlaced(player) + 1);
+    }
+
+    @EventHandler
+    public void blockMined(BlockBreakEvent event) {
+        Player player = event.getPlayer();
+        setPlayerBlocksMined(player, getPlayerBlocksMined(player) + 1);
+    }
+
+    @EventHandler
+    public void playerAdvanced(PlayerAdvancementDoneEvent event) {
+        Player player = event.getPlayer();
+        setPlayerAdvancements(player, getPlayerAdvancements(player) + 1);
+    }
+
+    public void playerScore(CommandSourceStack stack, Player player) {
+        ConfigurationSection scoring = getConfig().getConfigurationSection("Scoring");
+        double Death = player.getStatistic(Statistic.DEATHS) * scoring.getDouble("Death");
+        double Xp = player.getTotalExperience() * scoring.getDouble("Xp");
+        double OnlineHr = (double) ((player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) /60 * scoring.getDouble("OnlineHr");
+        double WardenKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.WARDEN) * scoring.getDouble("WardenKilled");
+        double RavengerKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.RAVAGER) * scoring.getDouble("RavengerKilled");
+        double WithersKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.WITHER) * scoring.getDouble("WithersKilled");
+        double PiglinBrutesKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.PIGLIN_BRUTE) * scoring.getDouble("PiglinBrutesKilled");
+        double ElderGuardiansKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.ELDER_GUARDIAN) * scoring.getDouble("ElderGuardianKilled");
+        double MobKilled = player.getStatistic(Statistic.MOB_KILLS) * scoring.getDouble("MobKilled");
+        double BlocksPlaced = getPlayerBlocksPlaced(player) * scoring.getDouble("BlocksPlaced");
+        double BlocksMined = getPlayerBlocksMined(player) * scoring.getDouble("BlocksMined");
+        double Achevements = getPlayerAdvancements(player) * scoring.getDouble("Achevements");
+        double TotalPoints = Death + Xp + OnlineHr + WardenKilled + RavengerKilled + WithersKilled + PiglinBrutesKilled + MobKilled + BlocksPlaced + BlocksMined + Achevements;
+        stack.getSender().sendMessage(player.getName() + "'s Scorecard:");
+        stack.getSender().sendMessage("Total Points: " + TotalPoints);
+        stack.getSender().sendMessage("Deaths: " + player.getStatistic(Statistic.DEATHS) + ", Points: " + Death);
+        stack.getSender().sendMessage("Xp: " + player.getTotalExperience() + ", Points: " + Xp);
+        stack.getSender().sendMessage("OnlineHr: " + (double) ((player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) /60 + ", Points: " + OnlineHr);
+        stack.getSender().sendMessage("Wardens Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.WARDEN) + ", Points: " + WardenKilled);
+        stack.getSender().sendMessage("Ravenger Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.RAVAGER) + ", Points: " + RavengerKilled);
+        stack.getSender().sendMessage("Withers Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.WITHER) + ", Points: " + WithersKilled);
+        stack.getSender().sendMessage("Piglin Brutes Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.PIGLIN_BRUTE) + ", Points: " + PiglinBrutesKilled);
+        stack.getSender().sendMessage("Mobs Killed: " + player.getStatistic(Statistic.MOB_KILLS) + ", Points: " + MobKilled);
+        stack.getSender().sendMessage("Blocks Placed: " + getPlayerBlocksPlaced(player) + ", Points: " + BlocksPlaced);
+        stack.getSender().sendMessage("Blocks Mined: " + getPlayerBlocksMined(player) + ", Points: " + BlocksMined);
+        stack.getSender().sendMessage("Achevements: " + getPlayerAdvancements(player) + ", Points: " + Achevements);
+        stack.getSender().sendMessage("------- END -----");
     }
 
     @EventHandler
@@ -118,11 +175,21 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             }
         }
 
+        //Zora Slowness on Land
         if(getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".slowOnLand")) {
             if(ev.getTo().getBlock().isLiquid()) {
                 ev.getPlayer().removePotionEffect(PotionEffectType.SLOWNESS);
             } else {
                 ev.getPlayer().addPotionEffect(PotionEffectType.SLOWNESS.createEffect(-1,1));
+            }
+        }
+
+        //Katari custom swiftsneak
+        if(getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".fastSneak")) {
+            if (ev.getPlayer().isSneaking()) {
+                ev.getPlayer().setWalkSpeed(0.4f);
+            } else {
+                ev.getPlayer().setWalkSpeed(0.2f);
             }
         }
     }
@@ -133,15 +200,11 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         setPlayerTasks(player, 0);
         player.sendMessage(Component.text("Hello, " + player.getName() + "!"));
         String race = getPlayerRace(player);
-        Double damage = getPlayerDamage(player);
         if (race != null) {
             player.sendMessage(Component.text("Race: " + race));
         } else {
             setPlayerRace(player, "Human");
             player.sendMessage(Component.text("Race: " + "Human"));
-        }
-        if (damage != null) {
-            player.sendMessage(Component.text("Damage: " + damage));
         }
         applyRaceEffects(player,null);
     }
@@ -152,12 +215,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         for (ItemStack item : drops) {
             raceItemChecks(item);
         }
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-totalDeathsTaken");
-        Player player = event.getEntity();
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        double deaths = 1.00;
-        if (playerContainer.has(key)) deaths += playerContainer.get(key, PersistentDataType.DOUBLE);
-        playerContainer.set(key, PersistentDataType.DOUBLE, deaths);
     }
 
     @EventHandler
@@ -204,11 +261,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-totalDamageTaken");
         if (event.getEntity() instanceof Player player) {
             double damage = event.getDamage();
-            PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-            if (playerContainer.has(key)) {
-                damage += playerContainer.get(key, PersistentDataType.DOUBLE);
-            }
-            playerContainer.set(key, PersistentDataType.DOUBLE, damage);
             String race = getPlayerRace(player);
 
             //Adjust Fall Damage Aven
@@ -385,16 +437,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     }
 
-    public Double getPlayerDamage(Player player) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-totalDamageTaken");
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        if (playerContainer.has(key)) {
-            return playerContainer.get(key, PersistentDataType.DOUBLE);
-        } else {
-            return null;
-        }
-    }
-
     public void setPlayerTasks(Player player, int task) {
         NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-tasks");
         PersistentDataContainer playerContainer = player.getPersistentDataContainer();
@@ -403,6 +445,54 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     public int getPlayerTasks(Player player) {
         NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-tasks");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        if (playerContainer.has(key)) {
+            return playerContainer.get(key, PersistentDataType.INTEGER);
+        } else {
+            return 0;
+        }
+    }
+
+    public void setPlayerBlocksPlaced(Player player, int task) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-blocksPlaced");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        playerContainer.set(key, PersistentDataType.INTEGER, task);
+    }
+
+    public int getPlayerBlocksPlaced(Player player) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-blocksPlaced");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        if (playerContainer.has(key)) {
+            return playerContainer.get(key, PersistentDataType.INTEGER);
+        } else {
+            return 0;
+        }
+    }
+
+    public void setPlayerBlocksMined(Player player, int task) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-blocksMined");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        playerContainer.set(key, PersistentDataType.INTEGER, task);
+    }
+
+    public int getPlayerBlocksMined(Player player) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-blocksMined");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        if (playerContainer.has(key)) {
+            return playerContainer.get(key, PersistentDataType.INTEGER);
+        } else {
+            return 0;
+        }
+    }
+
+    public void setPlayerAdvancements(Player player, int task) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-Advancements");
+        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
+        playerContainer.set(key, PersistentDataType.INTEGER, task);
+    }
+
+    public int getPlayerAdvancements(Player player) {
+        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-Advancements");
         PersistentDataContainer playerContainer = player.getPersistentDataContainer();
         if (playerContainer.has(key)) {
             return playerContainer.get(key, PersistentDataType.INTEGER);
@@ -611,6 +701,9 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (args.length == 2 && args[0].equalsIgnoreCase("races")) {
             stack.getSender().sendRichMessage(args[1] + "'s race: further work to be done");
         }
+        if (args.length == 2 && args[0].equalsIgnoreCase("Score")) {
+            playerScore(stack, (Player) Bukkit.getPlayer(args[1]));
+        }
         if (args.length == 3 && args[0].equalsIgnoreCase("races") && args[2].equalsIgnoreCase("resetStartItems")) {
             if (stack.getSender().isOp()) {
                 Player player = Bukkit.getPlayer(args[1]);
@@ -662,6 +755,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (args.length <= 1) {
             if (stack.getSender().isOp()) {
                 sug.add("reload");
+                sug.add("score");
             }
             if (getPlayerRace((Player) stack.getSender()).equalsIgnoreCase("Arathim")) {
                 sug.add("climb");
@@ -670,7 +764,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             sug.add("help");
             return sug;
         }
-        if (args.length <= 2 && args[0].equalsIgnoreCase("races")) {
+        if (args.length <= 2 && (args[0].equalsIgnoreCase("races") || args[0].equalsIgnoreCase("score"))) {
             if (stack.getSender().isOp()) {
                 if (args[1].length() == 0) {
                     for (Player player : Bukkit.getOnlinePlayers()) {

@@ -2,6 +2,7 @@ races:
   Katari:
     scale: 0.95
     reach: 5.0
+    fastSneak: true
     effects:
       - Speed
     equipment:
@@ -88,6 +89,20 @@ races:
         Max: 64
         QtyPer: 1
         TimeSec: 60
+Scoring:
+  Death: -10.0
+  Xp: 0.0001
+  OnlineHr: 1.0
+  WardenKilled: 15.0
+  RavengerKilled: 10.0
+  WithersKilled: 20.0
+  PiglinBrutesKilled: 5.0
+  ElderGuardianKilled: 5.0
+  MobKilled: 0.05
+  BlocksPlaced: 0.0001
+  BlocksMined: 0.0001
+  Achevements: 1.0
+
 MOBS:
   SKELETON:
     HEAD: PIGLIN_HEAD
