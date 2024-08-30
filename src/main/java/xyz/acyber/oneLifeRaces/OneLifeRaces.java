@@ -91,9 +91,30 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             if (!saveTo.exists()) {
                 saveTo.createNewFile();
             }
+
+            for (OfflinePlayer offlinePlayer : Bukkit.getWhitelistedPlayers()) {
+                checkPlayerinConfig(offlinePlayer.getUniqueId().toString());
+            }
         } catch (IOException e)
         {
             e.printStackTrace();
+        }
+    }
+
+    public void checkPlayerinConfig(String playerUUID){
+        FileConfiguration config = getPlayerConfig();
+        ConfigurationSection p = config.getConfigurationSection(playerUUID);
+        if (p == null) {
+            config.set(playerUUID + ".playerRace", "Human");
+            config.set(playerUUID + ".playerStartItem", "");
+            config.set(playerUUID + ".playerTasks", 0);
+            config.set(playerUUID + ".playerTotalXp", 0);
+            config.set(playerUUID + ".playerBlocksPlaced", 0);
+            config.set(playerUUID + ".playerBlocksMined", 0);
+            config.set(playerUUID + ".playerAdvancements", 0);
+            config.set(playerUUID + ".playerClimbs", true);
+            config.set(playerUUID + ".playerClimbVines", "");
+            savePlayerConfig(config);
         }
     }
 
@@ -291,6 +312,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     @EventHandler
     public void onJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        checkPlayerinConfig(player.getUniqueId().toString());
         setPlayerTasks(player, 0);
         player.sendMessage(Component.text("Hello, " + player.getName() + "!"));
         String race = getPlayerRace(player);

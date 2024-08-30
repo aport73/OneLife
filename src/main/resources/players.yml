@@ -8,6 +8,3 @@
 #  playerAdvancements:
 #  playerClimbs:
 #  playerClimbVines:
-FileConfiguration config = getPlayerConfig();
-config.set(player.getUniqueId() + ".playerBlocksMined", );
-savePlayerConfig(config);
