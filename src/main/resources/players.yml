@@ -1,0 +1,13 @@
+# UUID:
+#  playerRace:
+#  playerStartItem:
+#  playerTasks:
+#  playerTotalXp:
+#  playerBlocksPlaced:
+#  playerBlocksMined:
+#  playerAdvancements:
+#  playerClimbs:
+#  playerClimbVines:
+FileConfiguration config = getPlayerConfig();
+config.set(player.getUniqueId() + ".playerBlocksMined", );
+savePlayerConfig(config);
