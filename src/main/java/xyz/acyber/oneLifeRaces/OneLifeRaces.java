@@ -8,7 +8,6 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
-import org.apache.maven.model.PluginConfiguration;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.Material;
