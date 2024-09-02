@@ -46,7 +46,7 @@ races:
       - Hero_of_the_Village
   Elven:
     scale: 1.1
-    reach: 6
+    reach: 5
     equipment:
       #Elven Bow, mending and unbreaking 3 and power 1.
       BOW:
@@ -59,7 +59,7 @@ races:
       SPECTRAL_ARROW:
         Max: 64
         QtyPer: 1
-        TimeSec: 120
+        TimeSec: 90
   Dwarven:
     scale: 0.8
     reach: 4
