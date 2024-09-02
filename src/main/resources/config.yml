@@ -20,6 +20,7 @@ races:
   Zora:
     scale: 1.2
     reach: 4.0
+    stopSinkInWater: true
     effects:
       - Conduit_Power
       - Dolphins_Grace
@@ -62,6 +63,7 @@ races:
   Dwarven:
     scale: 0.8
     reach: 4
+    firedamage: 0.7
     equipment:
       #Dwarven pick, mending,  fortune 1 and unbreaking 3, iron.
       PICKAXE:

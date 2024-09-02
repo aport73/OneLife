@@ -1,5 +1,6 @@
 package xyz.acyber.oneLifeRaces;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import com.google.common.collect.Lists;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -299,6 +300,17 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             }
         }
 
+        //Zora Dont Sink in Water
+        if(getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".stopSinkInWater")) {
+            if (ev.getPlayer().isInWater()) {
+                ev.getPlayer().setGravity(false);
+            } else {
+                ev.getPlayer().setGravity(true);
+            }
+        } else {
+            ev.getPlayer().setGravity(true);
+        }
+
         //Katari custom swiftsneak
         if(getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".fastSneak")) {
             if (ev.getPlayer().isSneaking()) {
@@ -385,16 +397,19 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             }
 
             //Slow Burn Damage Dwarven
-            if ((event.getCause().equals(EntityDamageEvent.DamageCause.FIRE) || event.getCause().equals(EntityDamageEvent.DamageCause.LAVA))  && race.equalsIgnoreCase("Dwarven")) {
-                if (damage > 0.5)
-                    event.setDamage(0.5);
+            if (event.getCause().equals(EntityDamageEvent.DamageCause.FIRE) || event.getCause().equals(EntityDamageEvent.DamageCause.LAVA)) {
+                double multiple = getConfig().getDouble("races." + getPlayerRace(player) + ".firedamage");
+                if (multiple != 0.0) {
+                    if (damage > multiple)
+                        event.setDamage(getConfig().getDouble("races." + getPlayerRace(player) + ".firedamage"));
+                }
             }
         }
 
         if (event.getDamageSource().getCausingEntity() instanceof Player player) {
             if (player.isFlying()) {
                 Double multiplier = getConfig().getDouble("races." + getPlayerRace(player) + ".flyingAttackDamage");
-                if (multiplier != null)
+                if (multiplier == null)
                     multiplier = 1.0;
                 event.setDamage(event.getDamage() * multiplier);
             }
@@ -403,8 +418,47 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     @EventHandler
     public void playerItemConsume(PlayerItemConsumeEvent event) {
+        List<String> carnivor = Lists.newArrayList("Cooked_Chicken","Cooked_Cod","Cooked_Mutton","Cooked_Porkchop",
+                "Cooked_Rabbit","Cooked_Salmon","Cooked_Beef","Rabbit_Stew","Beef","Chicken","Cod","Mutton","Porkchop",
+                "Rabbit","Salmon","Rotten_Flesh","Spider_Eye","Tropical_Fish");
+        if (getPlayerRace(event.getPlayer()).equalsIgnoreCase("Katari")) {
+            Material item = event.getItem().getType();
+            boolean inList = false;
+            for (String str : carnivor) {
+                if (item == Material.getMaterial(str.toUpperCase())) {
+                    inList = true;
+                }
+            }
+            if (!inList) {
+                event.setCancelled(true);
+                event.getPlayer().sendMessage("Your race cannot consume this item");
+            } else {
+                if (event.getPlayer().hasPotionEffect(PotionEffectType.POISON))
+                    event.getPlayer().removePotionEffect(PotionEffectType.POISON);
+                if (event.getPlayer().hasPotionEffect(PotionEffectType.HUNGER))
+                    event.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
+            }
+        }
+        sendMsgOps(event.getItem().getType().toString());
         if (event.getItem().getType() == Material.MILK_BUCKET) {
-            applyRaceEffects(event.getPlayer(), null);
+            sendMsgOps("condition" + event.getItem().getType().toString());
+            BukkitRunnable runnable = new BukkitRunnable() {
+                @Override
+                public void run() {
+                    applyRaceEffects(event.getPlayer(), null);
+                }
+            };
+            runnable.runTaskLater(this,5);
+        }
+    }
+
+    @EventHandler
+    public void playerTamePet(EntityTameEvent event) {
+        if(getPlayerRace(Bukkit.getPlayer(event.getOwner().getUniqueId())).equalsIgnoreCase("Katari")) {
+            if (event.getEntity() instanceof Wolf) {
+                Bukkit.getPlayer(event.getOwner().getUniqueId()).sendMessage("Your Race Cannot Tame Wolfs");
+                event.setCancelled(true);
+            }
         }
     }
 
