@@ -16,6 +16,7 @@ races:
     effects:
       - Strength
       - Health_Boost
+      - Haste
     lockFreezeTicks: true
   Zora:
     scale: 1.2
