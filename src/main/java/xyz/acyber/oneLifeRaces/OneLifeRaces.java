@@ -232,8 +232,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     }
 
-
-
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent ev) {
         //Code for Wall Climbing
@@ -302,11 +300,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
         //Zora Dont Sink in Water
         if(getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".stopSinkInWater")) {
-            if (ev.getPlayer().isInWater()) {
-                ev.getPlayer().setGravity(false);
-            } else {
-                ev.getPlayer().setGravity(true);
-            }
+            ev.getPlayer().setGravity(!ev.getPlayer().isInWater());
         } else {
             ev.getPlayer().setGravity(true);
         }
@@ -361,9 +355,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (dropRFlesh.contains(event.getEntity().getType())) {
             event.getDrops().add(new ItemStack(Material.ROTTEN_FLESH));
         } else {
-            if (event.getDrops().contains(new ItemStack(Material.ROTTEN_FLESH))) {
-                event.getDrops().remove(new ItemStack(Material.ROTTEN_FLESH));
-            }
+            event.getDrops().remove(new ItemStack(Material.ROTTEN_FLESH));
         }
 
     }
@@ -472,7 +464,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         }
         sendMsgOps(event.getItem().getType().toString());
         if (event.getItem().getType() == Material.MILK_BUCKET) {
-            sendMsgOps("condition" + event.getItem().getType().toString());
+            sendMsgOps("condition" + event.getItem().getType());
             BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -594,16 +586,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 //        playerContainer.set(key, PersistentDataType.BOOLEAN, start);
     }
 
-    public Boolean getPlayerStartItem(Player player) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-playerStartItem");
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        if (playerContainer.has(key)) {
-            return playerContainer.get(key, PersistentDataType.BOOLEAN);
-        } else {
-            return false;
-        }
-    }
-
     public void setRaceEnchants(ItemStack item, String enchants) {
         NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-enchants");
         ItemMeta meta = item.getItemMeta();
@@ -668,54 +650,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 //        } else {
 //            return 0;
 //        }
-    }
-
-    public void setPlayerBlocksPlaced(Player player, int task) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-blocksPlaced");
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        playerContainer.set(key, PersistentDataType.INTEGER, task);
-    }
-
-    public int getPlayerBlocksPlaced(Player player) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-blocksPlaced");
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        if (playerContainer.has(key)) {
-            return playerContainer.get(key, PersistentDataType.INTEGER);
-        } else {
-            return 0;
-        }
-    }
-
-    public void setPlayerBlocksMined(Player player, int task) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-blocksMined");
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        playerContainer.set(key, PersistentDataType.INTEGER, task);
-    }
-
-    public int getPlayerBlocksMined(Player player) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-blocksMined");
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        if (playerContainer.has(key)) {
-            return playerContainer.get(key, PersistentDataType.INTEGER);
-        } else {
-            return 0;
-        }
-    }
-
-    public void setPlayerAdvancements(Player player, int task) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-Advancements");
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        playerContainer.set(key, PersistentDataType.INTEGER, task);
-    }
-
-    public int getPlayerAdvancements(Player player) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-Advancements");
-        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
-        if (playerContainer.has(key)) {
-            return playerContainer.get(key, PersistentDataType.INTEGER);
-        } else {
-            return 0;
-        }
     }
 
     public void setPlayerClimbs(Player player, Boolean climbOn) {
@@ -905,7 +839,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         }
     }
 
-
     @Override
     public void execute(@NotNull CommandSourceStack stack, @NotNull String[] args) {
         if (args.length == 1 && args[0].equalsIgnoreCase("help")) {
@@ -941,7 +874,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             stack.getSender().sendRichMessage(args[1] + "'s race: further work to be done");
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("playerScore")) {
-            playerScore(stack, (Player) Bukkit.getPlayer(args[1]),true);
+            playerScore(stack, Bukkit.getPlayer(args[1]),true);
         }
         if (args.length == 3 && args[0].equalsIgnoreCase("races") && args[2].equalsIgnoreCase("resetStartItems")) {
             if (stack.getSender().isOp()) {
