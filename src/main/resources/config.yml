@@ -77,6 +77,7 @@ races:
     reach: 3
     fallDamage: 1.5
     flyingAttackDamage: 1.5
+    weakUnderGround: true
     equipment:
       #Aven Wings, Unbreaking 3, Mending, Curse Of Binding.
       CHESTPLATE:
@@ -104,12 +105,16 @@ Scoring:
   BlocksPlaced: 0.0001
   BlocksMined: 0.0001
   Achevements: 1.0
-
+dropsRottenFlesh:
+  - WOLF
+  - CAT
+  - OCELOT
+  - POLAR_BEAR
 MOBS:
   SKELETON:
-    HEAD: PIGLIN_HEAD
-    CHEST: LEATHER_CHESTPLATE
-    LEGS: LEATHER_LEGGINGS
-    FEET: LEATHER_BOOTS
+    #HEAD: PIGLIN_HEAD
+    #CHEST: LEATHER_CHESTPLATE
+    #LEGS: LEATHER_LEGGINGS
+    #FEET: LEATHER_BOOTS
     #HAND: WOODEN_SWORD
     #OFF_HAND: WOODEN_SWORD

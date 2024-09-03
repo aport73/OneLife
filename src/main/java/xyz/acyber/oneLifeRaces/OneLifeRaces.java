@@ -311,12 +311,26 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             ev.getPlayer().setGravity(true);
         }
 
-        //Katari custom swiftsneak
+        //Katari swiftsneak
         if(getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".fastSneak")) {
             if (ev.getPlayer().isSneaking()) {
                 ev.getPlayer().setWalkSpeed(0.4f);
             } else {
                 ev.getPlayer().setWalkSpeed(0.2f);
+            }
+        }
+
+        //Aven Weakness & Slowness underground
+        if (getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".weakUnderGround")) {
+            Player player = ev.getPlayer();
+            if (ev.getTo().getBlock().getLightFromSky() < 8) {
+                player.addPotionEffect(PotionEffectType.WEAKNESS.createEffect(-1,1));
+                player.addPotionEffect(PotionEffectType.SLOWNESS.createEffect(-1,1));
+            } else {
+                if (player.hasPotionEffect(PotionEffectType.WEAKNESS))
+                    player.removePotionEffect(PotionEffectType.WEAKNESS);
+                if (player.hasPotionEffect(PotionEffectType.SLOWNESS))
+                    player.removePotionEffect(PotionEffectType.SLOWNESS);
             }
         }
     }
@@ -335,6 +349,23 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             player.sendMessage(Component.text("Race: " + "Human"));
         }
         applyRaceEffects(player,null);
+    }
+
+    @EventHandler
+    public void onEntityDeath(EntityDeathEvent event) {
+        //Change Rotten Flesh Drops
+        List<EntityType> dropRFlesh = new ArrayList<>();
+        for (String mob: getConfig().getStringList("dropsRottenFlesh")) {
+            dropRFlesh.add(EntityType.valueOf(mob.toUpperCase()));
+        }
+        if (dropRFlesh.contains(event.getEntity().getType())) {
+            event.getDrops().add(new ItemStack(Material.ROTTEN_FLESH));
+        } else {
+            if (event.getDrops().contains(new ItemStack(Material.ROTTEN_FLESH))) {
+                event.getDrops().remove(new ItemStack(Material.ROTTEN_FLESH));
+            }
+        }
+
     }
 
     @EventHandler
