@@ -3,6 +3,26 @@ races:
     scale: 0.95
     reach: 5.0
     fastSneak: true
+    rawFoodSafe: true
+    allowedFoods:
+      - Cooked_Chicken
+      - Cooked_Cod
+      - Cooked_Mutton
+      - Cooked_Porkchop
+      - Cooked_Rabbit
+      - Cooked_Salmon
+      - Cooked_Beef
+      - Rabbit_Stew
+      - Beef
+      - Chicken
+      - Cod
+      - Mutton
+      - Porkchop
+      - Rabbit
+      - Salmon
+      - Rotten_Flesh
+      - Spider_Eye
+      - Tropical_Fish
     effects:
       - Speed
     equipment:
@@ -22,6 +42,23 @@ races:
     scale: 1.2
     reach: 4.0
     stopSinkInWater: true
+    rawFoodSafe: true
+    buffedFoods:
+      Cod:
+        FOOD: 3
+        SATURATION: 1.8
+      Salmon:
+        FOOD: 3
+        SATURATION: 1.8
+      Tropical_Fish:
+        FOOD: 3
+        SATURATION: 1.8
+      Cooked_Salmon:
+        FOOD: 8
+        SATURATION: 12.8
+      Cooked_Cod:
+        FOOD: 8
+        SATURATION: 12.8
     effects:
       - Conduit_Power
       - Dolphins_Grace
@@ -115,15 +152,14 @@ Scoring:
   BlocksPlaced: 0.0001
   BlocksMined: 0.0001
   Achevements: 1.0
-dropsRottenFlesh:
-  - WOLF
-  - CAT
-  - OCELOT
-  - POLAR_BEAR
 MOBS:
   ZOMBIE:
     ITEMS:
       HAND: STONE_SWORD
+    DROPS:
+      PORKCHOP:
+        MIN: 0
+        MAX: 3
   HUSK:
     BUFFS:
       SIZE:
@@ -136,3 +172,23 @@ MOBS:
       SPEED:
         BASE: 2.0
         VARIANCE: 0.0
+  WOLF:
+    DROPS:
+      ROTTEN_FLESH:
+        MIN: 0
+        MAX: 2
+  CAT:
+    DROPS:
+      ROTTEN_FLESH:
+        MIN: 0
+        MAX: 2
+  OCELOT:
+    DROPS:
+      ROTTEN_FLESH:
+        MIN: 0
+        MAX: 2
+  POLAR_BEAR:
+    DROPS:
+      ROTTEN_FLESH:
+        MIN: 0
+        MAX: 2

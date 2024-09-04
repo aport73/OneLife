@@ -9,6 +9,10 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.TextComponent;
+import net.kyori.adventure.text.TextReplacementConfig;
+import net.minecraft.world.food.FoodConstants;
+import net.minecraft.world.food.FoodData;
 import net.minecraft.world.level.biome.MobSpawnSettings;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -33,10 +37,12 @@ import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.meta.*;
+import org.bukkit.inventory.meta.components.FoodComponent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
@@ -52,6 +58,7 @@ import java.time.LocalDate;
 
 public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCommand {
     //TODO Redo Mob Sounds
+    //TODO Idea - Disable Traveling Merchants being able to use Invisibility?
     @Override
     public void onEnable() {
         // Plugin startup logic
@@ -349,22 +356,33 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         //Change Rotten Flesh Drops
-        //TODO Husk still dropping rotten flesh
-        List<EntityType> dropRFlesh = new ArrayList<>();
-        for (String mob: getConfig().getStringList("dropsRottenFlesh")) {
-            dropRFlesh.add(EntityType.valueOf(mob.toUpperCase()));
+        int numbFlesh = 1;
+        for (ItemStack item : event.getDrops()) {
+            if (item.getType() == Material.ROTTEN_FLESH) {
+                numbFlesh = item.getAmount();
+            }
         }
-        if (dropRFlesh.contains(event.getEntity().getType())) {
-            event.getDrops().add(new ItemStack(Material.ROTTEN_FLESH));
-        } else {
-            event.getDrops().remove(new ItemStack(Material.ROTTEN_FLESH));
+        event.getDrops().remove(new ItemStack(Material.ROTTEN_FLESH, numbFlesh));
+        ConfigurationSection mobConfig = getConfig().getConfigurationSection("MOBS." + event.getEntityType().name());
+        if (mobConfig != null) {
+            ConfigurationSection mobDrops = mobConfig.getConfigurationSection("DROPS");
+            if (mobDrops != null) {
+                for (String key : mobDrops.getKeys(false)) {
+                    int min = mobDrops.getInt(key + ".MIN");
+                    int max = mobDrops.getInt(key + ".MAX");
+                    Random random = new Random();
+                    int numbItem = random.nextInt(max - min) + min;
+                    if (numbItem > 0) {
+                        event.getDrops().add(new ItemStack(Material.valueOf(key), numbItem));
+                    }
+                }
+            }
         }
 
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        //TODO Change death messages from reskined mobs.
         List<ItemStack> drops = event.getDrops();
         for (ItemStack item : drops) {
             raceItemChecks(item);
@@ -439,7 +457,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
-        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-totalDamageTaken");
         if (event.getEntity() instanceof Player player) {
             double damage = event.getDamage();
             String race = getPlayerRace(player);
@@ -460,8 +477,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         }
 
         if (event.getDamageSource().getCausingEntity() instanceof Player player) {
-            //TODO make buff not apply to bows
-            if (player.isGliding()) {
+            Entity item = event.getDamageSource().getDirectEntity();
+            if (player.isGliding() && !item.getType().name().contains("ARROW")) {
                 Double multiplier = getConfig().getDouble("races." + getPlayerRace(player) + ".flyingAttackDamage");
                 if (multiplier == null)
                     multiplier = 1.0;
@@ -472,14 +489,15 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     @EventHandler
     public void playerItemConsume(PlayerItemConsumeEvent event) {
-        //TODO make Zora fish be equal to cooked_beef
-        List<String> carnivor = Lists.newArrayList("Cooked_Chicken","Cooked_Cod","Cooked_Mutton","Cooked_Porkchop",
-                "Cooked_Rabbit","Cooked_Salmon","Cooked_Beef","Rabbit_Stew","Beef","Chicken","Cod","Mutton","Porkchop",
-                "Rabbit","Salmon","Rotten_Flesh","Spider_Eye","Tropical_Fish");
-        if (getPlayerRace(event.getPlayer()).equalsIgnoreCase("Katari")) {
+        //
+        List<String> allowedFoods = getConfig().getStringList("races." + getPlayerRace(event.getPlayer()) + ".allowedFoods");
+        ConfigurationSection buffedFoods = getConfig().getConfigurationSection("races." + getPlayerRace(event.getPlayer()) + ".buffedFoods");
+        boolean rawFoodSafe = getConfig().getBoolean("races." + getPlayerRace(event.getPlayer()) + ".rawFoodSafe");
+
+        if (!allowedFoods.isEmpty()) {
             Material item = event.getItem().getType();
             boolean inList = false;
-            for (String str : carnivor) {
+            for (String str : allowedFoods) {
                 if (item == Material.getMaterial(str.toUpperCase())) {
                     inList = true;
                 }
@@ -487,13 +505,31 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             if (!inList) {
                 event.setCancelled(true);
                 event.getPlayer().sendMessage("Your race cannot consume this item");
-            } else {
-                if (event.getPlayer().hasPotionEffect(PotionEffectType.POISON))
-                    event.getPlayer().removePotionEffect(PotionEffectType.POISON);
-                if (event.getPlayer().hasPotionEffect(PotionEffectType.HUNGER))
-                    event.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
             }
         }
+
+        if(rawFoodSafe) {
+            if (event.getPlayer().hasPotionEffect(PotionEffectType.POISON))
+                event.getPlayer().removePotionEffect(PotionEffectType.POISON);
+            if (event.getPlayer().hasPotionEffect(PotionEffectType.HUNGER))
+                event.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
+        }
+
+        if (buffedFoods != null) {
+            Material item = event.getItem().getType();
+            for (String str : buffedFoods.getKeys(false)) {
+                if (item == Material.getMaterial(str.toUpperCase())) {
+                    event.setCancelled(true);
+                    Player player = event.getPlayer();
+                    float sat = (float) buffedFoods.getDouble(str + ".SATURATION");
+                    int food = buffedFoods.getInt(str + ".FOOD");
+                    player.setSaturation(player.getSaturation() + sat);
+                    player.setFoodLevel(player.getFoodLevel() + food);
+                    player.getInventory().removeItemAnySlot(event.getItem().asQuantity(1));
+                }
+            }
+        }
+
         if (event.getItem().getType() == Material.MILK_BUCKET) {
             BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
