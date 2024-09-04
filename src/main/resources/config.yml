@@ -45,6 +45,13 @@ races:
     reach: 5.0
     effects:
       - Hero_of_the_Village
+    equipment:
+      #Human Sword
+      SWORD:
+        Default: IRON_SWORD
+        Enchants:
+          Mending: 1
+          Unbreaking: 3
   Elven:
     scale: 1.1
     reach: 5
@@ -56,6 +63,8 @@ races:
           Mending: 1
           Unbreaking: 3
           Power: 1
+    startItems:
+      SPECTRAL_ARROW: 5
     repeatItems:
       SPECTRAL_ARROW:
         Max: 64
@@ -64,7 +73,7 @@ races:
   Dwarven:
     scale: 0.8
     reach: 4
-    firedamage: 0.7
+    firedamage: 1
     equipment:
       #Dwarven pick, mending,  fortune 1 and unbreaking 3, iron.
       PICKAXE:
@@ -76,7 +85,7 @@ races:
   Aven:
     scale: 0.9
     reach: 3
-    fallDamage: 1.5
+    fallDamage: 1
     flyingAttackDamage: 1.5
     weakUnderGround: true
     equipment:
@@ -112,10 +121,19 @@ dropsRottenFlesh:
   - OCELOT
   - POLAR_BEAR
 MOBS:
-  SKELETON:
-    #HEAD: PIGLIN_HEAD
-    #CHEST: LEATHER_CHESTPLATE
-    #LEGS: LEATHER_LEGGINGS
-    #FEET: LEATHER_BOOTS
-    #HAND: WOODEN_SWORD
-    #OFF_HAND: WOODEN_SWORD
+  ZOMBIE:
+    ITEMS:
+      HAND: STONE_SWORD
+  HUSK:
+    BUFFS:
+      SIZE:
+        BASE: 1.5
+        VARIANCE: 0.3
+      #SPEED:
+    ITEMS:
+      HAND: STONE_SWORD
+  DROWNED:
+    BUFFS:
+      SPEED:
+        BASE: 2
+        VARIANCE: 0.0

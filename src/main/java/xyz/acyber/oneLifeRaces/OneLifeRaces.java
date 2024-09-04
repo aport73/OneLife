@@ -9,6 +9,7 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
+import net.minecraft.world.level.biome.MobSpawnSettings;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.Material;
@@ -50,7 +51,7 @@ import java.util.*;
 import java.time.LocalDate;
 
 public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCommand {
-
+    //TODO Redo Mob Sounds
     @Override
     public void onEnable() {
         // Plugin startup logic
@@ -348,6 +349,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
         //Change Rotten Flesh Drops
+        //TODO Husk still dropping rotten flesh
         List<EntityType> dropRFlesh = new ArrayList<>();
         for (String mob: getConfig().getStringList("dropsRottenFlesh")) {
             dropRFlesh.add(EntityType.valueOf(mob.toUpperCase()));
@@ -362,6 +364,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
+        //TODO Change death messages from reskined mobs.
         List<ItemStack> drops = event.getDrops();
         for (ItemStack item : drops) {
             raceItemChecks(item);
@@ -387,9 +390,11 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (event.getEntity() instanceof LivingEntity spawnedEntity) {
             ConfigurationSection mobConfig = getConfig().getConfigurationSection("MOBS." + spawnedEntity.getType().name());
             if (mobConfig != null) {
-                for (var key : mobConfig.getKeys(false)) {
-                        getLogger().config(mobConfig.getString(key));
-                        ItemStack item = ItemStack.of(Material.valueOf(mobConfig.getString(key)));
+                ConfigurationSection mobItems = mobConfig.getConfigurationSection("ITEMS");
+                if (mobItems != null) {
+                    for (var key : mobItems.getKeys(false)) {
+                        getLogger().config(mobItems.getString(key));
+                        ItemStack item = ItemStack.of(Material.valueOf(mobItems.getString(key)));
                         /* Color of Leather Armor Code. Still needs work.
                         if (item.getType().toString().contains("LEATHER")) {
                             String colorString = mobConfig.getString("Color");
@@ -402,6 +407,30 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                             item.setItemMeta(meta);
                         } */
                         spawnedEntity.getEquipment().setItem(EquipmentSlot.valueOf(key),item);
+                    }
+                }
+                ConfigurationSection mobBuffs = mobConfig.getConfigurationSection("BUFFS");
+                if (mobBuffs != null) {
+                    ConfigurationSection mobSize = mobBuffs.getConfigurationSection("SIZE");
+                    if (mobSize != null) {
+                        Random r = new Random();
+                        double base = mobSize.getDouble("BASE");
+                        double variance = mobSize.getDouble("VARIANCE");
+                        double low = base - variance;
+                        double high = base + variance;
+                        double result = r.nextDouble(high-low) + low;
+                        Objects.requireNonNull(spawnedEntity.getAttribute(Attribute.GENERIC_SCALE)).setBaseValue(result);
+                    }
+                    ConfigurationSection mobSpeed = mobBuffs.getConfigurationSection("Speed");
+                    if (mobSpeed != null) {
+                        Random r = new Random();
+                        double base = mobSpeed.getDouble("BASE");
+                        double variance = mobSpeed.getDouble("VARIANCE");
+                        double low = base - variance;
+                        double high = base + variance;
+                        double result = r.nextDouble(high-low) + low;
+                        Objects.requireNonNull(spawnedEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(result);
+                    }
                 }
             }
         }
@@ -430,7 +459,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         }
 
         if (event.getDamageSource().getCausingEntity() instanceof Player player) {
-            if (player.isFlying()) {
+            //TODO make buff not apply to bows
+            if (player.isGliding()) {
                 Double multiplier = getConfig().getDouble("races." + getPlayerRace(player) + ".flyingAttackDamage");
                 if (multiplier == null)
                     multiplier = 1.0;
@@ -441,6 +471,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     @EventHandler
     public void playerItemConsume(PlayerItemConsumeEvent event) {
+        //TODO make Zora fish be equal to cooked_beef
         List<String> carnivor = Lists.newArrayList("Cooked_Chicken","Cooked_Cod","Cooked_Mutton","Cooked_Porkchop",
                 "Cooked_Rabbit","Cooked_Salmon","Cooked_Beef","Rabbit_Stew","Beef","Chicken","Cod","Mutton","Porkchop",
                 "Rabbit","Salmon","Rotten_Flesh","Spider_Eye","Tropical_Fish");
@@ -462,9 +493,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                     event.getPlayer().removePotionEffect(PotionEffectType.HUNGER);
             }
         }
-        sendMsgOps(event.getItem().getType().toString());
         if (event.getItem().getType() == Material.MILK_BUCKET) {
-            sendMsgOps("condition" + event.getItem().getType());
             BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
                 public void run() {
@@ -663,8 +692,6 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     public Boolean getPlayerClimbs(Player player) {
         FileConfiguration config = getPlayerConfig();
-        ConfigurationSection section = config.getConfigurationSection(player.getUniqueId() + ".playerClimbs");
-        if (section == null) return true;
         return config.getBoolean(player.getUniqueId() + ".playerClimbs");
 //        NamespacedKey key = new NamespacedKey(this, "oneLifeRaces-climbOn");
 //        PersistentDataContainer playerContainer = player.getPersistentDataContainer();
@@ -781,7 +808,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             }
             ConfigurationSection startItems = raceConfig.getConfigurationSection("startItems");
             FileConfiguration config = getPlayerConfig();
-            if (startItems != null && config.getBoolean(player.getUniqueId() + ".playerStartItem")) {
+            if (startItems != null && !config.getBoolean(player.getUniqueId() + ".playerStartItem")) {
                 for (String key : startItems.getKeys(false)) {
                     ItemStack startItem = new ItemStack(Material.getMaterial(key));
                     startItem.setAmount(startItems.getInt(key));
