@@ -129,11 +129,10 @@ MOBS:
       SIZE:
         BASE: 1.5
         VARIANCE: 0.3
-      #SPEED:
     ITEMS:
       HAND: STONE_SWORD
   DROWNED:
     BUFFS:
       SPEED:
-        BASE: 2
+        BASE: 2.0
         VARIANCE: 0.0
