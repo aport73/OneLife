@@ -424,7 +424,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                     ConfigurationSection mobSpeed = mobBuffs.getConfigurationSection("Speed");
                     if (mobSpeed != null) {
                         Random r = new Random();
-                        double base = mobSpeed.getDouble("BASE");
+                        double multiple = mobSpeed.getDouble("BASE");
+                        double base = spawnedEntity.getAttribute(Attribute.GENERIC_SCALE).getBaseValue() * multiple;
                         double variance = mobSpeed.getDouble("VARIANCE");
                         double low = base - variance;
                         double high = base + variance;
