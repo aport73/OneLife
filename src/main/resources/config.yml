@@ -4,6 +4,14 @@ races:
     reach: 5.0
     fastSneak: true
     rawFoodSafe: true
+    lockFreezeTicks: false
+    stopSinkInWater: false
+    slowOnLand: false
+    climbingEnabled: false
+    weakUnderGround: false
+    #fireDamageCap: 0
+    #fallDamage: 1
+    #flyingAttackDamage: 1
     allowedFoods:
       - Cooked_Chicken
       - Cooked_Cod
@@ -33,16 +41,33 @@ races:
   Ursine:
     scale: 1.8
     reach: 6.0
+    fastSneak: false
+    rawFoodSafe: false
+    lockFreezeTicks: true
+    stopSinkInWater: false
+    slowOnLand: false
+    climbingEnabled: false
+    weakUnderGround: false
+    #fireDamageCap: 0
+    #fallDamage: 1
+    #flyingAttackDamage: 1
     effects:
       - Strength
       - Health_Boost
       - Haste
-    lockFreezeTicks: true
   Zora:
     scale: 1.2
     reach: 4.0
-    stopSinkInWater: true
+    fastSneak: false
     rawFoodSafe: true
+    lockFreezeTicks: false
+    stopSinkInWater: true
+    slowOnLand: true
+    climbingEnabled: false
+    weakUnderGround: false
+    #fireDamageCap: 0
+    #fallDamage: 1
+    #flyingAttackDamage: 1
     buffedFoods:
       Cod:
         FOOD: 3
@@ -63,11 +88,19 @@ races:
       - Conduit_Power
       - Dolphins_Grace
       - Slowness
-    slowOnLand: true
   Arathim:
     scale: 0.75
     reach: 4.0
+    fastSneak: false
+    rawFoodSafe: false
+    lockFreezeTicks: false
+    stopSinkInWater: false
+    slowOnLand: false
     climbingEnabled: true
+    weakUnderGround: false
+    #fireDamageCap: 0
+    #fallDamage: 1
+    #flyingAttackDamage: 1
     effects:
       - Weaving
       - Night_Vision
@@ -80,6 +113,16 @@ races:
   Human:
     scale: 1.0
     reach: 5.0
+    fastSneak: false
+    rawFoodSafe: false
+    lockFreezeTicks: false
+    stopSinkInWater: false
+    slowOnLand: false
+    climbingEnabled: false
+    weakUnderGround: false
+    #fireDamageCap: 0
+    #fallDamage: 1
+    #flyingAttackDamage: 1
     effects:
       - Hero_of_the_Village
     equipment:
@@ -92,6 +135,16 @@ races:
   Elven:
     scale: 1.1
     reach: 5
+    fastSneak: false
+    rawFoodSafe: false
+    lockFreezeTicks: false
+    stopSinkInWater: false
+    slowOnLand: false
+    climbingEnabled: false
+    weakUnderGround: false
+    #fireDamageCap: 0
+    #fallDamage: 1
+    #flyingAttackDamage: 1
     equipment:
       #Elven Bow, mending and unbreaking 3 and power 1.
       BOW:
@@ -110,7 +163,16 @@ races:
   Dwarven:
     scale: 0.8
     reach: 4
-    firedamage: 1
+    fastSneak: false
+    rawFoodSafe: false
+    lockFreezeTicks: false
+    stopSinkInWater: false
+    slowOnLand: false
+    climbingEnabled: false
+    weakUnderGround: false
+    fireDamageCap: 1
+    #fallDamage: 1
+    #flyingAttackDamage: 1
     equipment:
       #Dwarven pick, mending,  fortune 1 and unbreaking 3, iron.
       PICKAXE:
@@ -122,6 +184,13 @@ races:
   Aven:
     scale: 0.9
     reach: 3
+    fastSneak: false
+    rawFoodSafe: false
+    lockFreezeTicks: false
+    stopSinkInWater: false
+    slowOnLand: false
+    climbingEnabled: false
+    #fireDamageCap: 0
     fallDamage: 1
     flyingAttackDamage: 1.5
     weakUnderGround: true
@@ -142,16 +211,17 @@ races:
 Scoring:
   Death: -10.0
   Xp: 0.0001
-  OnlineHr: 1.0
-  WardenKilled: 15.0
-  RavengerKilled: 10.0
-  WithersKilled: 20.0
-  PiglinBrutesKilled: 5.0
-  ElderGuardianKilled: 5.0
-  MobKilled: 0.05
-  BlocksPlaced: 0.0001
-  BlocksMined: 0.0001
-  Achevements: 1.0
+  OnlineHr: 2.5
+  BlocksPlaced: 0.001
+  BlocksMined: 0.001
+  Achievements: 0.3
+  MobKills:
+    WARDEN: 15.0
+    RAVAGER: 10.0
+    WITHER: 20.0
+    PIGLIN_BRUTE: 5.0
+    ELDER_GUARDIAN: 5.0
+    DEFAULT: 0.05
 MOBS:
   ZOMBIE:
     ITEMS:

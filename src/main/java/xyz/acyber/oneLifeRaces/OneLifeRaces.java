@@ -17,6 +17,7 @@ import net.minecraft.world.level.biome.MobSpawnSettings;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.Material;
+import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -36,6 +37,7 @@ import org.bukkit.event.inventory.*;
 import org.bukkit.event.player.*;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.EquipmentSlot;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.*;
 import org.bukkit.inventory.meta.components.FoodComponent;
 import org.bukkit.persistence.PersistentDataContainer;
@@ -55,6 +57,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.*;
 import java.time.LocalDate;
+import java.util.logging.Level;
 
 public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCommand {
     //TODO Redo Mob Sounds
@@ -85,7 +88,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             File file = new File(getDataFolder(), "players.yml");
             config.save(file);
         } catch (IOException e) {
-            e.printStackTrace();
+            this.getLogger().log(Level.SEVERE, "Failed to save players.yml", e.getCause());
+            this.getLogger().log(Level.INFO, "Stacktrace", e.fillInStackTrace());
         }
     }
 
@@ -106,7 +110,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             }
         } catch (IOException e)
         {
-            e.printStackTrace();
+            this.getLogger().log(Level.SEVERE, "Failed to save Default players.yml", e.getCause());
+            this.getLogger().log(Level.INFO, "Stacktrace", e.fillInStackTrace());
         }
     }
 
@@ -159,9 +164,14 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     public void playerScore(CommandSourceStack stack, OfflinePlayer player, Boolean showInChat) {
         ConfigurationSection scoring = getConfig().getConfigurationSection("Scoring");
         ConfigurationSection playerScore = getPlayerConfig().getConfigurationSection(player.getUniqueId().toString());
+
+        assert scoring != null;
+
+        assert playerScore != null;
+
         double Death = player.getStatistic(Statistic.DEATHS) * scoring.getDouble("Death");
         double Xp = playerScore.getInt("playerTotalXp") * scoring.getDouble("Xp");
-        double OnlineHr = (double) ((player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) /60 * scoring.getDouble("OnlineHr");
+        double OnlineHr = (double) ((player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60 * scoring.getDouble("OnlineHr");
         double WardenKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.WARDEN) * scoring.getDouble("WardenKilled");
         double RavengerKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.RAVAGER) * scoring.getDouble("RavengerKilled");
         double WithersKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.WITHER) * scoring.getDouble("WithersKilled");
@@ -235,7 +245,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             pw.close();
         } catch (IOException e)
         {
-            e.printStackTrace();
+            this.getLogger().log(Level.SEVERE, "Failed to logToFile with Path: " + path + " & Message: " + message, e.getCause());
+            this.getLogger().log(Level.INFO, "Stacktrace", e.fillInStackTrace());
         }
 
     }
@@ -350,7 +361,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             setPlayerRace(player, "Human");
             player.sendMessage(Component.text("Race: " + "Human"));
         }
-        applyRaceEffects(player,null);
+        applyRace(player,null);
     }
 
     @EventHandler
@@ -385,13 +396,16 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     public void onDeath(PlayerDeathEvent event) {
         List<ItemStack> drops = event.getDrops();
         for (ItemStack item : drops) {
-            raceItemChecks(item);
+            if (isRaceItem(item)) {
+                event.getDrops().remove(item);
+                break;
+            }
         }
     }
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent event) {
-        applyRaceEffects(event.getPlayer(),null);
+        applyRace(event.getPlayer(),null);
     }
 
     public void sendMsgOps(String components) {
@@ -534,7 +548,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
                 public void run() {
-                    applyRaceEffects(event.getPlayer(), null);
+                    applyRace(event.getPlayer(), null);
                 }
             };
             runnable.runTaskLater(this,5);
@@ -558,7 +572,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         String race = getPlayerRace(event.getPlayer());
         ConfigurationSection equipConfig = getConfig().getConfigurationSection("races." + race + ".equipment");
         if (equipConfig != null && !item.isEmpty()) {
-            applyRaceEffects(event.getPlayer(), null);
+            applyRace(event.getPlayer(), null);
         }
     }
 
@@ -567,30 +581,41 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (event.getEntity().getType() == EntityType.PLAYER) {
             Player player = (Player) event.getEntity();
             ItemStack item = event.getItem().getItemStack();
-            applyRaceEffects(player, item);
+            applyRace(player, item);
         }
     }
 
     @EventHandler
     public void inventoryClickEvent(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
-        if (event.getAction() == InventoryAction.PLACE_ALL ||
+        if ((event.getAction() == InventoryAction.PLACE_ALL ||
                 event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
                 event.getAction() == InventoryAction.PLACE_ONE ||
                 event.getAction() == InventoryAction.PLACE_SOME ||
-                event.getAction() == InventoryAction.SWAP_WITH_CURSOR) {
-            if (event.getClickedInventory() != null) {
-                ItemStack item = event.getClickedInventory().getItem(event.getSlot());
-                if (event.getAction() == InventoryAction.SWAP_WITH_CURSOR || item == null) item = event.getCursor();
-                event.setCancelled(isRaceItem(item) &&
-                        (!event.getClickedInventory().getType().equals(InventoryType.PLAYER) ||
-                                event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY)
-                );
-                raceItemChecks(item);
-                if (event.getClickedInventory().getType().equals(InventoryType.PLAYER) &&
-                        event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
-                    applyRaceEffects(player, item);
+                event.getAction() == InventoryAction.SWAP_WITH_CURSOR) &&
+                event.getClickedInventory() != null) {
+            ItemStack item = event.getClickedInventory().getItem(event.getSlot());
+            if (event.getAction() == InventoryAction.SWAP_WITH_CURSOR || item == null) {
+                item = event.getCursor();
+            }
+
+            if (!stopItemDrop(item, player) ||
+                    event.getClickedInventory().getType().equals(InventoryType.PLAYER) &&
+                            event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+                if (!isRaceItem(item) ||
+                        event.getClickedInventory().getType().equals(InventoryType.PLAYER) &&
+                                event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+                    clearRaceItemEnchants(item);
+                } else {
+                    event.setCancelled(true);
+                    player.getInventory().removeItem(item);
                 }
+            } else {
+                event.setCancelled(true);
+            }
+
+            if (event.getClickedInventory().getType().equals(InventoryType.PLAYER) && event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+                this.applyRace(player, item);
             }
         }
     }
@@ -598,18 +623,49 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
     @EventHandler
     public void playerDropItem(PlayerDropItemEvent event) {
         ItemStack item = event.getItemDrop().getItemStack();
-        event.setCancelled(isRaceItem(item));
-        raceItemChecks(item);
+        Player player = event.getPlayer();
+        if (stopItemDrop(item, player)) {
+            event.setCancelled(true);
+        } else if (isRaceItem(item)) {
+            event.getItemDrop().remove();
+        } else {
+            this.clearRaceItemEnchants(item);
+            this.applyRace(player, null);
+        }
     }
 
-    public void raceItemChecks(ItemStack item) {
-        String RaceEnchants = getRaceEnchants(item);
-        if (RaceEnchants != null && !RaceEnchants.equals("")) {
-            for (String enchant: RaceEnchants.split(",")) {
-                item.removeEnchantment(RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(enchant.toLowerCase())));
+    private boolean stopItemDrop(ItemStack item, Player player) {
+        if (isRaceItem(item)) {
+            int count = 1;
+            String[] itemType = item.getType().toString().split("_");
+            PlayerInventory playerInventory = player.getInventory();
+            playerInventory.removeItem(item);
+
+            for(ItemStack invItem : playerInventory.getContents()) {
+                if (invItem != null) {
+                    String[] invType = ((ItemStack) Objects.requireNonNull(invItem)).getType().toString().split("_");
+                    if (itemType[itemType.length - 1].equalsIgnoreCase(invType[invType.length - 1])) {
+                        ++count;
+                    }
+                }
             }
-            setRaceEnchants(item, "");
+
+            return count <= 1;
+        } else {
+            return false;
         }
+    }
+
+    public void clearRaceItemEnchants(ItemStack item) {
+        String RaceEnchants = getRaceEnchants(item);
+        if (RaceEnchants != null && !RaceEnchants.isEmpty()) {
+            for(String enchant : RaceEnchants.split(",")) {
+                item.removeEnchantment((Enchantment)Objects.requireNonNull((Enchantment)RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(enchant.toLowerCase()))));
+            }
+
+            this.setRaceEnchants(item, "");
+        }
+
     }
 
     @EventHandler
@@ -762,7 +818,183 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 //        }
     }
 
-    public void applyRaceEffects(Player player, ItemStack item) {
+    public void giveRaceEquipment(Player player, ItemStack item, ConfigurationSection Equipment) {
+        for(String key : Equipment.getKeys(false)) {
+            boolean createdItem = false;
+            if (item == null || !item.getType().toString().endsWith(key.toUpperCase()) && !key.contains(item.getType().getEquipmentSlot().toString().toUpperCase()) || item.getType().toString().equalsIgnoreCase("CrossBow") && key.equalsIgnoreCase("Bow")) {
+                switch (key) {
+                    case "HELMET":
+                        if (player.getInventory().getHelmet() != null) {
+                            item = player.getInventory().getHelmet();
+                        }
+                        break;
+                    case "CHESTPLATE":
+                        if (player.getInventory().getChestplate() != null) {
+                            item = player.getInventory().getChestplate();
+                        }
+                        break;
+                    case "LEGGINGS":
+                        if (player.getInventory().getLeggings() != null) {
+                            item = player.getInventory().getLeggings();
+                        }
+                        break;
+                    case "BOOTS":
+                        if (player.getInventory().getBoots() != null) {
+                            item = player.getInventory().getBoots();
+                        }
+                        break;
+                    default:
+                        for(ItemStack i : player.getInventory().getContents()) {
+                            if (i != null && i.getType().toString().endsWith(key.toUpperCase()) && (!i.getType().toString().equalsIgnoreCase("CrossBow") || !key.equalsIgnoreCase("Bow"))) {
+                                item = i;
+                            }
+                        }
+                }
+
+                if (item == null || !item.getType().toString().endsWith(key.toUpperCase()) && !key.contains(item.getType().getEquipmentSlot().toString().toUpperCase()) || item.getType().toString().equalsIgnoreCase("CrossBow") && key.equalsIgnoreCase("Bow")) {
+                    item = new ItemStack(Material.valueOf(Equipment.getString(key + ".Default")));
+                    this.setIsRaceItem(item, true);
+                    createdItem = true;
+                }
+            }
+
+            StringBuilder upgrades = new StringBuilder();
+
+            for(String upgrade : ((ConfigurationSection)Objects.requireNonNull(Equipment.getConfigurationSection(key + ".Enchants"))).getKeys(false)) {
+                int level = Equipment.getInt(key + ".Enchants." + upgrade);
+                Enchantment enchantment = (Enchantment)RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(upgrade.toLowerCase()));
+
+                assert enchantment != null;
+
+                if ((getRaceEnchants(item) == null || ((String)Objects.requireNonNull(getRaceEnchants(item))).isEmpty()) && !item.containsEnchantment(enchantment)) {
+                    upgrades.append(upgrade).append(",");
+                    item.addEnchantment(enchantment, level);
+                }
+            }
+
+            this.setRaceEnchants(item, upgrades.toString());
+            if (createdItem) {
+                switch (key) {
+                    case "HELMET":
+                        player.getInventory().setHelmet(item);
+                        break;
+                    case "CHESTPLATE":
+                        player.getInventory().setChestplate(item);
+                        break;
+                    case "LEGGINGS":
+                        player.getInventory().setLeggings(item);
+                        break;
+                    case "BOOTS":
+                        player.getInventory().setBoots(item);
+                        break;
+                    default:
+                        player.getInventory().addItem(item);
+                }
+            }
+        }
+
+    }
+
+    public void giveRaceEffects(Player player, List<String> Effects) {
+        for(String effect : Effects) {
+            PotionEffectType potion = (PotionEffectType)Registry.EFFECT.get(NamespacedKey.minecraft(effect.toLowerCase()));
+
+            assert potion != null;
+
+            player.addPotionEffect((PotionEffect)Objects.requireNonNull(potion.createEffect(-1, 0)));
+        }
+
+    }
+
+    public void giveStartItems(Player player, ConfigurationSection startItems) {
+        FileConfiguration config = this.getPlayerConfig();
+        if (startItems != null && !config.getBoolean(String.valueOf(player.getUniqueId()) + ".playerStartItem")) {
+            for(String key : startItems.getKeys(false)) {
+                ItemStack startItem = new ItemStack((Material)Objects.requireNonNull(Material.getMaterial(key)));
+                startItem.setAmount(startItems.getInt(key));
+                player.getInventory().addItem(new ItemStack[]{startItem});
+            }
+
+            this.setPlayerStartItem(player, true);
+        }
+
+    }
+
+    public void setRepeatItems(final Player player, ConfigurationSection repeatItems) {
+        if (repeatItems != null) {
+            for(String key : repeatItems.getKeys(false)) {
+                final ItemStack repeatItem = new ItemStack((Material)Objects.requireNonNull(Material.getMaterial(key)));
+                this.setIsRaceItem(repeatItem, true);
+                final int Max = repeatItems.getInt(key + ".Max");
+                final int QtyPer = repeatItems.getInt(key + ".QtyPer");
+                int TimeSec = repeatItems.getInt(key + ".TimeSec") * 20;
+                if (this.getPlayerTasks(player) <= 0) {
+                    this.setPlayerTasks(player, 1);
+                    BukkitRunnable runnable = new BukkitRunnable() {
+                        public void run() {
+                            if (OneLifeRaces.this.getPlayerTasks(player) <= 0) {
+                                this.cancel();
+                            }
+
+                            int inventoryCount = 0;
+                            ItemStack inv = null;
+
+                            for(ItemStack i : player.getInventory().getContents()) {
+                                if (i != null && i.getType() == repeatItem.getType()) {
+                                    inventoryCount += i.getAmount();
+                                    OneLifeRaces.this.setIsRaceItem(i, true);
+                                    inv = i;
+                                    break;
+                                }
+                            }
+
+                            if (inv != null && !inv.isEmpty()) {
+                                if (inventoryCount < Max) {
+                                    inv.setAmount(Math.min(inv.getAmount() + QtyPer, Max));
+                                }
+                            } else {
+                                repeatItem.setAmount(QtyPer);
+                                player.getInventory().addItem(new ItemStack[]{repeatItem});
+                            }
+
+                        }
+                    };
+                    runnable.runTaskTimerAsynchronously(this, 0L, (long)TimeSec);
+                }
+            }
+        }
+
+    }
+
+    public void applyRace(Player player, ItemStack item) {
+        player.clearActivePotionEffects();
+        String race = this.getPlayerRace(player);
+        if (race != null) {
+            ConfigurationSection raceConfig = this.getConfig().getConfigurationSection("races." + race);
+
+            assert raceConfig != null;
+
+            ((AttributeInstance)Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_SCALE))).setBaseValue(raceConfig.getDouble("scale"));
+            ((AttributeInstance)Objects.requireNonNull(player.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE))).setBaseValue(raceConfig.getDouble("reach"));
+            if (raceConfig.getBoolean("lockFreezeTicks")) {
+                player.setFreezeTicks(0);
+            }
+
+            player.lockFreezeTicks(raceConfig.getBoolean("lockFreezeTicks"));
+            this.giveRaceEffects(player, raceConfig.getStringList("effects"));
+            ConfigurationSection raceEquipment = raceConfig.getConfigurationSection("equipment");
+            if (raceEquipment != null) {
+                this.giveRaceEquipment(player, item, raceEquipment);
+            }
+
+            this.giveStartItems(player, raceConfig.getConfigurationSection("startItems"));
+            this.setRepeatItems(player, raceConfig.getConfigurationSection("repeatItems"));
+        }
+
+    }
+
+   /* Old Race Effects Code for Refferance
+   public void applyRaceEffects(Player player, ItemStack item) {
         player.clearActivePotionEffects();
         String race = getPlayerRace(player);
         if (race != null) {
@@ -901,7 +1133,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             }
             player.lockFreezeTicks(raceConfig.getBoolean("lockFreezeTicks"));
         }
-    }
+    }*/
 
     @Override
     public void execute(@NotNull CommandSourceStack stack, @NotNull String[] args) {
@@ -953,19 +1185,19 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             Player player = Bukkit.getPlayer(args[1]);
             if (stack.getSender().isOp()) {
                 for (ItemStack i : player.getInventory().getContents()) {
-                    raceItemChecks(i);
+                    clearRaceItemEnchants(i);
                     if (isRaceItem(i)) {
                         player.getInventory().removeItemAnySlot(i);
                     }
                 }
                 setPlayerTasks(player,0);
                 setPlayerRace(player, args[3]);
-                applyRaceEffects(player, null);
+                applyRace(player, null);
                 stack.getSender().sendMessage(player.getName() + " has been set to " + args[3]);
             } else if (getPlayerRace(player).equalsIgnoreCase("Human")) {
                 setPlayerTasks(player,0);
                 setPlayerRace(player, args[3]);
-                applyRaceEffects(player, null);
+                applyRace(player, null);
                 stack.getSender().sendMessage( "Your race has been set to " + args[3]);
             } else {
                 stack.getSender().sendMessage( "You are unable to change your race more than once, please ask an op for more assistance.");
