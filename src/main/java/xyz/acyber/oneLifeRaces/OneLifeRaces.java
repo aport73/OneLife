@@ -1,6 +1,7 @@
 package xyz.acyber.oneLifeRaces;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import com.google.common.collect.Lists;
+import io.netty.util.internal.StringUtil;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -14,6 +15,7 @@ import net.kyori.adventure.text.TextReplacementConfig;
 import net.minecraft.world.food.FoodConstants;
 import net.minecraft.world.food.FoodData;
 import net.minecraft.world.level.biome.MobSpawnSettings;
+import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.Material;
@@ -50,6 +52,7 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.bukkit.scheduler.BukkitRunnable;
+import org.w3c.dom.DOMStringList;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -168,32 +171,30 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         assert scoring != null;
 
         assert playerScore != null;
-
         double Death = player.getStatistic(Statistic.DEATHS) * scoring.getDouble("Death");
         double Xp = playerScore.getInt("playerTotalXp") * scoring.getDouble("Xp");
         double OnlineHr = (double) ((player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60 * scoring.getDouble("OnlineHr");
-        double WardenKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.WARDEN) * scoring.getDouble("WardenKilled");
-        double RavengerKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.RAVAGER) * scoring.getDouble("RavengerKilled");
-        double WithersKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.WITHER) * scoring.getDouble("WithersKilled");
-        double PiglinBrutesKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.PIGLIN_BRUTE) * scoring.getDouble("PiglinBrutesKilled");
-        double ElderGuardiansKilled = player.getStatistic(Statistic.KILL_ENTITY, EntityType.ELDER_GUARDIAN) * scoring.getDouble("ElderGuardianKilled");
-        double MobKilled = player.getStatistic(Statistic.MOB_KILLS) * scoring.getDouble("MobKilled");
         double BlocksPlaced = playerScore.getInt("playerBlocksPlaced") * scoring.getDouble("BlocksPlaced");
         double BlocksMined = playerScore.getInt("playerBlocksMined") * scoring.getDouble("BlocksMined");
         double Achevements = playerScore.getInt("playerAdvancements") * scoring.getDouble("Achevements");
-        double TotalPoints = Death + Xp + OnlineHr + WardenKilled + RavengerKilled + WithersKilled + PiglinBrutesKilled + MobKilled + BlocksPlaced + BlocksMined + Achevements;
+        double TotalPoints = Death + Xp + OnlineHr + BlocksPlaced + BlocksMined + Achevements;
+        List<String> MobMessages = new ArrayList<>();
+        for (String key: scoring.getConfigurationSection("MobKills").getKeys(false)) {
+            double MobPoints = player.getStatistic(Statistic.KILL_ENTITY, EntityType.valueOf(key)) * scoring.getConfigurationSection("MobKills").getDouble(key);
+            TotalPoints = TotalPoints + MobPoints;
+            MobMessages.add(StringUtils.capitalize(key.toLowerCase()) + " Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.valueOf(key)) + ", Points: " + MobPoints);
+        }
         if (showInChat) {
             stack.getSender().sendMessage(player.getName() + "'s Scorecard:");
             stack.getSender().sendMessage("Total Points: " + TotalPoints);
             stack.getSender().sendMessage("Deaths: " + player.getStatistic(Statistic.DEATHS) + ", Points: " + Death);
             stack.getSender().sendMessage("Xp: " + playerScore.getInt("playerTotalXp") + ", Points: " + Xp);
             stack.getSender().sendMessage("OnlineHr: " + (double) ((player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60 + ", Points: " + OnlineHr);
-            stack.getSender().sendMessage("Wardens Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.WARDEN) + ", Points: " + WardenKilled);
-            stack.getSender().sendMessage("Ravenger Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.RAVAGER) + ", Points: " + RavengerKilled);
-            stack.getSender().sendMessage("Withers Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.WITHER) + ", Points: " + WithersKilled);
-            stack.getSender().sendMessage("Piglin Brutes Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.PIGLIN_BRUTE) + ", Points: " + PiglinBrutesKilled);
-            stack.getSender().sendMessage("Elder Guardians Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.ELDER_GUARDIAN) + ", Points: " + ElderGuardiansKilled);
-            stack.getSender().sendMessage("Mobs Killed: " + player.getStatistic(Statistic.MOB_KILLS) + ", Points: " + MobKilled);
+            if (MobMessages.size() > 0) {
+                for (String msg : MobMessages) {
+                    stack.getSender().sendMessage(msg);
+                }
+            }
             stack.getSender().sendMessage("Blocks Placed: " + playerScore.getInt("playerBlocksPlaced") + ", Points: " + BlocksPlaced);
             stack.getSender().sendMessage("Blocks Mined: " + playerScore.getInt("playerBlocksMined") + ", Points: " + BlocksMined);
             stack.getSender().sendMessage("Achevements: " + playerScore.getInt("playerAdvancements") + ", Points: " + Achevements);
@@ -205,12 +206,11 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             logToFile("Deaths: " + player.getStatistic(Statistic.DEATHS) + ", Points: " + Death, path);
             logToFile("Xp: " + playerScore.getInt("playerTotalXp") + ", Points: " + Xp, path);
             logToFile("OnlineHr: " + (double) ((player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60 + ", Points: " + OnlineHr, path);
-            logToFile("Wardens Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.WARDEN) + ", Points: " + WardenKilled, path);
-            logToFile("Ravenger Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.RAVAGER) + ", Points: " + RavengerKilled, path);
-            logToFile("Withers Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.WITHER) + ", Points: " + WithersKilled, path);
-            logToFile("Piglin Brutes Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.PIGLIN_BRUTE) + ", Points: " + PiglinBrutesKilled, path);
-            logToFile("Elder Guardians Killed: " + player.getStatistic(Statistic.KILL_ENTITY, EntityType.ELDER_GUARDIAN) + ", Points: " + ElderGuardiansKilled, path);
-            logToFile("Mobs Killed: " + player.getStatistic(Statistic.MOB_KILLS) + ", Points: " + MobKilled, path);
+            if (MobMessages.size() > 0) {
+                for (String msg : MobMessages) {
+                    logToFile(msg, path);
+                }
+            }
             logToFile("Blocks Placed: " + playerScore.getInt("playerBlocksPlaced") + ", Points: " + BlocksPlaced, path);
             logToFile("Blocks Mined: " + playerScore.getInt("playerBlocksMined") + ", Points: " + BlocksMined, path);
             logToFile("Achevements: " + playerScore.getInt("playerAdvancements") + ", Points: " + Achevements, path);
@@ -1162,7 +1162,8 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         if (args.length == 1 && args[0].equalsIgnoreCase("allScores")) {
             stack.getSender().sendMessage("Generating Scores");
             for (OfflinePlayer offlinePlayer : Bukkit.getWhitelistedPlayers()) {
-                playerScore(stack, offlinePlayer,false);
+                if (offlinePlayer.getStatistic(Statistic.PLAY_ONE_MINUTE) != 0)
+                    playerScore(stack, offlinePlayer,false);
             }
             stack.getSender().sendMessage("Scores have been logged to a File");
         }
