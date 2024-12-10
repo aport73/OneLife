@@ -1,7 +1,5 @@
 package xyz.acyber.oneLifeRaces;
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
-import com.google.common.collect.Lists;
-import io.netty.util.internal.StringUtil;
 import io.papermc.paper.command.brigadier.BasicCommand;
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
@@ -10,16 +8,10 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.TextComponent;
-import net.kyori.adventure.text.TextReplacementConfig;
-import net.minecraft.world.food.FoodConstants;
-import net.minecraft.world.food.FoodData;
-import net.minecraft.world.level.biome.MobSpawnSettings;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.Material;
-import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
@@ -41,7 +33,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.*;
-import org.bukkit.inventory.meta.components.FoodComponent;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.plugin.Plugin;
@@ -52,7 +43,6 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.w3c.dom.DOMStringList;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -451,18 +441,18 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                         double low = base - variance;
                         double high = base + variance;
                         double result = r.nextDouble(high-low) + low;
-                        Objects.requireNonNull(spawnedEntity.getAttribute(Attribute.GENERIC_SCALE)).setBaseValue(result);
+                        Objects.requireNonNull(spawnedEntity.getAttribute(Attribute.SCALE)).setBaseValue(result);
                     }
                     ConfigurationSection mobSpeed = mobBuffs.getConfigurationSection("Speed");
                     if (mobSpeed != null) {
                         Random r = new Random();
                         double multiple = mobSpeed.getDouble("BASE");
-                        double base = spawnedEntity.getAttribute(Attribute.GENERIC_SCALE).getBaseValue() * multiple;
+                        double base = spawnedEntity.getAttribute(Attribute.SCALE).getBaseValue() * multiple;
                         double variance = mobSpeed.getDouble("VARIANCE");
                         double low = base - variance;
                         double high = base + variance;
                         double result = r.nextDouble(high-low) + low;
-                        Objects.requireNonNull(spawnedEntity.getAttribute(Attribute.GENERIC_MOVEMENT_SPEED)).setBaseValue(result);
+                        Objects.requireNonNull(spawnedEntity.getAttribute(Attribute.MOVEMENT_SPEED)).setBaseValue(result);
                     }
                 }
             }
@@ -973,22 +963,30 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             ConfigurationSection raceConfig = this.getConfig().getConfigurationSection("races." + race);
 
             assert raceConfig != null;
+            if (raceConfig.getBoolean("enabled")) {
+                Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(raceConfig.getDouble("scale"));
+                Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).setBaseValue(raceConfig.getDouble("reach"));
+                if (raceConfig.getBoolean("lockFreezeTicks")) {
+                    player.setFreezeTicks(0);
+                }
 
-            ((AttributeInstance)Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_SCALE))).setBaseValue(raceConfig.getDouble("scale"));
-            ((AttributeInstance)Objects.requireNonNull(player.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE))).setBaseValue(raceConfig.getDouble("reach"));
-            if (raceConfig.getBoolean("lockFreezeTicks")) {
-                player.setFreezeTicks(0);
+                player.lockFreezeTicks(raceConfig.getBoolean("lockFreezeTicks"));
+                this.giveRaceEffects(player, raceConfig.getStringList("effects"));
+                ConfigurationSection raceEquipment = raceConfig.getConfigurationSection("equipment");
+                if (raceEquipment != null) {
+                    this.giveRaceEquipment(player, item, raceEquipment);
+                }
+
+                this.giveStartItems(player, raceConfig.getConfigurationSection("startItems"));
+                this.setRepeatItems(player, raceConfig.getConfigurationSection("repeatItems"));
+            } else {
+                player.clearActivePotionEffects();
+                for (ItemStack items : player.getInventory().getContents())
+                    clearRaceItemEnchants(items);
+                Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).getDefaultValue());
+                Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).getDefaultValue());
             }
 
-            player.lockFreezeTicks(raceConfig.getBoolean("lockFreezeTicks"));
-            this.giveRaceEffects(player, raceConfig.getStringList("effects"));
-            ConfigurationSection raceEquipment = raceConfig.getConfigurationSection("equipment");
-            if (raceEquipment != null) {
-                this.giveRaceEquipment(player, item, raceEquipment);
-            }
-
-            this.giveStartItems(player, raceConfig.getConfigurationSection("startItems"));
-            this.setRepeatItems(player, raceConfig.getConfigurationSection("repeatItems"));
         }
 
     }
@@ -999,7 +997,7 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         String race = getPlayerRace(player);
         if (race != null) {
             ConfigurationSection raceConfig = getConfig().getConfigurationSection("races." + race);
-            Objects.requireNonNull(player.getAttribute(Attribute.GENERIC_SCALE)).setBaseValue(raceConfig.getDouble("scale"));
+            Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(raceConfig.getDouble("scale"));
             Objects.requireNonNull(player.getAttribute(Attribute.PLAYER_BLOCK_INTERACTION_RANGE)).setBaseValue(raceConfig.getDouble("reach"));
             List<String> raceEffects = raceConfig.getStringList("effects");
             for (String effect : raceEffects) {
@@ -1265,10 +1263,12 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         }
         if (args.length <= 4 && args[0].equalsIgnoreCase("races") && args[2].equalsIgnoreCase("setRace")) {
             if (args[3].length() == 0) {
-                sug.addAll(getConfig().getConfigurationSection("races").getKeys(false));
+                for (String key: getConfig().getConfigurationSection("races").getKeys(false))
+                    if (getConfig().getConfigurationSection("races." + key).getBoolean("enabled"))
+                        sug.add(key);
             } else {
                 for (String key : getConfig().getConfigurationSection("races").getKeys(false)) {
-                    if (key.toLowerCase().startsWith(args[3].toLowerCase())) {
+                    if (key.toLowerCase().startsWith(args[3].toLowerCase()) && getConfig().getConfigurationSection("races." + key).getBoolean("enabled")) {
                         sug.add(key);
                     }
                 }
