@@ -1,11 +1,11 @@
 plugins {
     id 'java'
-    id("xyz.jpenilla.run-paper") version "2.3.0"
-    id("io.papermc.paperweight.userdev") version "1.7.2" // Check for new versions at https://plugins.gradle.org/plugin/io.papermc.paperweight.userdev
+    id("io.papermc.paperweight.userdev") version "1.7.7" // Check for new versions at https://plugins.gradle.org/plugin/io.papermc.paperweight.userdev
+    id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
 group = 'xyz.acyber'
-version = '1.21.4-V1'
+version = '1.21.4-V1.0.2'
 repositories {
     mavenCentral()
     maven {

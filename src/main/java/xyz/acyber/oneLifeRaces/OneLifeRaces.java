@@ -8,6 +8,8 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
 import net.kyori.adventure.text.Component;
+import net.minecraft.server.commands.ScoreboardCommand;
+import net.minecraft.world.level.storage.loot.providers.number.ScoreboardValue;
 import org.apache.commons.lang.StringUtils;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
@@ -39,6 +41,9 @@ import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -991,6 +996,26 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
 
     }
 
+    public String giveLife(Player giver, Player reciever) {
+        ScoreboardManager manager = Bukkit.getScoreboardManager();
+        Scoreboard board = manager.getMainScoreboard();
+        Objective deaths = board.getObjective("deaths");
+        int recscore = deaths.getScoreFor(reciever).getScore();
+        int givscore = deaths.getScoreFor(giver).getScore();
+        if (givscore < 4) {
+            if (recscore > 4) {
+                deaths.getScoreFor(reciever).setScore(4);
+                reciever.setGameMode(GameMode.SURVIVAL);
+            } else {
+                deaths.getScoreFor(reciever).setScore(recscore - 1);
+            }
+            deaths.getScoreFor(giver).setScore(givscore + 1);
+            return "1 Life Gifted";
+        } else {
+            return "Error: you don't have enough lives to give";
+        }
+    }
+
    /* Old Race Effects Code for Refferance
    public void applyRaceEffects(Player player, ItemStack item) {
         player.clearActivePotionEffects();
@@ -1157,6 +1182,9 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
                 }
             }
         }
+        if (args.length == 1 && args[0].equalsIgnoreCase("giveLife")) {
+            stack.getSender().sendRichMessage("Missing who you want to give life too");
+        }
         if (args.length == 1 && args[0].equalsIgnoreCase("allScores")) {
             stack.getSender().sendMessage("Generating Scores");
             for (OfflinePlayer offlinePlayer : Bukkit.getWhitelistedPlayers()) {
@@ -1167,6 +1195,11 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("races")) {
             stack.getSender().sendRichMessage(args[1] + "'s race: further work to be done");
+        }
+        if (args.length == 2 && args[0].equalsIgnoreCase("giveLife")) {
+            Player reciever = Bukkit.getPlayer(args[1]);
+            Player giver = Bukkit.getPlayer(stack.getSender().getName());
+            giveLife(giver, reciever);
         }
         if (args.length == 2 && args[0].equalsIgnoreCase("playerScore")) {
             playerScore(stack, Bukkit.getPlayer(args[1]),true);
@@ -1228,11 +1261,12 @@ public final class OneLifeRaces extends JavaPlugin implements Listener, BasicCom
             if (getPlayerRace((Player) stack.getSender()).equalsIgnoreCase("Arathim")) {
                 sug.add("climb");
             }
+            sug.add("giveLife");
             sug.add("races");
             sug.add("help");
             return sug;
         }
-        if (args.length <= 2 && (args[0].equalsIgnoreCase("races") || args[0].equalsIgnoreCase("playerScore"))) {
+        if (args.length <= 2 && (args[0].equalsIgnoreCase("races") || args[0].equalsIgnoreCase("playerScore") || args[0].equalsIgnoreCase("giveLife"))) {
             if (stack.getSender().isOp()) {
                 if (args[1].length() == 0) {
                     for (Player player : Bukkit.getOnlinePlayers()) {
