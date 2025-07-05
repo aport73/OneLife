@@ -2,12 +2,9 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/IdeaProjects.OneLifeRaces.main.iml" filepath="$PROJECT_DIR$/.idea/modules/IdeaProjects.OneLifeRaces.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/IdeaProjects.OneLifeRaces.test.iml" filepath="$PROJECT_DIR$/.idea/modules/IdeaProjects.OneLifeRaces.test.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/OneLife.main.iml" filepath="$PROJECT_DIR$/.idea/modules/OneLife.main.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/OneLife.test.iml" filepath="$PROJECT_DIR$/.idea/modules/OneLife.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/OneLifeRaces.main.iml" filepath="$PROJECT_DIR$/.idea/modules/OneLifeRaces.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/OneLifeRaces.test.iml" filepath="$PROJECT_DIR$/.idea/modules/OneLifeRaces.test.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/aidenporter.IdeaProjects.OneLifeRaces.main.iml" filepath="$PROJECT_DIR$/.idea/modules/aidenporter.IdeaProjects.OneLifeRaces.main.iml" />
-      <module fileurl="file://$PROJECT_DIR$/.idea/modules/aidenporter.IdeaProjects.OneLifeRaces.test.iml" filepath="$PROJECT_DIR$/.idea/modules/aidenporter.IdeaProjects.OneLifeRaces.test.iml" />
     </modules>
   </component>
 </project>

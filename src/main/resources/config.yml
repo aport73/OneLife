@@ -1,6 +1,11 @@
+Modes:
+  RaceManager: true
+  MobManager: true
+  ScoreManager: true
+  LifeGifting: true
 races:
   Katari:
-    enabled: false
+    enabled: true
     scale: 0.95
     reach: 5.0
     fastSneak: true
@@ -40,7 +45,7 @@ races:
         Enchants:
           Feather_Falling: 2
   Ursine:
-    enabled: false
+    enabled: true
     scale: 1.8
     reach: 6.0
     fastSneak: false
@@ -58,7 +63,7 @@ races:
       - Health_Boost
       - Haste
   Zora:
-    enabled: false
+    enabled: true
     scale: 1.2
     reach: 4.0
     fastSneak: false
@@ -92,7 +97,7 @@ races:
       - Dolphins_Grace
       - Slowness
   Arathim:
-    enabled: false
+    enabled: true
     scale: 0.75
     reach: 4.0
     fastSneak: false
@@ -115,7 +120,7 @@ races:
         QtyPer: 1
         TimeSec: 120
   Human:
-    enabled: false
+    enabled: true
     scale: 1.0
     reach: 5.0
     fastSneak: false
@@ -138,7 +143,7 @@ races:
           Mending: 1
           Unbreaking: 3
   Elven:
-    enabled: false
+    enabled: true
     scale: 1.1
     reach: 5
     fastSneak: false
@@ -167,7 +172,7 @@ races:
         QtyPer: 1
         TimeSec: 90
   Dwarven:
-    enabled: false
+    enabled: true
     scale: 0.8
     reach: 4
     fastSneak: false
@@ -189,7 +194,7 @@ races:
           Unbreaking: 3
           Fortune: 1
   Aven:
-    enabled: false
+    enabled: true
     scale: 0.9
     reach: 3
     fastSneak: false
