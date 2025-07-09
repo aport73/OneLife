@@ -2,6 +2,7 @@ package xyz.acyber.oneLife.Managers;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
+import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
@@ -12,12 +13,11 @@ import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
-import org.bukkit.event.Listener;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.plugin.Plugin;
 
 import java.util.*;
 
@@ -28,6 +28,7 @@ public class CommandManager {
     static MobManager mm;
     static ScoreManager sm;
     static RaceManager rm;
+    static LivesManager lm;
     static Main main;
 
     public CommandManager(Main plugin) {
@@ -35,12 +36,38 @@ public class CommandManager {
         sm = main.sm;
         rm = main.rm;
         mm = main.mm;
+        lm = main.lm;
     }
 
     public LiteralCommandNode<CommandSourceStack> loadCmds() {
 
+        LiteralArgumentBuilder<CommandSourceStack> cmdLives = Commands.literal("Lives")
+                .requires(sender -> sender.getSender().hasPermission("OneLife.lives"))
+                .then(Commands.literal("Set")
+                        .then(Commands.literal("LivesCap")
+                            .then(Commands.argument("Cap", IntegerArgumentType.integer())
+                                .executes(CommandManager::runSetLivesCapLogic)))
+                        .then(Commands.literal("FinalGameMode")
+                                .then(Commands.argument("GameMode", ArgumentTypes.gameMode())
+                                        .executes(CommandManager::runSetFinalGameModeLogic)))
+                        .then(Commands.literal("PlayerDeaths")
+                                .then(Commands.argument("Player", ArgumentTypes.player())
+                                    .then(Commands.argument("Deaths", IntegerArgumentType.integer())
+                                        .executes(CommandManager::runSetPlayerDeathsLogic)))))
+                .then(Commands.literal("Get")
+                        .then(Commands.literal("LivesCap")
+                                .executes(CommandManager::runGetLivesCapLogic))
+                        .then(Commands.literal("FinalGameMode")
+                                .executes(CommandManager::runGetFinalGameModeLogic)))
+                .then(Commands.literal("Reset")
+                        .then(Commands.literal("Deaths")
+                                .executes(CommandManager::runResetDeathsLogic))
+                        .then(Commands.literal("PlayerDeaths")
+                                .then(Commands.argument("Player", ArgumentTypes.player())
+                                        .executes(CommandManager::runResetPlayerDeathsLogic))));
+
         LiteralArgumentBuilder<CommandSourceStack> cmdScores = Commands.literal("Scores")
-                .requires(sender -> sender.getSender().isOp() && main.scoreMEnabled)
+                .requires(sender -> sender.getSender().hasPermission("OneLife.Scores") && main.scoreMEnabled)
                 .then(Commands.literal("All")
                         .executes(CommandManager::runAllScoresLogic))
                 .then(Commands.literal("Player")
@@ -48,7 +75,7 @@ public class CommandManager {
                                 .executes(CommandManager::runPlayerScoreLogic)));
 
         LiteralArgumentBuilder<CommandSourceStack> cmdFeatures = Commands.literal("Features")
-                .requires(sender -> sender.getSender().isOp())
+                .requires(sender -> sender.getSender().hasPermission("OneLife.Features"))
                 .then(Commands.literal("MobsTweaks")
                         .then(Commands.argument("mMEnabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
@@ -100,16 +127,34 @@ public class CommandManager {
                                     else
                                         ctx.getSource().getSender().sendRichMessage("Life Gifting Disabled");
                                     return Command.SINGLE_SUCCESS;
-                                })));
+                                })))
+                .then(Commands.literal("Lives")
+                    .then(Commands.argument("livesMEnabled", BoolArgumentType.bool())
+                            .executes(ctx -> {
+                                if (ctx.getArgument("livesMEnabled", Boolean.class))
+                                    lm.enableDeathsScoreboard();
+                                else
+                                    lm.disableDeathsScoreboard();
+
+                                Player player = (Player) ctx.getSource().getSender();
+                                player.updateCommands();
+
+                                if (main.livesMEnabled)
+                                    ctx.getSource().getSender().sendRichMessage("Lives Manager Enabled");
+                                else
+                                    ctx.getSource().getSender().sendRichMessage("Lives Manager Disabled");
+                                return Command.SINGLE_SUCCESS;
+
+                            })));
 
         LiteralArgumentBuilder<CommandSourceStack> cmdRaces = Commands.literal("Races")
                 .requires(sender -> main.raceMEnabled)
                 .then(Commands.argument("Player", ArgumentTypes.player())
                         .then(Commands.literal("ResetStartItems")
-                                .requires(sender -> sender.getSender().isOp())
+                                .requires(sender -> sender.getSender().hasPermission("OneLife.Races.ResetStartItems"))
                                 .executes(CommandManager::runResetStartItemsLogic))
                         .then(Commands.literal("SetRace")
-                                .requires(sender -> sender.getSender().isOp() || rm.getPlayerRace((Player) sender.getSender()).equalsIgnoreCase("Human"))
+                                .requires(sender -> sender.getSender().hasPermission("OneLife.Races.SetRace") || rm.getPlayerRace((Player) sender.getSender()).equalsIgnoreCase("Human"))
                                 .then(Commands.argument("Race", StringArgumentType.word())
                                         .suggests((ctx, builder) -> {
                                             List<String> races = new ArrayList<>();
@@ -123,7 +168,7 @@ public class CommandManager {
                                         })
                                         .executes(CommandManager::runSetRaceLogic)))
                         .then(Commands.literal("Abilities")
-                                .requires(sender -> sender.getSender().isOp())
+                                .requires(sender -> sender.getSender().hasPermission("OneLife.Races.Abilities"))
                                 .then(Commands.literal("Climb")
                                         .then(Commands.argument("state", BoolArgumentType.bool())
                                                 .executes(CommandManager::runSetPlayerClimbLogic)))));
@@ -146,16 +191,63 @@ public class CommandManager {
                         .then(Commands.argument("Player", ArgumentTypes.player())
                                 .executes(CommandManager::runGiveLifeLogic)))
                 .then(Commands.literal("Reload")
-                        .requires(sender -> sender.getSender().isOp())
+                        .requires(sender -> sender.getSender().hasPermission("OneLife.Reload"))
                         .executes(ctx -> {
                             main.reloadConfig();
                             ctx.getSource().getSender().sendRichMessage("One Life Plugin Reloaded!");
                             return Command.SINGLE_SUCCESS;
                         }))
+                .then(cmdLives
+                        .requires(sender -> main.livesMEnabled))
                 .then(cmdFeatures)
                 .then(cmdHelp);
 
          return cmdRoot.build();
+    }
+
+    private static int runResetPlayerDeathsLogic(CommandContext<CommandSourceStack> ctx) {
+        Player player = getPlayerArgument(ctx);
+        lm.resetPlayerScore(lm.getObjective("deaths", lm.getScoreboard()), player);
+        ctx.getSource().getSender().sendRichMessage(player.getName() + "'s Deaths have been reset!");
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runResetDeathsLogic(CommandContext<CommandSourceStack> ctx) {
+        lm.resetObjective(lm.getObjective("deaths", lm.getScoreboard()));
+        ctx.getSource().getSender().sendRichMessage("Deaths have been reset!");
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runGetFinalGameModeLogic(CommandContext<CommandSourceStack> ctx) {
+        ctx.getSource().getSender().sendRichMessage("Final Game Mode is: " + lm.getFinalGameMode());
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runGetLivesCapLogic(CommandContext<CommandSourceStack> ctx) {
+        ctx.getSource().getSender().sendRichMessage("Lives cap is: " + lm.getLivesCap());
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runSetPlayerDeathsLogic(CommandContext<CommandSourceStack> ctx) {
+        int deaths = ctx.getArgument("Deaths", Integer.class);
+        Player player = getPlayerArgument(ctx);
+        lm.setPlayerScore(lm.getObjective("deaths",lm.getScoreboard()), player, deaths);
+        ctx.getSource().getSender().sendRichMessage(player.getName() + "'s deaths has been set to " + deaths);
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runSetFinalGameModeLogic(CommandContext<CommandSourceStack> ctx) {
+        GameMode mode = ctx.getArgument("GameMode", GameMode.class);
+        lm.setFinalGameMode(mode);
+        ctx.getSource().getSender().sendRichMessage("Final game mode has been set to " + mode.name());
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runSetLivesCapLogic(CommandContext<CommandSourceStack> ctx) {
+        int cap = ctx.getArgument("Cap", Integer.class);
+        lm.setLivesCap(cap);
+        ctx.getSource().getSender().sendRichMessage("Lives cap has been set to " + cap);
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int runClimbLogic(CommandContext<CommandSourceStack> ctx) {

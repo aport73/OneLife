@@ -2,6 +2,7 @@ Modes:
   RaceManager: true
   MobManager: true
   ScoreManager: true
+  LivesManager: true
   LifeGifting: true
 races:
   Katari:
@@ -342,3 +343,6 @@ Scoring:
     WOLF: -1.0
     VILLAGER: -2.0
     WANDERING_TRADER: -2.0
+Lives:
+  cap: 2
+  gameModeAfterLastDeath: Adventure

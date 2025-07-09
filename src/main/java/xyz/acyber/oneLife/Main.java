@@ -12,6 +12,7 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.*;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -24,10 +25,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.Managers.CommandManager;
-import xyz.acyber.oneLife.Managers.MobManager;
-import xyz.acyber.oneLife.Managers.RaceManager;
-import xyz.acyber.oneLife.Managers.ScoreManager;
+import xyz.acyber.oneLife.Managers.*;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -43,11 +41,13 @@ public class Main extends JavaPlugin implements Listener {
     public MobManager mm = new MobManager(this);
     public RaceManager rm = new RaceManager(this);
     public ScoreManager sm = new ScoreManager(this);
+    public LivesManager lm = new LivesManager(this);
     public CommandManager cm = new CommandManager(this);
 
     public boolean mobMEnabled = false;
     public boolean raceMEnabled = false;
     public boolean scoreMEnabled = false;
+    public boolean livesMEnabled = false;
     public boolean lifeGEnabled = false;
 
     @Override
@@ -63,6 +63,7 @@ public class Main extends JavaPlugin implements Listener {
         raceMEnabled = modes.getBoolean("RaceManager");
         scoreMEnabled = modes.getBoolean("ScoreManager");
         lifeGEnabled = modes.getBoolean("LifeGifting");
+        livesMEnabled = modes.getBoolean("LivesManager");
 
         Bukkit.getPluginManager().registerEvents(this, this);
 
@@ -70,6 +71,9 @@ public class Main extends JavaPlugin implements Listener {
         manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
             commands.registrar().register(cm.loadCmds());
         });
+
+        if (livesMEnabled)
+            lm.enableDeathsScoreboard();
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -221,12 +225,21 @@ public class Main extends JavaPlugin implements Listener {
     public void onRespawn(PlayerRespawnEvent event) {
         if (raceMEnabled)
             rm.applyRace(event.getPlayer(), null);
+        if (livesMEnabled)
+            lm.setPlayerGameMode(event.getPlayer());
     }
 
     @EventHandler
     public void onEntitySpawn(EntitySpawnEvent event) {
         if (mobMEnabled)
             mm.onEntitySpawn(event);
+    }
+
+    @EventHandler
+    public void onPlayerGameModeChange(PlayerGameModeChangeEvent event) {
+        if (livesMEnabled)
+            if (!event.getPlayer().isOp())
+                lm.setPlayerGameMode(event.getPlayer());
     }
 
     @EventHandler
