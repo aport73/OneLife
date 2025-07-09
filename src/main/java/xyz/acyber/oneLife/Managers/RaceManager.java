@@ -45,6 +45,8 @@ import xyz.acyber.oneLife.Main;
 
 public class RaceManager {
 
+    //TODO Entire Class needs Refactor - Redesign
+
     static MobManager mm;
     static ScoreManager sm;
     static CommandManager cm;
