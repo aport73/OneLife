@@ -8,10 +8,11 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import xyz.acyber.oneLife.Main;
 
 import java.util.Objects;
 import java.util.Random;
+
+import xyz.acyber.oneLife.Main;
 
 public class MobManager {
 

@@ -11,10 +11,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
-import xyz.acyber.oneLife.Main;
 
 import java.util.ArrayList;
 import java.util.List;
+
+import xyz.acyber.oneLife.Main;
 
 public class ScoreManager {
 

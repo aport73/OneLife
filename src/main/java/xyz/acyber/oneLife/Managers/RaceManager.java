@@ -36,10 +36,11 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-import xyz.acyber.oneLife.Main;
 
 import java.util.List;
 import java.util.Objects;
+
+import xyz.acyber.oneLife.Main;
 
 
 public class RaceManager {

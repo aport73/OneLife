@@ -18,11 +18,10 @@ import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-import xyz.acyber.oneLife.Main;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+
+import xyz.acyber.oneLife.Main;
 
 public class CommandManager {
 
