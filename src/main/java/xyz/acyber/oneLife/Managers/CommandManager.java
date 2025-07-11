@@ -14,14 +14,17 @@ import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
-
-import java.util.*;
-
+import org.jetbrains.annotations.NotNull;
 import xyz.acyber.oneLife.Main;
+
+import javax.swing.*;
+import java.awt.datatransfer.StringSelection;
+import java.lang.invoke.TypeDescriptor;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
 
 public class CommandManager {
 
@@ -212,23 +215,23 @@ public class CommandManager {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runResetDeathsLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runResetDeathsLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         lm.resetObjective(lm.getObjective("deaths", lm.getScoreboard()));
         ctx.getSource().getSender().sendRichMessage("Deaths have been reset!");
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runGetFinalGameModeLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runGetFinalGameModeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         ctx.getSource().getSender().sendRichMessage("Final Game Mode is: " + lm.getFinalGameMode());
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runGetLivesCapLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runGetLivesCapLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         ctx.getSource().getSender().sendRichMessage("Lives cap is: " + lm.getLivesCap());
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runSetPlayerDeathsLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runSetPlayerDeathsLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         int deaths = ctx.getArgument("Deaths", Integer.class);
         Player player = getPlayerArgument(ctx);
         lm.setPlayerScore(lm.getObjective("deaths",lm.getScoreboard()), player, deaths);
@@ -236,21 +239,21 @@ public class CommandManager {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runSetFinalGameModeLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runSetFinalGameModeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         GameMode mode = ctx.getArgument("GameMode", GameMode.class);
         lm.setFinalGameMode(mode);
         ctx.getSource().getSender().sendRichMessage("Final game mode has been set to " + mode.name());
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runSetLivesCapLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runSetLivesCapLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         int cap = ctx.getArgument("Cap", Integer.class);
         lm.setLivesCap(cap);
         ctx.getSource().getSender().sendRichMessage("Lives cap has been set to " + cap);
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runClimbLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runClimbLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack stack = ctx.getSource();
         Player player = (Player) stack.getSender();
         if (rm.getPlayerClimbs(player)) {
@@ -263,7 +266,7 @@ public class CommandManager {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runSetPlayerClimbLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runSetPlayerClimbLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack stack = ctx.getSource();
         Player player = getPlayerArgument(ctx);
         boolean state = ctx.getArgument("state", boolean.class);
@@ -276,7 +279,7 @@ public class CommandManager {
     }
 
 
-    private static int runGiveLifeLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runGiveLifeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         final PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("Player", PlayerSelectorArgumentResolver.class);
         final Player receiver;
         final Player giver;
@@ -292,18 +295,15 @@ public class CommandManager {
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runAllScoresLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runAllScoresLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         CommandSourceStack stack = ctx.getSource();
         stack.getSender().sendMessage("Generating Scores");
-        for (OfflinePlayer offlinePlayer : Bukkit.getWhitelistedPlayers()) {
-            if (offlinePlayer.getStatistic(Statistic.PLAY_ONE_MINUTE) != 0)
-                sm.playerScore(stack, offlinePlayer, false);
-        }
+        sm.allPlayerScores(stack, false);
         stack.getSender().sendMessage("Scores have been logged to a File");
         return Command.SINGLE_SUCCESS;
     }
 
-    private static int runPlayerScoreLogic(CommandContext<CommandSourceStack> ctx) {
+    private static int runPlayerScoreLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         final PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("Player", PlayerSelectorArgumentResolver.class);
         final Player player;
         try {
@@ -311,7 +311,7 @@ public class CommandManager {
         } catch (CommandSyntaxException e) {
             throw new RuntimeException(e);
         }
-        sm.playerScore(ctx.getSource(), Objects.requireNonNull(player), true);
+        sm.singlePlayerScores(ctx.getSource(), Objects.requireNonNull(player), true);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -353,13 +353,13 @@ public class CommandManager {
     }
 
 
-    private static Player getPlayerArgument(CommandContext<CommandSourceStack> ctx) {
+    private static Player getPlayerArgument(@NotNull CommandContext<CommandSourceStack> ctx) {
         final PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("Player", PlayerSelectorArgumentResolver.class);
         final Player player;
         try {
             player = targetResolver.resolve(ctx.getSource()).getFirst();
         } catch (CommandSyntaxException e) {
-            throw new RuntimeException(e);
+                throw new RuntimeException(e);
         }
         return player;
     }

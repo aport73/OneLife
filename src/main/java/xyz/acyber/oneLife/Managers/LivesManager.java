@@ -1,15 +1,11 @@
 package xyz.acyber.oneLife.Managers;
 
-import io.papermc.paper.command.brigadier.CommandSourceStack;
-import me.lucko.spark.paper.lib.protobuf.SourceContext;
 import net.kyori.adventure.text.Component;
-import net.kyori.adventure.text.event.ClickEvent;
-import org.bukkit.GameMode;
-import org.bukkit.entity.Entity;
-import org.bukkit.entity.Player;
 import org.bukkit.Bukkit;
-import xyz.acyber.oneLife.Main;
+import org.bukkit.GameMode;
+import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
+import xyz.acyber.oneLife.Main;
 
 import java.util.Objects;
 

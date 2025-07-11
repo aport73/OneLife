@@ -36,11 +36,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import xyz.acyber.oneLife.Main;
 
 import java.util.List;
 import java.util.Objects;
-
-import xyz.acyber.oneLife.Main;
 
 
 public class RaceManager {
@@ -377,7 +376,8 @@ public class RaceManager {
 
     public String getPlayerRace(Player player) {
         FileConfiguration config = main.getPlayerConfig();
-        return config.getString(player.getUniqueId() + ".playerRace");
+        String race = config.getString(player.getUniqueId() + ".playerRace");
+        return !(race == null) ? race : "";
     }
 
     public void setPlayerRace(Player player, String playerRace) {

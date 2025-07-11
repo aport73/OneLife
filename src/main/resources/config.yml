@@ -346,3 +346,8 @@ Scoring:
 Lives:
   cap: 2
   gameModeAfterLastDeath: Adventure
+Teams:
+  - Tideborn
+  - Dalenii
+  - Galactic
+  - Trolls

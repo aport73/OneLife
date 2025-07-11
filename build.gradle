@@ -1,14 +1,14 @@
 plugins {
     id 'java'
-    id("io.papermc.paperweight.userdev") version "2.0.0-beta.17"
+    id("io.papermc.paperweight.userdev") version "2.0.0-beta.18"
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
-version = '2-Beta-3'
+version = '2-Beta-5'
 repositories {
     mavenCentral()
     maven {
-        name = "papermc-repo"
+        name = "papermc"
         url = "https://repo.papermc.io/repository/maven-public/"
     }
     maven {
@@ -18,8 +18,8 @@ repositories {
 }
 
 dependencies {
+    compileOnly 'net.luckperms:api:5.5'
     paperweight.paperDevBundle("1.21.7-R0.1-SNAPSHOT")
-    //compileOnly("io.papermc.paper:1.21.1-R0.1-SNAPSHOT")
 }
 
 tasks {
@@ -38,14 +38,6 @@ java {
     targetCompatibility = javaVersion
     if (JavaVersion.current() < javaVersion) {
         toolchain.languageVersion = JavaLanguageVersion.of(targetJavaVersion)
-    }
-}
-
-tasks.withType(JavaCompile).configureEach {
-    options.encoding = 'UTF-8'
-
-    if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
-        options.release.set(targetJavaVersion)
     }
 }
 

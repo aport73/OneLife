@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
+import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
@@ -12,7 +13,6 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
-import org.bukkit.event.*;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -32,8 +32,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDate;
+import java.util.List;
 import java.util.logging.Level;
-
+import net.luckperms.api.LuckPerms;
 
 public class Main extends JavaPlugin implements Listener {
     //TODO Redo Mob Sounds
@@ -49,6 +50,8 @@ public class Main extends JavaPlugin implements Listener {
     public boolean scoreMEnabled = false;
     public boolean livesMEnabled = false;
     public boolean lifeGEnabled = false;
+
+    public LuckPerms lpapi;
 
     @Override
     public void onEnable() {
@@ -74,6 +77,8 @@ public class Main extends JavaPlugin implements Listener {
 
         if (livesMEnabled)
             lm.enableDeathsScoreboard();
+
+        lpapi = LuckPermsProvider.get();
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -81,7 +86,7 @@ public class Main extends JavaPlugin implements Listener {
         return YamlConfiguration.loadConfiguration(file);
     }
 
-    public void savePlayerConfig(FileConfiguration config) {
+    public void savePlayerConfig(@NotNull FileConfiguration config) {
         try {
             File file = new File(getDataFolder(), "players.yml");
             config.save(file);
@@ -143,6 +148,38 @@ public class Main extends JavaPlugin implements Listener {
 
     }
 
+    public void exportToCsv(String filePath, List<String[]> data, String[] headers) {
+
+        //Create Folder
+        File dataFolder = getDataFolder();
+        if (!dataFolder.exists()) {
+            dataFolder.mkdirs();
+        }
+        if (!filePath.equalsIgnoreCase("")) {
+            File root = dataFolder;
+            dataFolder = new File(root, filePath);
+            if (!dataFolder.exists()) {
+                dataFolder.mkdirs();
+            }
+        }
+
+        try (PrintWriter writer = new PrintWriter(new FileWriter(dataFolder.getPath() + "/scores-" + LocalDate.now() + ".csv"), true)) {
+
+            // Write headers
+            if (headers != null && headers.length > 0) {
+                writer.println(String.join(",", headers));
+            }
+
+            // Write data rows
+            for (String[] row : data) {
+                writer.println(String.join(",", row));
+            }
+            System.out.println("CSV file exported successfully to: " + filePath);
+        } catch (IOException e) {
+            System.err.println("Error exporting CSV: " + e.getMessage());
+        }
+    }
+
     public void checkPlayerInConfig(String playerUUID) {
         FileConfiguration config = getPlayerConfig();
         ConfigurationSection p = config.getConfigurationSection(playerUUID);
@@ -171,6 +208,18 @@ public class Main extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    @EventHandler
+    public void playerHarvest(PlayerHarvestBlockEvent ev) {
+        if (scoreMEnabled)
+            sm.playerHarvest(ev);
+    }
+
+    @EventHandler
+    public void playerFish(PlayerFishEvent ev) {
+        if (scoreMEnabled)
+            sm.playerFish(ev);
     }
 
     @EventHandler
@@ -285,7 +334,7 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     @EventHandler
-    public void playerDisconnect(PlayerQuitEvent event) {
+    public void playerDisconnect(@NotNull PlayerQuitEvent event) {
         FileConfiguration config = getPlayerConfig();
         Player player = event.getPlayer();
         config.set(player.getUniqueId() + ".playerTasks", 0);
@@ -294,7 +343,7 @@ public class Main extends JavaPlugin implements Listener {
         savePlayerConfig(config);
     }
 
-    public void setPlayerTasks(Player player, int task) {
+    public void setPlayerTasks(@NotNull Player player, int task) {
         FileConfiguration config = getPlayerConfig();
         config.set(player.getUniqueId() + ".playerTasks", task);
         savePlayerConfig(config);
@@ -311,12 +360,12 @@ public class Main extends JavaPlugin implements Listener {
         saveConfig();
     }
 
-    public int getPlayerTasks(Player player) {
+    public int getPlayerTasks(@NotNull Player player) {
         FileConfiguration config = getPlayerConfig();
         return config.getInt(player.getUniqueId() + ".playerTasks");
     }
 
-    public String giveLife(Player giver, Player receiver) {
+    public void giveLife(Player giver, Player receiver) {
         ScoreboardManager manager = Bukkit.getScoreboardManager();
         Scoreboard board = manager.getMainScoreboard();
         Objective deaths = board.getObjective("deaths");
@@ -331,9 +380,6 @@ public class Main extends JavaPlugin implements Listener {
                 deaths.getScoreFor(receiver).setScore(recscore - 1);
             }
             deaths.getScoreFor(giver).setScore(givscore + 1);
-            return "1 Life Gifted";
-        } else {
-            return "Error: you don't have enough lives to give";
         }
     }
 }
