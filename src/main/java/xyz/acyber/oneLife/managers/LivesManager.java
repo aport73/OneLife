@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.Managers;
+package xyz.acyber.oneLife.managers;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
@@ -99,11 +99,11 @@ public class LivesManager {
     }
 
     public void resetObjective(Objective objective) {
-        Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
-        String name = objective.getName();
-        Criteria criteria = objective.getTrackedCriteria();
-        Component displayName = objective.displayName();
-        RenderType renderType = objective.getRenderType();
+        scoreboardManager.getMainScoreboard();
+        objective.getName();
+        objective.getTrackedCriteria();
+        objective.displayName();
+        objective.getRenderType();
 
         objective.unregister();
         enableDeathsScoreboard();

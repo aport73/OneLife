@@ -1,9 +1,7 @@
 package xyz.acyber.oneLife;
 
-import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.OfflinePlayer;
 
-import java.util.Comparator;
 import java.util.Dictionary;
 import java.util.List;
 

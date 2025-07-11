@@ -4,6 +4,7 @@ import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
+import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
@@ -25,7 +26,11 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.Managers.*;
+import xyz.acyber.oneLife.managers.CommandManager;
+import xyz.acyber.oneLife.managers.MobManager;
+import xyz.acyber.oneLife.managers.RaceManager;
+import xyz.acyber.oneLife.managers.ScoreManager;
+import xyz.acyber.oneLife.managers.LivesManager;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -34,16 +39,15 @@ import java.io.PrintWriter;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.logging.Level;
-import net.luckperms.api.LuckPerms;
 
 public class Main extends JavaPlugin implements Listener {
     //TODO Redo Mob Sounds
     //TODO Idea - Disable Traveling Merchants being able to use Invisibility?
-    public MobManager mm = new MobManager(this);
-    public RaceManager rm = new RaceManager(this);
-    public ScoreManager sm = new ScoreManager(this);
-    public LivesManager lm = new LivesManager(this);
-    public CommandManager cm = new CommandManager(this);
+    public final MobManager mm = new MobManager(this);
+    public final RaceManager rm = new RaceManager(this);
+    public final ScoreManager sm = new ScoreManager(this);
+    public final LivesManager lm = new LivesManager(this);
+    public final CommandManager cm = new CommandManager(this);
 
     public boolean mobMEnabled = false;
     public boolean raceMEnabled = false;
@@ -51,7 +55,7 @@ public class Main extends JavaPlugin implements Listener {
     public boolean livesMEnabled = false;
     public boolean lifeGEnabled = false;
 
-    public LuckPerms lpapi;
+    public LuckPerms lpAPI;
 
     @Override
     public void onEnable() {
@@ -71,14 +75,12 @@ public class Main extends JavaPlugin implements Listener {
         Bukkit.getPluginManager().registerEvents(this, this);
 
         LifecycleEventManager<@NotNull Plugin> manager = this.getLifecycleManager();
-        manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> {
-            commands.registrar().register(cm.loadCmds());
-        });
+        manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> commands.registrar().register(cm.loadCmds()));
 
         if (livesMEnabled)
             lm.enableDeathsScoreboard();
 
-        lpapi = LuckPermsProvider.get();
+        lpAPI = LuckPermsProvider.get();
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -100,12 +102,14 @@ public class Main extends JavaPlugin implements Listener {
         try {
             File dataFolder = getDataFolder();
             if (!dataFolder.exists()) {
-                boolean mkdirs = dataFolder.mkdirs();
+                //noinspection ResultOfMethodCallIgnored
+                dataFolder.mkdirs();
             }
 
             File saveTo = new File(dataFolder, "players.yml");
             if (!saveTo.exists()) {
-                boolean createNewFile = saveTo.createNewFile();
+                //noinspection ResultOfMethodCallIgnored
+                saveTo.createNewFile();
             }
 
             for (OfflinePlayer offlinePlayer : Bukkit.getWhitelistedPlayers()) {
@@ -119,20 +123,11 @@ public class Main extends JavaPlugin implements Listener {
 
     public void logToFile(String message, String path) {
         try {
-            File dataFolder = getDataFolder();
-            if (!dataFolder.exists()) {
-                dataFolder.mkdirs();
-            }
-            if (!path.equalsIgnoreCase("")) {
-                File root = dataFolder;
-                dataFolder = new File(root, path);
-                if (!dataFolder.exists()) {
-                    dataFolder.mkdirs();
-                }
-            }
+            File dataFolder = createFolder(path);
 
             File saveTo = new File(dataFolder, "scores-" + LocalDate.now() + ".txt");
             if (!saveTo.exists()) {
+                //noinspection ResultOfMethodCallIgnored
                 saveTo.createNewFile();
             }
 
@@ -151,17 +146,7 @@ public class Main extends JavaPlugin implements Listener {
     public void exportToCsv(String filePath, List<String[]> data, String[] headers) {
 
         //Create Folder
-        File dataFolder = getDataFolder();
-        if (!dataFolder.exists()) {
-            dataFolder.mkdirs();
-        }
-        if (!filePath.equalsIgnoreCase("")) {
-            File root = dataFolder;
-            dataFolder = new File(root, filePath);
-            if (!dataFolder.exists()) {
-                dataFolder.mkdirs();
-            }
-        }
+        File dataFolder = createFolder(filePath);
 
         try (PrintWriter writer = new PrintWriter(new FileWriter(dataFolder.getPath() + "/scores-" + LocalDate.now() + ".csv"), true)) {
 
@@ -178,6 +163,23 @@ public class Main extends JavaPlugin implements Listener {
         } catch (IOException e) {
             System.err.println("Error exporting CSV: " + e.getMessage());
         }
+    }
+
+    private File createFolder(String filePath) {
+        File dataFolder = getDataFolder();
+        if (!dataFolder.exists()) {
+            //noinspection ResultOfMethodCallIgnored
+            dataFolder.mkdirs();
+        }
+        if (!filePath.equalsIgnoreCase("")) {
+            File root = dataFolder;
+            dataFolder = new File(root, filePath);
+            if (!dataFolder.exists()) {
+                //noinspection ResultOfMethodCallIgnored
+                dataFolder.mkdirs();
+            }
+        }
+        return dataFolder;
     }
 
     public void checkPlayerInConfig(String playerUUID) {

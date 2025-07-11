@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.Managers;
+package xyz.acyber.oneLife.managers;
 
 import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
@@ -15,16 +15,10 @@ import java.util.Random;
 
 public class MobManager {
 
-    static CommandManager cm;
-    static ScoreManager sm;
-    static RaceManager rm;
     static Main main;
 
     public MobManager(Main plugin) {
         main = plugin;
-        cm = main.cm;
-        sm = main.sm;
-        rm = main.rm;
     }
 
     public void onEntityDeath(EntityDeathEvent event) {
@@ -74,7 +68,7 @@ public class MobManager {
                             meta.setColor(Color.fromRGB(r,g,b));
                             item.setItemMeta(meta);
                         } */
-                        spawnedEntity.getEquipment().setItem(EquipmentSlot.valueOf(key), item);
+                        Objects.requireNonNull(spawnedEntity.getEquipment()).setItem(EquipmentSlot.valueOf(key), item);
                     }
                 }
                 ConfigurationSection mobBuffs = mobConfig.getConfigurationSection("BUFFS");
@@ -93,7 +87,7 @@ public class MobManager {
                     if (mobSpeed != null) {
                         Random r = new Random();
                         double multiple = mobSpeed.getDouble("BASE");
-                        double base = spawnedEntity.getAttribute(Attribute.SCALE).getBaseValue() * multiple;
+                        double base = Objects.requireNonNull(spawnedEntity.getAttribute(Attribute.SCALE)).getBaseValue() * multiple;
                         double variance = mobSpeed.getDouble("VARIANCE");
                         double low = base - variance;
                         double high = base + variance;

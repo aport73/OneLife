@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.Managers;
+package xyz.acyber.oneLife.managers;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -19,16 +19,13 @@ import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import xyz.acyber.oneLife.Main;
 
-import javax.swing.*;
-import java.awt.datatransfer.StringSelection;
-import java.lang.invoke.TypeDescriptor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
+@SuppressWarnings("SameReturnValue")
 public class CommandManager {
 
-    static MobManager mm;
     static ScoreManager sm;
     static RaceManager rm;
     static LivesManager lm;
@@ -38,7 +35,6 @@ public class CommandManager {
         main = plugin;
         sm = main.sm;
         rm = main.rm;
-        mm = main.mm;
         lm = main.lm;
     }
 
@@ -311,7 +307,7 @@ public class CommandManager {
         } catch (CommandSyntaxException e) {
             throw new RuntimeException(e);
         }
-        sm.singlePlayerScores(ctx.getSource(), Objects.requireNonNull(player), true);
+        sm.singlePlayerScores(ctx.getSource(), Objects.requireNonNull(player));
         return Command.SINGLE_SUCCESS;
     }
 
@@ -331,7 +327,7 @@ public class CommandManager {
             for (ItemStack i : player.getInventory().getContents()) {
                 rm.clearRaceItemEnchants(i);
                 if (rm.isRaceItem(i)) {
-                    player.getInventory().removeItemAnySlot(i);
+                    player.getInventory().removeItemAnySlot(Objects.requireNonNull(i));
                 }
             }
             main.setPlayerTasks(player, 0);

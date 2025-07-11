@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.Managers;
+package xyz.acyber.oneLife.managers;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import net.luckperms.api.model.group.Group;
@@ -26,16 +26,10 @@ import java.util.stream.Collectors;
 
 public class ScoreManager {
 
-    static MobManager mm;
-    static RaceManager rm;
-    static CommandManager cm;
     static Main main;
 
     public ScoreManager(Main plugin) {
         main = plugin;
-        mm = main.mm;
-        rm = main.rm;
-        cm = main.cm;
     }
 
     public void playerFish(@NotNull PlayerFishEvent event) {
@@ -131,7 +125,7 @@ public class ScoreManager {
         logPlayerScore(scores, sortedTeamScore);
     }
 
-    public void singlePlayerScores(CommandSourceStack stack, @NotNull Player player, Boolean showInChat) {
+    public void singlePlayerScores(CommandSourceStack stack, @NotNull Player player) {
         OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player.getUniqueId());
         ScoreData scoreData = playerScore(offlinePlayer);
         showPlayerScore(stack,scoreData);
@@ -170,7 +164,7 @@ public class ScoreManager {
         scoreData.typeBlocksMined = new Hashtable<>();
         for (String key : Objects.requireNonNull(scoring.getConfigurationSection("MobKills")).getKeys(false)) {
             List<Double> data = new ArrayList<>();
-            double MobKills = (double) player.getStatistic(Statistic.KILL_ENTITY, EntityType.valueOf(key));
+            double MobKills = player.getStatistic(Statistic.KILL_ENTITY, EntityType.valueOf(key));
             double MobPoints = MobKills * Objects.requireNonNull(scoring.getConfigurationSection("MobKills")).getDouble(key);
             data.add(MobKills);
             data.add(MobPoints);
@@ -260,9 +254,7 @@ public class ScoreManager {
         teamScores.forEach((key, value) -> {
             main.logToFile(key + "'s Score: " + value, path);
             main.logToFile("--- Member Ranking ---", path);
-            scores.stream().filter(score -> score.team == key).forEach(score -> {
-                main.logToFile(score.player.getName() +"'s Score: " + score.totalPoints(), path);
-            });
+            scores.stream().filter(score -> Objects.equals(score.team, key)).forEach(score -> main.logToFile(score.player.getName() +"'s Score: " + score.totalPoints(), path));
             main.logToFile("--- End Members ---", path);
             main.logToFile("",path);
         });
@@ -284,37 +276,27 @@ public class ScoreManager {
             main.logToFile("", path);
             main.logToFile("Mobs Killed Breakdown", path);
             if (!scoreData.typeMobs.isEmpty()) {
-                scoreData.typeMobs.keys().asIterator().forEachRemaining(key -> {
-                    main.logToFile(key + "s Killed: " + scoreData.typeMobs.get(key).getFirst() + " , Points: " + scoreData.typeMobs.get(key).getLast(), path);
-                });
+                scoreData.typeMobs.keys().asIterator().forEachRemaining(key -> main.logToFile(key + "s Killed: " + scoreData.typeMobs.get(key).getFirst() + " , Points: " + scoreData.typeMobs.get(key).getLast(), path));
             }
             main.logToFile("", path);
             main.logToFile("Blocks Mined Breakdown", path);
             if (!scoreData.typeBlocksMined.isEmpty()) {
-                scoreData.typeBlocksMined.keys().asIterator().forEachRemaining(key -> {
-                    main.logToFile(key + " Mined: " + scoreData.typeBlocksMined.get(key).getFirst() + " , Points: " + scoreData.typeBlocksMined.get(key).getLast(), path);
-                });
+                scoreData.typeBlocksMined.keys().asIterator().forEachRemaining(key -> main.logToFile(key + " Mined: " + scoreData.typeBlocksMined.get(key).getFirst() + " , Points: " + scoreData.typeBlocksMined.get(key).getLast(), path));
             }
             main.logToFile("", path);
             main.logToFile("Blocks Placed Breakdown", path);
             if (!scoreData.typeBlocksPlaced.isEmpty()) {
-                scoreData.typeBlocksPlaced.keys().asIterator().forEachRemaining(key -> {
-                    main.logToFile(key + " Placed: " + scoreData.typeBlocksPlaced.get(key).getFirst() + " , Points: " + scoreData.typeBlocksPlaced.get(key).getLast(), path);
-                });
+                scoreData.typeBlocksPlaced.keys().asIterator().forEachRemaining(key -> main.logToFile(key + " Placed: " + scoreData.typeBlocksPlaced.get(key).getFirst() + " , Points: " + scoreData.typeBlocksPlaced.get(key).getLast(), path));
             }
             main.logToFile("", path);
             main.logToFile("Items Harvested Breakdown", path);
             if (!scoreData.typeItemsHarvested.isEmpty()) {
-                scoreData.typeItemsHarvested.keys().asIterator().forEachRemaining(key -> {
-                    main.logToFile(key + " Havested: " + scoreData.typeItemsHarvested.get(key).getFirst() + " , Points: " + scoreData.typeItemsHarvested.get(key).getLast(), path);
-                });
+                scoreData.typeItemsHarvested.keys().asIterator().forEachRemaining(key -> main.logToFile(key + " Havested: " + scoreData.typeItemsHarvested.get(key).getFirst() + " , Points: " + scoreData.typeItemsHarvested.get(key).getLast(), path));
             }
             main.logToFile("", path);
             main.logToFile("Items Caught Breakdown", path);
             if (!scoreData.typeItemsCaught.isEmpty()) {
-                scoreData.typeItemsCaught.keys().asIterator().forEachRemaining(key -> {
-                    main.logToFile(key + " Caught: " + scoreData.typeItemsCaught.get(key).getFirst() + " , Points: " + scoreData.typeItemsCaught.get(key).getLast(), path);
-                });
+                scoreData.typeItemsCaught.keys().asIterator().forEachRemaining(key -> main.logToFile(key + " Caught: " + scoreData.typeItemsCaught.get(key).getFirst() + " , Points: " + scoreData.typeItemsCaught.get(key).getLast(), path));
             }
             main.logToFile("------- END -----", path);
         }
@@ -333,38 +315,6 @@ public class ScoreManager {
         stack.getSender().sendMessage("Items Harvested: " + scoreData.harvested + ", Points: " + scoreData.harvestedPoints);
         stack.getSender().sendMessage("Items Caught: " + scoreData.caught + ", Points: " + scoreData.caughtPoints);
         stack.getSender().sendMessage("Achievements: " + scoreData.achievements + ", Points: " + scoreData.achievementPoints);
-        /*
-        stack.getSender().sendMessage("------- Mobs Killed Breakdown -------");
-        if (!scoreData.typeMobs.isEmpty()) {
-            scoreData.typeMobs.keys().asIterator().forEachRemaining(key -> {
-                stack.getSender().sendMessage(key + " Killed: " + scoreData.typeMobs.get(key).getFirst() + " , Points: " + scoreData.typeMobs.get(key).getLast());
-            });
-        }
-        stack.getSender().sendMessage("------- Blocks Mined Breakdown -------");
-        if (!scoreData.typeBlocksMined.isEmpty()) {
-            scoreData.typeBlocksMined.keys().asIterator().forEachRemaining(key -> {
-                stack.getSender().sendMessage(key + " Mined: " + scoreData.typeBlocksMined.get(key).getFirst() + " , Points: " + scoreData.typeBlocksMined.get(key).getLast());
-            });
-        }
-        stack.getSender().sendMessage("------- Blocks Placed Breakdown -------");
-        if (!scoreData.typeBlocksPlaced.isEmpty()) {
-            scoreData.typeBlocksPlaced.keys().asIterator().forEachRemaining(key -> {
-                stack.getSender().sendMessage(key + " Placed: " + scoreData.typeBlocksPlaced.get(key).getFirst() + " , Points: " + scoreData.typeBlocksPlaced.get(key).getLast());
-            });
-        }
-        stack.getSender().sendMessage("------- Items Harvested Breakdown -------");
-        if (!scoreData.typeItemsHarvested.isEmpty()) {
-            scoreData.typeItemsHarvested.keys().asIterator().forEachRemaining(key -> {
-                stack.getSender().sendMessage(key + " Harvested: " + scoreData.typeItemsHarvested.get(key).getFirst() + " , Points: " + scoreData.typeItemsHarvested.get(key).getLast());
-            });
-        }
-        stack.getSender().sendMessage("------- Items Caught Breakdown -------");
-        if (!scoreData.typeItemsCaught.isEmpty()) {
-            scoreData.typeItemsCaught.keys().asIterator().forEachRemaining(key -> {
-                stack.getSender().sendMessage(key + " Caught: " + scoreData.typeItemsCaught.get(key).getFirst() + " , Points: " + scoreData.typeItemsCaught.get(key).getLast());
-            });
-        }
-         */
         stack.getSender().sendMessage("Use /OneLife Scores All for a Detailed Breakdown");
         stack.getSender().sendMessage("------- END -----");
     }
@@ -373,18 +323,18 @@ public class ScoreManager {
         List<String> teams = main.getConfig().getStringList("Teams");
         User user;
         try {
-            user = main.lpapi.getUserManager().loadUser(player.getUniqueId()).get();
+            user = main.lpAPI.getUserManager().loadUser(player.getUniqueId()).get();
         } catch (ExecutionException | InterruptedException e) {
             throw new RuntimeException(e);
         }
-        String pg;;
+        String pg;
         if (user == null)
             pg = "default";
         else
             pg = user.getPrimaryGroup();
         if (pg.isEmpty())
             pg = "default";
-        Group group = main.lpapi.getGroupManager().getGroup(pg);
+        Group group = main.lpAPI.getGroupManager().getGroup(pg);
         assert group != null;
         for (String team : teams) {
             if (Objects.requireNonNull(group.getDisplayName()).equalsIgnoreCase(team))

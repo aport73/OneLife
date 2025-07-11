@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.Managers;
+package xyz.acyber.oneLife.managers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import io.papermc.paper.registry.RegistryAccess;
@@ -32,7 +32,6 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
@@ -46,16 +45,10 @@ public class RaceManager {
 
     //TODO Entire Class needs Refactor - Redesign
 
-    static MobManager mm;
-    static ScoreManager sm;
-    static CommandManager cm;
     static Main main;
 
     public RaceManager(Main plugin) {
         main = plugin;
-        mm = main.mm;
-        sm = main.sm;
-        cm = main.cm;
     }
 
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -112,12 +105,12 @@ public class RaceManager {
                         || ev.getFrom().getBlockZ() != ev.getTo().getBlockZ()
                         || ev.getFrom().getBlockY() != ev.getTo().getBlockY()) {
                     for (String xyz : getPlayerClimbVines(ev.getPlayer()).split("/")) {
-                        if (xyz != "" && xyz != null) {
+                        if (!xyz.isEmpty()) {
                             int xVine = Integer.parseInt(xyz.split(",")[0]);
                             int yVine = Integer.parseInt(xyz.split(",")[1]);
                             int zVine = Integer.parseInt(xyz.split(",")[2]);
                             Location loc = new Location(ev.getFrom().getWorld(), xVine, yVine, zVine);
-                            if (loc != b1.getLocation() && loc != b2.getLocation()) {
+                            if (!loc.equals(b1.getLocation()) && loc != b2.getLocation()) {
                                 ev.getPlayer().sendBlockChange(loc, loc.getBlock().getBlockData());
                                 setPlayerClimbVines(ev.getPlayer(), getPlayerClimbVines(ev.getPlayer()).replaceAll(xyz + "/", ""));
                             }
@@ -349,7 +342,7 @@ public class RaceManager {
 
             for (ItemStack invItem : playerInventory.getContents()) {
                 if (invItem != null) {
-                    String[] invType = ((ItemStack) Objects.requireNonNull(invItem)).getType().toString().split("_");
+                    String[] invType = Objects.requireNonNull(invItem).getType().toString().split("_");
                     if (itemType[itemType.length - 1].equalsIgnoreCase(invType[invType.length - 1])) {
                         ++count;
                     }
@@ -366,7 +359,7 @@ public class RaceManager {
         String RaceEnchants = getRaceEnchants(item);
         if (RaceEnchants != null && !RaceEnchants.isEmpty()) {
             for (String enchant : RaceEnchants.split(",")) {
-                item.removeEnchantment((Enchantment) Objects.requireNonNull((Enchantment) RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(enchant.toLowerCase()))));
+                item.removeEnchantment(Objects.requireNonNull(RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(enchant.toLowerCase()))));
             }
 
             this.setRaceEnchants(item, "");
@@ -503,13 +496,13 @@ public class RaceManager {
 
             StringBuilder upgrades = new StringBuilder();
 
-            for (String upgrade : ((ConfigurationSection) Objects.requireNonNull(Equipment.getConfigurationSection(key + ".Enchants"))).getKeys(false)) {
+            for (String upgrade : Objects.requireNonNull(Equipment.getConfigurationSection(key + ".Enchants")).getKeys(false)) {
                 int level = Equipment.getInt(key + ".Enchants." + upgrade);
-                Enchantment enchantment = (Enchantment) RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(upgrade.toLowerCase()));
+                Enchantment enchantment = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(upgrade.toLowerCase()));
 
                 assert enchantment != null;
 
-                if ((getRaceEnchants(item) == null || ((String) Objects.requireNonNull(getRaceEnchants(item))).isEmpty()) && !item.containsEnchantment(enchantment)) {
+                if ((getRaceEnchants(item) == null || Objects.requireNonNull(getRaceEnchants(item)).isEmpty()) && !item.containsEnchantment(enchantment)) {
                     upgrades.append(upgrade).append(",");
                     item.addEnchantment(enchantment, level);
                 }
@@ -540,22 +533,22 @@ public class RaceManager {
 
     public void giveRaceEffects(Player player, List<String> Effects) {
         for (String effect : Effects) {
-            PotionEffectType potion = (PotionEffectType) Registry.EFFECT.get(NamespacedKey.minecraft(effect.toLowerCase()));
+            PotionEffectType potion = Registry.EFFECT.get(NamespacedKey.minecraft(effect.toLowerCase()));
 
             assert potion != null;
 
-            player.addPotionEffect((PotionEffect) Objects.requireNonNull(potion.createEffect(-1, 0)));
+            player.addPotionEffect(Objects.requireNonNull(potion.createEffect(-1, 0)));
         }
 
     }
 
     public void giveStartItems(Player player, ConfigurationSection startItems) {
         FileConfiguration config = main.getPlayerConfig();
-        if (startItems != null && !config.getBoolean(String.valueOf(player.getUniqueId()) + ".playerStartItem")) {
+        if (startItems != null && !config.getBoolean(player.getUniqueId() + ".playerStartItem")) {
             for (String key : startItems.getKeys(false)) {
-                ItemStack startItem = new ItemStack((Material) Objects.requireNonNull(Material.getMaterial(key)));
+                ItemStack startItem = new ItemStack(Objects.requireNonNull(Material.getMaterial(key)));
                 startItem.setAmount(startItems.getInt(key));
-                player.getInventory().addItem(new ItemStack[]{startItem});
+                player.getInventory().addItem(startItem);
             }
 
             this.setPlayerStartItem(player, true);
@@ -566,7 +559,7 @@ public class RaceManager {
     public void setRepeatItems(final Player player, ConfigurationSection repeatItems) {
         if (repeatItems != null) {
             for (String key : repeatItems.getKeys(false)) {
-                final ItemStack repeatItem = new ItemStack((Material) Objects.requireNonNull(Material.getMaterial(key)));
+                final ItemStack repeatItem = new ItemStack(Objects.requireNonNull(Material.getMaterial(key)));
                 this.setIsRaceItem(repeatItem, true);
                 final int Max = repeatItems.getInt(key + ".Max");
                 final int QtyPer = repeatItems.getInt(key + ".QtyPer");
@@ -597,12 +590,12 @@ public class RaceManager {
                                 }
                             } else {
                                 repeatItem.setAmount(QtyPer);
-                                player.getInventory().addItem(new ItemStack[]{repeatItem});
+                                player.getInventory().addItem(repeatItem);
                             }
 
                         }
                     };
-                    runnable.runTaskTimerAsynchronously(main, 0L, (long) TimeSec);
+                    runnable.runTaskTimerAsynchronously(main, 0L, TimeSec);
                 }
             }
         }
