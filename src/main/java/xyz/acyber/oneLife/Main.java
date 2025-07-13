@@ -1,6 +1,7 @@
 package xyz.acyber.oneLife;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
@@ -22,22 +23,21 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.player.*;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
 import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.managers.CommandManager;
-import xyz.acyber.oneLife.managers.MobManager;
-import xyz.acyber.oneLife.managers.RaceManager;
-import xyz.acyber.oneLife.managers.ScoreManager;
-import xyz.acyber.oneLife.managers.LivesManager;
+import xyz.acyber.oneLife.managers.*;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.time.LocalDate;
+import java.util.HashMap;
 import java.util.List;
+import java.util.UUID;
 import java.util.logging.Level;
 
 public class Main extends JavaPlugin implements Listener {
@@ -54,8 +54,13 @@ public class Main extends JavaPlugin implements Listener {
     public boolean scoreMEnabled = false;
     public boolean livesMEnabled = false;
     public boolean lifeGEnabled = false;
+    public boolean afkKickEnabled = false;
 
     public LuckPerms lpAPI;
+
+    public HashMap<UUID,Long> afkLastInput;
+    public BukkitTask afkChecker;
+    public long afkCheck;
 
     @Override
     public void onEnable() {
@@ -66,11 +71,13 @@ public class Main extends JavaPlugin implements Listener {
         FileConfiguration config = getConfig();
         ConfigurationSection modes = config.getConfigurationSection("Modes");
         assert modes != null;
+
         mobMEnabled = modes.getBoolean("MobManager");
         raceMEnabled = modes.getBoolean("RaceManager");
         scoreMEnabled = modes.getBoolean("ScoreManager");
         lifeGEnabled = modes.getBoolean("LifeGifting");
         livesMEnabled = modes.getBoolean("LivesManager");
+        afkKickEnabled = modes.getBoolean("AFKKicker");
 
         Bukkit.getPluginManager().registerEvents(this, this);
 
@@ -81,6 +88,10 @@ public class Main extends JavaPlugin implements Listener {
             lm.enableDeathsScoreboard();
 
         lpAPI = LuckPermsProvider.get();
+
+        afkCheck = getConfig().getLong("AFK.secondsInterval");
+        afkLastInput = new HashMap<>();
+        afkChecker = new AFKChecker(this,afkLastInput).runTaskTimer(this,0,afkCheck*20L);
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -248,16 +259,28 @@ public class Main extends JavaPlugin implements Listener {
     public void onPlayerMove(PlayerMoveEvent ev) {
         if (raceMEnabled)
             rm.onPlayerMove(ev);
+        if (afkKickEnabled)
+            afkUpdater(ev.getPlayer());
     }
 
     @EventHandler
-    public void onJoin(PlayerJoinEvent event) {
+    public void onChat(AsyncChatEvent event) {
+        if (afkKickEnabled)
+            afkUpdater(event.getPlayer());
+    }
+
+    @EventHandler
+    public void onJoin(@NotNull PlayerJoinEvent event) {
         Player player = event.getPlayer();
         checkPlayerInConfig(player.getUniqueId().toString());
         setPlayerTasks(player, 0);
         player.sendMessage(Component.text("Hello, " + player.getName() + "!"));
         if (raceMEnabled)
             rm.onPlayerJoin(event);
+        if (afkKickEnabled) {
+            if(!player.hasPermission("OneLife.AFK.Bypass"))
+                afkLastInput.put(player.getUniqueId(),System.currentTimeMillis());
+        }
     }
 
     @EventHandler
@@ -343,6 +366,16 @@ public class Main extends JavaPlugin implements Listener {
         if (scoreMEnabled)
             config.set(player.getUniqueId() + ".playerTotalXp", config.getInt(player.getUniqueId() + ".playerTotalXp") + 1);
         savePlayerConfig(config);
+        if (afkKickEnabled) {
+            if(player.hasPermission("OneLife.AFK.Bypass")){
+                if(!afkLastInput.containsKey(player.getUniqueId())){
+                    return;
+                }
+                afkLastInput.remove(player.getUniqueId());
+                return;
+            }
+            afkLastInput.remove(player.getUniqueId());
+        }
     }
 
     public void setPlayerTasks(@NotNull Player player, int task) {
@@ -382,6 +415,29 @@ public class Main extends JavaPlugin implements Listener {
                 deaths.getScoreFor(receiver).setScore(recscore - 1);
             }
             deaths.getScoreFor(giver).setScore(givscore + 1);
+        }
+    }
+
+    private void afkUpdater(@NotNull Player player){
+
+        if (player.hasPermission("OneLife.AFK.Bypass")){
+            afkLastInput.remove(player.getUniqueId());
+        } else {
+            long eventTime = System.currentTimeMillis();
+
+            if(!afkLastInput.containsKey(player.getUniqueId())){
+                afkLastInput.put(player.getUniqueId(),eventTime);
+                return;
+            }
+
+            long lastIn = afkLastInput.get(player.getUniqueId());
+            long interval = eventTime - lastIn;
+
+            if(interval < afkCheck){
+                return;
+            }
+
+            afkLastInput.replace(player.getUniqueId(),eventTime);
         }
     }
 }

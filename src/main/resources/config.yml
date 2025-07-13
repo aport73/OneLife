@@ -4,6 +4,7 @@ Modes:
   ScoreManager: true
   LivesManager: true
   LifeGifting: true
+  AFKKicker: true
 races:
   Katari:
     enabled: true
@@ -351,3 +352,16 @@ Teams:
   - Dalenii
   - Galactic
   - Trolls
+AFK:
+  #Time limit
+  minutesAFK: 10
+
+  #Checks if a player is AFK every x seconds and stores the data
+  #More seconds -> Less accuracy less lag
+  #Fewer seconds -> More accuracy more lag
+  #Find a balance, start trying with fewer seconds
+  secondsInterval: 1
+
+  # Messages
+  kickIn: "<bold><red>You will be kicked on <blue>%seconds% <red>seconds"
+  kicked: "<red>You have been kicked for being AFK"

@@ -40,6 +40,16 @@ public class CommandManager {
 
     public LiteralCommandNode<CommandSourceStack> loadCmds() {
 
+        LiteralArgumentBuilder<CommandSourceStack> cmdAFK = Commands.literal("AFK")
+                .requires(sender -> sender.getSender().hasPermission("OneLife.AFK"))
+                .then(Commands.literal("Set")
+                        .then(Commands.literal("KickTime")
+                                .then(Commands.argument("time", IntegerArgumentType.integer())
+                                        .executes(CommandManager::runSetKickTimeLogic))))
+                .then(Commands.literal("Get")
+                        .then(Commands.literal("KickTime")
+                                .executes(CommandManager::runGetKickTimeLogic)));
+
         LiteralArgumentBuilder<CommandSourceStack> cmdLives = Commands.literal("Lives")
                 .requires(sender -> sender.getSender().hasPermission("OneLife.lives"))
                 .then(Commands.literal("Set")
@@ -144,7 +154,20 @@ public class CommandManager {
                                     ctx.getSource().getSender().sendRichMessage("Lives Manager Disabled");
                                 return Command.SINGLE_SUCCESS;
 
-                            })));
+                            })))
+                .then(Commands.literal("AFKKicker")
+                        .then(Commands.argument("AFKKickerEnabled", BoolArgumentType.bool())
+                                .executes(ctx -> {
+                                    main.afkKickEnabled = ctx.getArgument("AFKKickerEnabled", Boolean.class);
+                                    main.setFeatures();
+                                    Player player = (Player) ctx.getSource().getSender();
+                                    player.updateCommands();
+                                    if (main.afkKickEnabled)
+                                        ctx.getSource().getSender().sendRichMessage("AFK Kicking Enabled");
+                                    else
+                                        ctx.getSource().getSender().sendRichMessage("AFK Kicking Disabled");
+                                    return Command.SINGLE_SUCCESS;
+                                })));
 
         LiteralArgumentBuilder<CommandSourceStack> cmdRaces = Commands.literal("Races")
                 .requires(sender -> main.raceMEnabled)
@@ -198,10 +221,25 @@ public class CommandManager {
                         }))
                 .then(cmdLives
                         .requires(sender -> main.livesMEnabled))
+                .then(cmdAFK
+                        .requires(sender -> main.afkKickEnabled))
                 .then(cmdFeatures)
                 .then(cmdHelp);
 
          return cmdRoot.build();
+    }
+
+    private static int runGetKickTimeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
+        ctx.getSource().getSender().sendRichMessage("Time AFK before Kick is currently: " + main.getConfig().getDouble("AFK.minutesAFK") + "m");
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runSetKickTimeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
+        double kickTime = (double) ctx.getArgument("time", Integer.class);
+        main.getConfig().set("AFK.minutesAFK", kickTime);
+        main.saveConfig();
+        ctx.getSource().getSender().sendMessage("Time AFK before Kick is now set to: " + kickTime + "m");
+        return Command.SINGLE_SUCCESS;
     }
 
     private static int runResetPlayerDeathsLogic(CommandContext<CommandSourceStack> ctx) {
@@ -347,7 +385,6 @@ public class CommandManager {
         }
         return Command.SINGLE_SUCCESS;
     }
-
 
     private static Player getPlayerArgument(@NotNull CommandContext<CommandSourceStack> ctx) {
         final PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("Player", PlayerSelectorArgumentResolver.class);
