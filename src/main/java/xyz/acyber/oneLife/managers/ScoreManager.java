@@ -415,6 +415,7 @@ public class ScoreManager {
                 scoreData.typeItemsCaught.keys().asIterator().forEachRemaining(key -> main.logToFile(key + " Caught: " + scoreData.typeItemsCaught.get(key).getFirst() + " , Points: " + scoreData.typeItemsCaught.get(key).getLast(), path));
             }
             main.logToFile("------- END -----", path);
+            main.logToFile("", path);
         }
     }
 
