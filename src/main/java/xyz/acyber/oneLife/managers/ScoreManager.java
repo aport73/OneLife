@@ -1,9 +1,12 @@
 package xyz.acyber.oneLife.managers;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
+import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.types.InheritanceNode;
 import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.Statistic;
 import org.bukkit.configuration.ConfigurationSection;
@@ -12,6 +15,8 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerHarvestBlockEvent;
@@ -20,13 +25,18 @@ import org.jetbrains.annotations.NotNull;
 import xyz.acyber.oneLife.Main;
 import xyz.acyber.oneLife.ScoreData;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
+import static java.lang.Math.round;
+
 public class ScoreManager {
 
     static Main main;
+    private double adventureMultiplier;
 
     public ScoreManager(Main plugin) {
         main = plugin;
@@ -36,11 +46,19 @@ public class ScoreManager {
         //Update Players Fished Placed
         FileConfiguration config = main.getPlayerConfig();
         Player player = event.getPlayer();
+        ConfigurationSection scoring = main.getConfig().getConfigurationSection("Scoring");
         if (event.getCaught() != null) {
-            //Update Total Fished Count
-            config.set(player.getUniqueId() + ".playerCaughtTotal", config.getInt(player.getUniqueId() + ".playerCaughtTotal") + 1);
-            //Update Specific Fish Caught
-            config.set(player.getUniqueId() + ".playerCaught." + event.getCaught().getType().name(), config.getInt(player.getUniqueId() + ".playerCaught." + event.getCaught().getType().name()) + 1);
+            if (playerAFK(player)) {
+                assert scoring != null;
+                config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("CaughtTotal")));
+                config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("playerCaught." + event.getCaught().getType().name())));
+            }
+            else {
+                //Update Total Fished Count
+                config.set(player.getUniqueId() + ".playerCaughtTotal", config.getInt(player.getUniqueId() + ".playerCaughtTotal") + 1);
+                //Update Specific Fish Caught
+                config.set(player.getUniqueId() + ".playerCaught." + event.getCaught().getType().name(), config.getInt(player.getUniqueId() + ".playerCaught." + event.getCaught().getType().name()) + 1);
+            }
             main.savePlayerConfig(config);
         }
     }
@@ -49,13 +67,26 @@ public class ScoreManager {
         //Update Players Harvest
         FileConfiguration config = main.getPlayerConfig();
         Player player = event.getPlayer();
-        //Update Total Harvested Count
-        config.set(player.getUniqueId() + ".playerHarvestedTotal", config.getInt(player.getUniqueId() + ".playerHarvestedTotal") + 1);
-        //Update Specific Harvested Count
+        ConfigurationSection scoring = main.getConfig().getConfigurationSection("Scoring");
         List<ItemStack> harvested = event.getItemsHarvested();
-        for (ItemStack item : harvested) {
-            config.set(player.getUniqueId() + ".playerHarvested." + item.getType().name(), config.getInt(player.getUniqueId() + ".playerHarvested." + item.getType().name()) + 1);
+
+        if (playerAFK(player)) {
+            assert scoring != null;
+            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("HarvestedTotal")));
+            for (ItemStack item : harvested) {
+                config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("playerHarvested." + item.getType().name())));
+            }
+
         }
+        else {
+            //Update Total Harvested Count
+            config.set(player.getUniqueId() + ".playerHarvestedTotal", config.getInt(player.getUniqueId() + ".playerHarvestedTotal") + 1);
+            //Update Specific Harvested Count
+            for (ItemStack item : harvested) {
+                config.set(player.getUniqueId() + ".playerHarvested." + item.getType().name(), config.getInt(player.getUniqueId() + ".playerHarvested." + item.getType().name()) + 1);
+            }
+        }
+
         main.savePlayerConfig(config);
     }
 
@@ -63,10 +94,19 @@ public class ScoreManager {
         //Update Players Blocks Placed
         FileConfiguration config = main.getPlayerConfig();
         Player player = event.getPlayer();
-        //Update Total Blocks Placed Count
-        config.set(player.getUniqueId() + ".playerBlocksPlaced", config.getInt(player.getUniqueId() + ".playerBlocksPlaced") + 1);
-        //Update Specific Blocks Placed Count
-        config.set(player.getUniqueId() + ".playerPlaced." + event.getBlock().getType().name(), config.getInt(player.getUniqueId() + ".playerPlaced." + event.getBlock().getType().name()) + 1);
+        ConfigurationSection scoring = main.getConfig().getConfigurationSection("Scoring");
+
+        if (playerAFK(player)) {
+            assert scoring != null;
+            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("BlocksPlaced")));
+            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("playerPlaced." + event.getBlock().getType().name())));
+        }
+        else {
+            //Update Total Blocks Placed Count
+            config.set(player.getUniqueId() + ".playerBlocksPlaced", config.getInt(player.getUniqueId() + ".playerBlocksPlaced") + 1);
+            //Update Specific Blocks Placed Count
+            config.set(player.getUniqueId() + ".playerPlaced." + event.getBlock().getType().name(), config.getInt(player.getUniqueId() + ".playerPlaced." + event.getBlock().getType().name()) + 1);
+        }
         main.savePlayerConfig(config);
     }
 
@@ -74,17 +114,78 @@ public class ScoreManager {
         //Update Players Blocks Placed
         FileConfiguration config = main.getPlayerConfig();
         Player player = event.getPlayer();
-        //Update Total Blocks Placed Count
-        config.set(player.getUniqueId() + ".playerBlocksMined", config.getInt(player.getUniqueId() + ".playerBlocksMined") + 1);
-        //Update Specific Blocks Placed Count
-        config.set(player.getUniqueId() + ".playerMined." + event.getBlock().getType().name(), config.getInt(player.getUniqueId() + ".playerMined." + event.getBlock().getType().name()) + 1);
+        ConfigurationSection scoring = main.getConfig().getConfigurationSection("Scoring");
+
+        if (playerAFK(player)) {
+            assert scoring != null;
+            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("BlocksMined")));
+            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("playerMined." + event.getBlock().getType().name())));
+        }
+        else {
+            config.set(player.getUniqueId() + ".playerMined." + event.getBlock().getType().name(), config.getDouble(player.getUniqueId() + ".playerMined." + event.getBlock().getType().name()) + 1);
+            config.set(player.getUniqueId() + ".playerBlocksMined", config.getDouble(player.getUniqueId() + ".playerBlocksMined") + 1);
+        }
+
         main.savePlayerConfig(config);
     }
 
     public void playerAdvanced(@NotNull PlayerAdvancementDoneEvent event) {
         FileConfiguration config = main.getPlayerConfig();
         Player player = event.getPlayer();
-        config.set(player.getUniqueId() + ".playerAdvancements", config.getInt(player.getUniqueId() + ".playerAdvancements") + 1);
+        ConfigurationSection scoring = main.getConfig().getConfigurationSection("Scoring");
+        assert scoring != null;
+
+        if (playerAFK(player)) {
+
+            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("Achevements")));
+        }
+        else
+            config.set(player.getUniqueId() + ".playerAdvancements", config.getInt(player.getUniqueId() + ".playerAdvancements") - 1);
+        main.savePlayerConfig(config);
+    }
+
+    public void playerDeath(@NotNull PlayerDeathEvent event) {
+        FileConfiguration config = main.getPlayerConfig();
+        Player player = event.getEntity();
+        if (player.getGameMode().equals(GameMode.ADVENTURE)) {
+            config.set(player.getUniqueId() + ".adventureDeaths", config.getDouble(player.getUniqueId() + ".adventureDeaths") + 1);
+        } else {
+            config.set(player.getUniqueId() + ".deaths", config.getDouble(player.getUniqueId() + ".deaths") + 1);
+        }
+        main.savePlayerConfig(config);
+    }
+
+    public void entityKilled(@NotNull EntityDeathEvent event) {
+        if (event.getDamageSource().getCausingEntity() != null && event.getDamageSource().getCausingEntity().getType() == EntityType.PLAYER) {
+            FileConfiguration config = main.getPlayerConfig();
+            Player player = (Player) event.getDamageSource().getCausingEntity();
+            ConfigurationSection scoring = main.getConfig().getConfigurationSection("Scoring");
+
+            if (playerAFK(player)) {
+                assert scoring != null;
+                config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("MobKills." + event.getEntity().getType().name().toUpperCase())));
+            }
+            else
+                config.set(player.getUniqueId() + ".MobKills." + event.getEntity().getType().name().toUpperCase(), config.getDouble(player.getUniqueId() + ".MobKills." + event.getEntity().getType().name().toUpperCase()) + 1);
+
+            main.savePlayerConfig(config);
+        }
+    }
+
+    public void timeOnline(@NotNull Player player) {
+        FileConfiguration config = main.getPlayerConfig();
+        ConfigurationSection scoring = main.getConfig().getConfigurationSection("Scoring");
+        assert scoring != null;
+        if (player.getGameMode().equals(GameMode.ADVENTURE)) {
+            config.set(player.getUniqueId() + ".adventureSec", config.getDouble(player.getUniqueId() + ".adventureSec") + 1);
+            config.set(player.getUniqueId() + ".adventureHr", (config.getDouble(player.getUniqueId() + ".adventureSec") + 1)/60/60);
+        } else if (playerAFK(player)) {
+            config.set(player.getUniqueId() + ".afkSec", config.getDouble(player.getUniqueId() + ".afkSec") + 1);
+            config.set(player.getUniqueId() + ".afkHr", (config.getDouble(player.getUniqueId() + ".afkSec") + 1)/60/60);
+        } else {
+            config.set(player.getUniqueId() + ".survivalSec", config.getDouble(player.getUniqueId() + ".survivalSec") + 1);
+            config.set(player.getUniqueId() + ".survivalHr", (config.getDouble(player.getUniqueId() + ".survivalSec") + 1)/60/60);
+        }
         main.savePlayerConfig(config);
     }
 
@@ -140,36 +241,48 @@ public class ScoreManager {
         ScoreData scoreData = new ScoreData();
         scoreData.player = player;
         scoreData.team = getTeam(player);
-        scoreData.deaths = player.getStatistic(Statistic.DEATHS);
-        scoreData.xp = playerScore.getInt("playerTotalXp");
-        scoreData.onlineHr = (double) ((player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20) / 60) / 60;
-        scoreData.blocksPlaced = playerScore.getInt("playerBlocksPlaced");
-        scoreData.blocksMined = playerScore.getInt("playerBlocksMined");
-        scoreData.harvested = playerScore.getInt("playerHarvestedTotal");
-        scoreData.caught = playerScore.getInt("playerCaughtTotal");
-        scoreData.achievements = playerScore.getInt("playerAdvancements");
+        scoreData.deaths = playerScore.getDouble("deaths");
+        scoreData.adventureDeaths = playerScore.getDouble("adventureDeaths");
+        scoreData.xp = round(playerScore.getDouble("playerTotalXp"),2);
+        scoreData.survivalHr = round(playerScore.getDouble("survivalHr"),2);
+        scoreData.adventureHr = round(playerScore.getDouble("adventureHr"),2);
+        scoreData.afkHr = round(playerScore.getDouble("afkHr"),2);
+        scoreData.blocksPlaced = playerScore.getDouble("playerBlocksPlaced");
+        scoreData.blocksMined = playerScore.getDouble("playerBlocksMined");
+        scoreData.harvested = playerScore.getDouble("playerHarvestedTotal");
+        scoreData.caught = playerScore.getDouble("playerCaughtTotal");
+        scoreData.achievements = playerScore.getDouble("playerAdvancements");
+
+        scoreData.afkPointsOffset = playerScore.getDouble("afkPointsOffset") - (scoreData.afkHr * scoring.getDouble("OnlineHr"));
 
         scoreData.deathPoints = scoreData.deaths * scoring.getDouble("Death");
-        scoreData.xpPoints = scoreData.xp * scoring.getDouble("Xp");
-        scoreData.onlineHrPoints = scoreData.onlineHr * scoring.getDouble("OnlineHr");
+        scoreData.adventureDeathPoints = scoreData.adventureDeaths * scoring.getDouble("AdventureDeath");
+        scoreData.xpPoints = round(scoreData.xp * scoring.getDouble("Xp"),2);
+        scoreData.onlineHrPoints = round((scoreData.survivalHr * scoring.getDouble("OnlineHr")) + (scoreData.adventureHr * scoring.getDouble("OnlineHr") * scoring.getDouble("adventureMultiplier")),2);
         scoreData.blocksPlacedPoints = scoreData.blocksPlaced * scoring.getDouble("BlocksPlaced");
         scoreData.blocksMinedPoints = scoreData.blocksMined * scoring.getDouble("BlocksMined");
         scoreData.harvestedPoints = scoreData.harvested * scoring.getDouble("HarvestedTotal");
         scoreData.caughtPoints = scoreData.caught * scoring.getDouble("CaughtTotal");
-        scoreData.achievementPoints = scoreData.achievements * scoring.getDouble("Achevements");
+        scoreData.achievementPoints = round(scoreData.achievements * scoring.getDouble("Achevements"),2);
         scoreData.typeMobs = new Hashtable<>();
         scoreData.typeItemsHarvested = new Hashtable<>();
         scoreData.typeItemsCaught = new Hashtable<>();
         scoreData.typeBlocksPlaced = new Hashtable<>();
         scoreData.typeBlocksMined = new Hashtable<>();
-        for (String key : Objects.requireNonNull(scoring.getConfigurationSection("MobKills")).getKeys(false)) {
-            List<Double> data = new ArrayList<>();
-            double MobKills = player.getStatistic(Statistic.KILL_ENTITY, EntityType.valueOf(key));
-            double MobPoints = MobKills * Objects.requireNonNull(scoring.getConfigurationSection("MobKills")).getDouble(key);
-            data.add(MobKills);
-            data.add(MobPoints);
-            scoreData.typeMobTotalPoints = scoreData.typeMobTotalPoints + MobPoints;
-            scoreData.typeMobs.put(key, data);
+        if (playerScore.isConfigurationSection("MobKills")) {
+            for (String key : Objects.requireNonNull(playerScore.getConfigurationSection("MobKills")).getKeys(false)) {
+                List<Double> data = new ArrayList<>();
+
+                double multiplier = scoring.getDouble("MobKills." + key);
+                double mined = playerScore.getDouble("MobKills." + key);
+                double minedPoints = mined * multiplier;
+
+                data.add(mined);
+                data.add(minedPoints);
+
+                scoreData.typeMobTotalPoints = scoreData.typeMobTotalPoints + minedPoints;
+                scoreData.typeMobs.put(key, data);
+            }
         }
         if (playerScore.isConfigurationSection("playerMined")) {
             for (String key : Objects.requireNonNull(playerScore.getConfigurationSection("playerMined")).getKeys(false)) {
@@ -214,7 +327,7 @@ public class ScoreManager {
             }
 
         }
-        if  (playerScore.isConfigurationSection("playerCaught")) {
+        if (playerScore.isConfigurationSection("playerCaught")) {
             for (String key : Objects.requireNonNull(playerScore.getConfigurationSection("playerCaught")).getKeys(false)) {
                 List<Double> data = new ArrayList<>();
 
@@ -229,21 +342,20 @@ public class ScoreManager {
                 scoreData.typeItemsCaught.put(key, data);
             }
         }
-
         return scoreData;
     }
 
     public void csvPlayerScore(@NotNull List<ScoreData> scores) {
-        String[] headers = new String[]{"Player", "Team", "Total", "Deaths", "DeathPoints", "Xp", "XpPoints", "OnlineHr", "OnlineHrPoints", "Total Mob Kill Points",
-                "Blocks Mined", "Blocks Mined Points", "Blocks Placed", "Blocks Placed Points", "Items Harvested", "Items Harvested Points", "Items Caught",
-                "Items Caught Points", "Achievements", "Achievement Points"};
+        String[] headers = new String[]{"Player", "Team", "Total", "Deaths", "DeathPoints", "Xp", "XpPoints", "OnlineHr", "SurvivalHr", "AdventureHr", "AfkHr",
+                "OnlineHrPoints", "Total Mob Kill Points", "Blocks Mined", "Blocks Mined Points", "Blocks Placed", "Blocks Placed Points", "Items Harvested",
+                "Items Harvested Points", "Items Caught", "Items Caught Points", "Achievements", "Achievement Points"};
         List<String[]> data = new ArrayList<>();
         for (ScoreData scoreData : scores) {
             data.add(new String[]{scoreData.player.getName(), scoreData.team, String.valueOf(scoreData.totalPoints()), String.valueOf(scoreData.deaths), String.valueOf(scoreData.deathPoints),
-                    String.valueOf(scoreData.xp), String.valueOf(scoreData.xpPoints), String.valueOf(scoreData.onlineHr), String.valueOf(scoreData.onlineHrPoints),
-                    String.valueOf(scoreData.typeMobTotalPoints), String.valueOf(scoreData.blocksMined), String.valueOf(scoreData.blocksMinedPoints), String.valueOf(scoreData.blocksPlaced),
-                    String.valueOf(scoreData.blocksPlacedPoints), String.valueOf(scoreData.harvested), String.valueOf(scoreData.harvestedPoints), String.valueOf(scoreData.caught),
-                    String.valueOf(scoreData.caughtPoints), String.valueOf(scoreData.achievements), String.valueOf(scoreData.achievementPoints)});
+                    String.valueOf(scoreData.xp), String.valueOf(scoreData.xpPoints), String.valueOf(scoreData.onlineHr()), String.valueOf(scoreData.survivalHr), String.valueOf(scoreData.adventureHr),
+                    String.valueOf(scoreData.afkHr), String.valueOf(scoreData.onlineHrPoints), String.valueOf(scoreData.typeMobTotalPoints), String.valueOf(scoreData.blocksMined),
+                    String.valueOf(scoreData.blocksMinedPoints), String.valueOf(scoreData.blocksPlaced), String.valueOf(scoreData.blocksPlacedPoints), String.valueOf(scoreData.harvested),
+                    String.valueOf(scoreData.harvestedPoints), String.valueOf(scoreData.caught), String.valueOf(scoreData.caughtPoints), String.valueOf(scoreData.achievements), String.valueOf(scoreData.achievementPoints)});
         }
         main.exportToCsv("Score", data, headers);
     }
@@ -251,6 +363,7 @@ public class ScoreManager {
     public void logPlayerScore(@NotNull List<ScoreData> scores, @NotNull Map<String, Double> teamScores) {
         String path = "Score";
         main.logToFile("--- Team Scores ---", path);
+        main.logToFile("", path);
         teamScores.forEach((key, value) -> {
             main.logToFile(key + "'s Score: " + value, path);
             main.logToFile("--- Member Ranking ---", path);
@@ -263,10 +376,13 @@ public class ScoreManager {
         for(ScoreData scoreData : scores) {
             main.logToFile(scoreData.player.getName() + " - Team: " + scoreData.team + ":", path);
             main.logToFile("Total Points: " + scoreData.totalPoints(), path);
-            main.logToFile("Category Totals", path);
+            main.logToFile("--- Category Totals ---", path);
             main.logToFile("Deaths: " + scoreData.deaths + ", Points: " + scoreData.deathPoints, path);
+            main.logToFile("Adventure Deaths: " + scoreData.adventureDeaths + ", Points: " + scoreData.adventureDeathPoints, path);
+            main.logToFile("AFK Penalty: " + scoreData.afkPointsOffset, path);
             main.logToFile("Xp: " + scoreData.xp + ", Points: " + scoreData.xpPoints, path);
-            main.logToFile("OnlineHr: " + scoreData.onlineHr + ", Points: " + scoreData.onlineHrPoints, path);
+            main.logToFile("OnlineHr: " + scoreData.onlineHr() + ", Points: " + scoreData.onlineHrPoints, path);
+            main.logToFile("SurvivalHr: " + scoreData.survivalHr + ", AdventureHr: " + scoreData.adventureHr + ", AfkHr: " + scoreData.afkHr, path);
             main.logToFile("Total Mob Kill Points: " + scoreData.typeMobTotalPoints, path);
             main.logToFile("Blocks Mined: " + scoreData.blocksMined + ", Points: " + scoreData.blocksMinedPoints, path);
             main.logToFile("Blocks Placed: " + scoreData.blocksPlaced + ", Points: " + scoreData.blocksPlacedPoints, path);
@@ -307,8 +423,11 @@ public class ScoreManager {
         stack.getSender().sendMessage("Total Points: " + scoreData.totalPoints());
         stack.getSender().sendMessage("------- Category Totals -------");
         stack.getSender().sendMessage("Deaths: " + scoreData.deaths + ", Points: " + scoreData.deathPoints);
+        stack.getSender().sendMessage("Adventure Deaths: " + scoreData.adventureDeaths + ", Points: " + scoreData.adventureDeathPoints);
+        stack.getSender().sendMessage("AFK Penalty: " + scoreData.afkPointsOffset);
         stack.getSender().sendMessage("Xp: " + scoreData.xp + ", Points: " + scoreData.xpPoints);
-        stack.getSender().sendMessage("OnlineHr: " + scoreData.onlineHr + ", Points: " + scoreData.onlineHrPoints);
+        stack.getSender().sendMessage("OnlineHr: " + scoreData.onlineHr() + ", Points: " + scoreData.onlineHrPoints);
+        stack.getSender().sendMessage("SurvivalHr: " + scoreData.survivalHr + ", AdventureHr: " + scoreData.adventureHr + ", AfkHr: " + scoreData.afkHr);
         stack.getSender().sendMessage("Total Mob Kill Points: " + scoreData.typeMobTotalPoints);
         stack.getSender().sendMessage("Blocks Mined: " + scoreData.blocksMined + ", Points: " + scoreData.blocksMinedPoints);
         stack.getSender().sendMessage("Blocks Placed: " + scoreData.blocksPlaced + ", Points: " + scoreData.blocksPlacedPoints);
@@ -337,9 +456,23 @@ public class ScoreManager {
         Group group = main.lpAPI.getGroupManager().getGroup(pg);
         assert group != null;
         for (String team : teams) {
-            if (Objects.requireNonNull(group.getDisplayName()).equalsIgnoreCase(team))
-                return group.getDisplayName();
+            if (Objects.requireNonNull(group.getName()).equalsIgnoreCase(team))
+                return Objects.requireNonNullElse(group.getDisplayName(), group.getName());
         }
         return null;
+    }
+
+    public boolean playerAFK(@NotNull OfflinePlayer player) {
+        User user = main.lpAPI.getUserManager().getUser(player.getUniqueId());
+        assert user != null;
+        return user.getPrimaryGroup().equalsIgnoreCase("AFK");
+    }
+
+    private static double round(double value, int places) {
+        if (places < 0) throw new IllegalArgumentException();
+
+        BigDecimal bd = BigDecimal.valueOf(value);
+        bd = bd.setScale(places, RoundingMode.HALF_UP);
+        return bd.doubleValue();
     }
 }

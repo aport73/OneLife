@@ -4,7 +4,7 @@ Modes:
   ScoreManager: true
   LivesManager: true
   LifeGifting: true
-  AFKKicker: true
+  AFKChecker: true
 races:
   Katari:
     enabled: true
@@ -264,7 +264,9 @@ MOBS:
         MIN: 0
         MAX: 2
 Scoring:
+  adventureMultiplier: 1.5
   Death: -10.0
+  AdventureDeath: -5.0
   Xp: 0.0001
   OnlineHr: 2.5
   BlocksPlaced: 0.001
@@ -354,14 +356,14 @@ Teams:
   - Trolls
 AFK:
   #Time limit
-  minutesAFK: 10
+  minutesAFK: 1
 
   #Checks if a player is AFK every x seconds and stores the data
   #More seconds -> Less accuracy less lag
   #Fewer seconds -> More accuracy more lag
-  #Find a balance, start trying with fewer seconds
+  #Currently must be set to 1 for other hooked in functions. Will optimize these functions in the future to allow this to be adjusted in future.
   secondsInterval: 1
 
   # Messages
-  kickIn: "<bold><red>You will be kicked on <blue>%seconds% <red>seconds"
+  afkWarning: "<bold><red>You will be marked afk ing <blue>%seconds% <red>seconds"
   kicked: "<red>You have been kicked for being AFK"

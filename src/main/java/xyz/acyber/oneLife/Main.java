@@ -7,6 +7,12 @@ import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.kyori.adventure.text.Component;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.group.Group;
+import net.luckperms.api.model.user.User;
+import net.luckperms.api.node.types.InheritanceNode;
+import net.luckperms.api.node.types.PrefixNode;
+import net.luckperms.api.node.types.SuffixNode;
+import net.luckperms.api.node.types.WeightNode;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
@@ -38,11 +44,15 @@ import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
 public class Main extends JavaPlugin implements Listener {
     //TODO Redo Mob Sounds
     //TODO Idea - Disable Traveling Merchants being able to use Invisibility?
+
+    public LuckPerms lpAPI;
+
     public final MobManager mm = new MobManager(this);
     public final RaceManager rm = new RaceManager(this);
     public final ScoreManager sm = new ScoreManager(this);
@@ -54,13 +64,12 @@ public class Main extends JavaPlugin implements Listener {
     public boolean scoreMEnabled = false;
     public boolean livesMEnabled = false;
     public boolean lifeGEnabled = false;
-    public boolean afkKickEnabled = false;
-
-    public LuckPerms lpAPI;
+    public boolean afkCheckerEnabled = false;
 
     public HashMap<UUID,Long> afkLastInput;
     public BukkitTask afkChecker;
     public long afkCheck;
+    public List<UUID> afkPlayers;
 
     @Override
     public void onEnable() {
@@ -77,7 +86,7 @@ public class Main extends JavaPlugin implements Listener {
         scoreMEnabled = modes.getBoolean("ScoreManager");
         lifeGEnabled = modes.getBoolean("LifeGifting");
         livesMEnabled = modes.getBoolean("LivesManager");
-        afkKickEnabled = modes.getBoolean("AFKKicker");
+        afkCheckerEnabled = modes.getBoolean("AFKChecker");
 
         Bukkit.getPluginManager().registerEvents(this, this);
 
@@ -89,9 +98,26 @@ public class Main extends JavaPlugin implements Listener {
 
         lpAPI = LuckPermsProvider.get();
 
+        Group afk = lpAPI.getGroupManager().getGroup("AFK");
+        if (afk == null) {
+            try {
+                afk = lpAPI.getGroupManager().createAndLoadGroup("AFK").get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        afk.data().clear();
+        PrefixNode prefixNode = PrefixNode.builder("[AFK] ", 200).build();
+        SuffixNode suffixNode = SuffixNode.builder("§7", 200).build();
+        WeightNode weightNode = WeightNode.builder(200).build();
+        afk.data().add(prefixNode);
+        afk.data().add(suffixNode);
+        afk.data().add(weightNode);
+        lpAPI.getGroupManager().saveGroup(afk);
+
         afkCheck = getConfig().getLong("AFK.secondsInterval");
         afkLastInput = new HashMap<>();
-        afkChecker = new AFKChecker(this,afkLastInput).runTaskTimer(this,0,afkCheck*20L);
+        afkChecker = new AFKChecker(this, afkLastInput, afk, lpAPI, sm).runTaskTimer(this,0,afkCheck*20L);
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -259,13 +285,13 @@ public class Main extends JavaPlugin implements Listener {
     public void onPlayerMove(PlayerMoveEvent ev) {
         if (raceMEnabled)
             rm.onPlayerMove(ev);
-        if (afkKickEnabled)
+        if (afkCheckerEnabled)
             afkUpdater(ev.getPlayer());
     }
 
     @EventHandler
     public void onChat(AsyncChatEvent event) {
-        if (afkKickEnabled)
+        if (afkCheckerEnabled)
             afkUpdater(event.getPlayer());
     }
 
@@ -277,7 +303,7 @@ public class Main extends JavaPlugin implements Listener {
         player.sendMessage(Component.text("Hello, " + player.getName() + "!"));
         if (raceMEnabled)
             rm.onPlayerJoin(event);
-        if (afkKickEnabled) {
+        if (afkCheckerEnabled) {
             if(!player.hasPermission("OneLife.AFK.Bypass"))
                 afkLastInput.put(player.getUniqueId(),System.currentTimeMillis());
         }
@@ -287,12 +313,18 @@ public class Main extends JavaPlugin implements Listener {
     public void onEntityDeath(EntityDeathEvent event) {
         if (mobMEnabled)
             mm.onEntityDeath(event);
+        if (scoreMEnabled)
+            sm.entityKilled(event);
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
         if (raceMEnabled)
             rm.onDeath(event);
+        if (scoreMEnabled)
+            sm.playerDeath(event);
+        if (afkCheckerEnabled)
+            afkUpdater(event.getEntity());
     }
 
     @EventHandler
@@ -366,14 +398,13 @@ public class Main extends JavaPlugin implements Listener {
         if (scoreMEnabled)
             config.set(player.getUniqueId() + ".playerTotalXp", config.getInt(player.getUniqueId() + ".playerTotalXp") + 1);
         savePlayerConfig(config);
-        if (afkKickEnabled) {
-            if(player.hasPermission("OneLife.AFK.Bypass")){
-                if(!afkLastInput.containsKey(player.getUniqueId())){
-                    return;
-                }
-                afkLastInput.remove(player.getUniqueId());
-                return;
-            }
+        if (afkCheckerEnabled) {
+            User user = lpAPI.getUserManager().getUser(player.getUniqueId());
+            assert user != null;
+            Group afk = lpAPI.getGroupManager().getGroup("afk");
+            assert afk != null;
+            user.data().remove(InheritanceNode.builder(afk).build());
+            lpAPI.getUserManager().saveUser(user);
             afkLastInput.remove(player.getUniqueId());
         }
     }

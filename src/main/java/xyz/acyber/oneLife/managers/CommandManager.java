@@ -155,17 +155,17 @@ public class CommandManager {
                                 return Command.SINGLE_SUCCESS;
 
                             })))
-                .then(Commands.literal("AFKKicker")
-                        .then(Commands.argument("AFKKickerEnabled", BoolArgumentType.bool())
+                .then(Commands.literal("AFKChecker")
+                        .then(Commands.argument("AFKCheckerEnabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
-                                    main.afkKickEnabled = ctx.getArgument("AFKKickerEnabled", Boolean.class);
+                                    main.afkCheckerEnabled = ctx.getArgument("AFKCheckerEnabled", Boolean.class);
                                     main.setFeatures();
                                     Player player = (Player) ctx.getSource().getSender();
                                     player.updateCommands();
-                                    if (main.afkKickEnabled)
-                                        ctx.getSource().getSender().sendRichMessage("AFK Kicking Enabled");
+                                    if (main.afkCheckerEnabled)
+                                        ctx.getSource().getSender().sendRichMessage("AFK Checking Enabled");
                                     else
-                                        ctx.getSource().getSender().sendRichMessage("AFK Kicking Disabled");
+                                        ctx.getSource().getSender().sendRichMessage("AFK Checking Disabled");
                                     return Command.SINGLE_SUCCESS;
                                 })));
 
@@ -222,7 +222,7 @@ public class CommandManager {
                 .then(cmdLives
                         .requires(sender -> main.livesMEnabled))
                 .then(cmdAFK
-                        .requires(sender -> main.afkKickEnabled))
+                        .requires(sender -> main.afkCheckerEnabled))
                 .then(cmdFeatures)
                 .then(cmdHelp);
 
@@ -230,7 +230,7 @@ public class CommandManager {
     }
 
     private static int runGetKickTimeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
-        ctx.getSource().getSender().sendRichMessage("Time AFK before Kick is currently: " + main.getConfig().getDouble("AFK.minutesAFK") + "m");
+        ctx.getSource().getSender().sendRichMessage("Time before viewed as AFK is currently: " + main.getConfig().getDouble("AFK.minutesAFK") + "m");
         return Command.SINGLE_SUCCESS;
     }
 
@@ -238,7 +238,7 @@ public class CommandManager {
         double kickTime = (double) ctx.getArgument("time", Integer.class);
         main.getConfig().set("AFK.minutesAFK", kickTime);
         main.saveConfig();
-        ctx.getSource().getSender().sendMessage("Time AFK before Kick is now set to: " + kickTime + "m");
+        ctx.getSource().getSender().sendMessage("Time before viewed as AFK  is now set to: " + kickTime + "m");
         return Command.SINGLE_SUCCESS;
     }
 
@@ -311,7 +311,6 @@ public class CommandManager {
             stack.getSender().sendRichMessage("Climbing Turned Off");
         return Command.SINGLE_SUCCESS;
     }
-
 
     private static int runGiveLifeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         final PlayerSelectorArgumentResolver targetResolver = ctx.getArgument("Player", PlayerSelectorArgumentResolver.class);

@@ -1,5 +1,5 @@
 name: OneLife
-version: '2-Beta-7'
+version: '2-Beta-10'
 main: xyz.acyber.oneLife.Main
 api-version: '1.21.7'
 dependencies:
