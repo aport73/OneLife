@@ -257,7 +257,7 @@ public class ScoreManager {
 
         scoreData.deathPoints = scoreData.deaths * scoring.getDouble("Death");
         scoreData.adventureDeathPoints = scoreData.adventureDeaths * scoring.getDouble("AdventureDeath");
-        scoreData.xpPoints = round(scoreData.xp * scoring.getDouble("Xp"),2);
+        scoreData.xpPoints = round(scoreData.xp * scoring.getDouble("Xp"),5);
         scoreData.onlineHrPoints = round((scoreData.survivalHr * scoring.getDouble("OnlineHr")) + (scoreData.adventureHr * scoring.getDouble("OnlineHr") * scoring.getDouble("adventureMultiplier")),2);
         scoreData.blocksPlacedPoints = scoreData.blocksPlaced * scoring.getDouble("BlocksPlaced");
         scoreData.blocksMinedPoints = scoreData.blocksMined * scoring.getDouble("BlocksMined");

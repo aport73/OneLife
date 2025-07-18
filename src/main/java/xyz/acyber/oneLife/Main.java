@@ -303,6 +303,8 @@ public class Main extends JavaPlugin implements Listener {
         player.sendMessage(Component.text("Hello, " + player.getName() + "!"));
         if (raceMEnabled)
             rm.onPlayerJoin(event);
+        if (livesMEnabled)
+            lm.setPlayerGameMode(event.getPlayer());
         if (afkCheckerEnabled) {
             if(!player.hasPermission("OneLife.AFK.Bypass"))
                 afkLastInput.put(player.getUniqueId(),System.currentTimeMillis());
@@ -343,9 +345,11 @@ public class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerGameModeChange(PlayerGameModeChangeEvent event) {
+        /*
         if (livesMEnabled)
             if (!event.getPlayer().isOp())
                 lm.setPlayerGameMode(event.getPlayer());
+        */
     }
 
     @EventHandler

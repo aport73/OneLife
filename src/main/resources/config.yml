@@ -271,6 +271,8 @@ Scoring:
   OnlineHr: 2.5
   BlocksPlaced: 0.001
   BlocksMined: 0.001
+  HarvestedTotal: 0.001
+  CaughtTotal: 0.001
   Achevements: 0.3
   MobKills:
     WARDEN: 20.0

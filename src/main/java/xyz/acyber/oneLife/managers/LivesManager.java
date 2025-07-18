@@ -67,7 +67,7 @@ public class LivesManager {
 
     public void setPlayerGameMode(Player player) {
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
-        main.sendMsgOps(String.valueOf(getPlayerScore(getObjective("deaths",scoreboard), player)));
+        // Causes server crashes main.sendMsgOps(String.valueOf(getPlayerScore(getObjective("deaths",scoreboard), player)));
         if (getPlayerScore(getObjective("deaths",scoreboard), player) >= main.getConfig().getInt("Lives.cap")) {
             player.setGameMode(GameMode.valueOf(Objects.requireNonNull(main.getConfig().getString("Lives.gameModeAfterLastDeath")).toUpperCase()));
             player.sendMessage(Component.text("Sorry, You're out of lives! You can continue to play on the server in Adventure Mode"));
