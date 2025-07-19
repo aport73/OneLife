@@ -34,6 +34,8 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.jetbrains.annotations.NotNull;
+import xyz.acyber.oneLife.events.HasBecomeDayEvent;
+import xyz.acyber.oneLife.events.HasBecomeNightEvent;
 import xyz.acyber.oneLife.managers.*;
 
 import java.io.File;
@@ -58,6 +60,7 @@ public class Main extends JavaPlugin implements Listener {
     public final ScoreManager sm = new ScoreManager(this);
     public final LivesManager lm = new LivesManager(this);
     public final CommandManager cm = new CommandManager(this);
+    public final DayNightChecker dnc = new DayNightChecker(this);
 
     public boolean mobMEnabled = false;
     public boolean raceMEnabled = false;
@@ -65,9 +68,13 @@ public class Main extends JavaPlugin implements Listener {
     public boolean livesMEnabled = false;
     public boolean lifeGEnabled = false;
     public boolean afkCheckerEnabled = false;
+    public boolean nightHostiles = true;
+
+    public boolean isNight = false;
 
     public HashMap<UUID,Long> afkLastInput;
     public BukkitTask afkChecker;
+    public BukkitTask dnChecker;
     public long afkCheck;
     public List<UUID> afkPlayers;
 
@@ -106,6 +113,7 @@ public class Main extends JavaPlugin implements Listener {
                 throw new RuntimeException(e);
             }
         }
+
         afk.data().clear();
         PrefixNode prefixNode = PrefixNode.builder("[AFK] ", 200).build();
         SuffixNode suffixNode = SuffixNode.builder("§7", 200).build();
@@ -117,7 +125,8 @@ public class Main extends JavaPlugin implements Listener {
 
         afkCheck = getConfig().getLong("AFK.secondsInterval");
         afkLastInput = new HashMap<>();
-        afkChecker = new AFKChecker(this, afkLastInput, afk, lpAPI, sm).runTaskTimer(this,0,afkCheck*20L);
+        afkChecker = new AFKChecker(this, afkLastInput, afk, lpAPI, sm).runTaskTimerAsynchronously(this,0,afkCheck*20L);
+        dnChecker = dnc.runTaskTimerAsynchronously(this,0,2*20L);
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -247,6 +256,16 @@ public class Main extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+    }
+
+    @EventHandler
+    public void nightFall(HasBecomeNightEvent event) {
+        isNight = true;
+    }
+
+    @EventHandler
+    public void dayBreak(HasBecomeDayEvent event) {
+        isNight = false;
     }
 
     @EventHandler

@@ -225,6 +225,7 @@ races:
         TimeSec: 60
 MOBS:
   ZOMBIE:
+    NOBABYS: true
     ITEMS:
       HAND: STONE_SWORD
     DROPS:

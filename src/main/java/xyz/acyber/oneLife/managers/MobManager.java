@@ -1,15 +1,18 @@
 package xyz.acyber.oneLife.managers;
 
-import org.bukkit.Material;
+import com.destroystokyo.paper.entity.Pathfinder;
+import net.luckperms.api.node.metadata.NodeMetadataKey;
+import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.*;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import xyz.acyber.oneLife.Main;
 
+import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
@@ -47,11 +50,31 @@ public class MobManager {
         }
     }
 
+    public void turnAllMobsHostile() {
+        //TODO finishing logic for feature
+        List<World> worlds = Bukkit.getWorlds();
+        for (World world : worlds) {
+            world.getEntities().forEach(entity -> {
+                if (entity instanceof LivingEntity spawnedEntity) {
+                    Pathfinder pathfinder = ((Mob) spawnedEntity).getPathfinder();
+                }
+            });
+        }
+    }
+
     public void onEntitySpawn(EntitySpawnEvent event) {
         //Handle Mob Adjustments from Config
         if (event.getEntity() instanceof LivingEntity spawnedEntity) {
             ConfigurationSection mobConfig = main.getConfig().getConfigurationSection("MOBS." + spawnedEntity.getType().name());
             if (mobConfig != null) {
+                if (mobConfig.getBoolean("NOBABYS")) {
+                    if (event.getEntityType() == EntityType.ZOMBIE) {
+                        Zombie zombie = (Zombie) spawnedEntity;
+                        if(!zombie.isAdult()) {
+                            zombie.setAdult();
+                        }
+                    }
+                }
                 ConfigurationSection mobItems = mobConfig.getConfigurationSection("ITEMS");
                 if (mobItems != null) {
                     for (var key : mobItems.getKeys(false)) {
