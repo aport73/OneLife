@@ -53,7 +53,7 @@ public class PassiveMobsModifier extends BukkitRunnable {
                 List<Entity> nearbyEntities = new ArrayList<>(p.getNearbyEntities(maxRadius, maxRadius, maxRadius));
                 List<UUID> previousMobs = new ArrayList<>();
                 List<UUID> currentMobs = new ArrayList<>();
-                if (!modifiedMobs.isEmpty())
+                if (!modifiedMobs.isEmpty() && modifiedMobs.containsKey(p))
                     previousMobs.addAll(modifiedMobs.get(p));
 
                 nearbyEntities.forEach(entity -> {
