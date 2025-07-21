@@ -167,6 +167,19 @@ public class CommandManager {
                                     else
                                         ctx.getSource().getSender().sendRichMessage("AFK Checking Disabled");
                                     return Command.SINGLE_SUCCESS;
+                                })))
+                .then(Commands.literal("NightHostiles")
+                        .then(Commands.argument("NightHostiles", BoolArgumentType.bool())
+                                .executes(ctx -> {
+                                    main.nightHostiles = ctx.getArgument("NightHostiles", Boolean.class);
+                                    main.setFeatures();
+                                    Player player = (Player) ctx.getSource().getSender();
+                                    player.updateCommands();
+                                    if (main.nightHostiles)
+                                        ctx.getSource().getSender().sendRichMessage("Night Hostiles Enabled");
+                                    else
+                                        ctx.getSource().getSender().sendRichMessage("Night Hostiles Disabled");
+                                    return Command.SINGLE_SUCCESS;
                                 })));
 
         LiteralArgumentBuilder<CommandSourceStack> cmdRaces = Commands.literal("Races")
@@ -216,6 +229,7 @@ public class CommandManager {
                         .requires(sender -> sender.getSender().hasPermission("OneLife.Reload"))
                         .executes(ctx -> {
                             main.reloadConfig();
+                            main.loadNightHostiles();
                             ctx.getSource().getSender().sendRichMessage("One Life Plugin Reloaded!");
                             return Command.SINGLE_SUCCESS;
                         }))

@@ -50,18 +50,6 @@ public class MobManager {
         }
     }
 
-    public void turnAllMobsHostile() {
-        //TODO finishing logic for feature
-        List<World> worlds = Bukkit.getWorlds();
-        for (World world : worlds) {
-            world.getEntities().forEach(entity -> {
-                if (entity instanceof LivingEntity spawnedEntity) {
-                    Pathfinder pathfinder = ((Mob) spawnedEntity).getPathfinder();
-                }
-            });
-        }
-    }
-
     public void onEntitySpawn(EntitySpawnEvent event) {
         //Handle Mob Adjustments from Config
         if (event.getEntity() instanceof LivingEntity spawnedEntity) {

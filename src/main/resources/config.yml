@@ -5,6 +5,7 @@ Modes:
   LivesManager: true
   LifeGifting: true
   AFKChecker: true
+  NightHostiles: true
 races:
   Katari:
     enabled: true

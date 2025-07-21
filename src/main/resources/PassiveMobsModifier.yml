@@ -1,0 +1,188 @@
+ALLAY:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+ARMADILLO:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+AXOLOTL:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+BAT:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+CAMEL:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+CAT:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+CHICKEN:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+COD:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+COW:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+DONKEY:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+FROG:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+GLOW_SQUID:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+HORSE:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+MOOSHROOM:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+MULE:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+OCELOT:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+PARROT:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+PIG:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+PUFFERFISH:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+RABBIT:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+SALMON:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+SHEEP:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+SKELETON_HORSE:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+SNIFFER:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+SNOW_GOLEM:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+SQUID:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+STRIDER:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+TADPOLE:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+TROPICAL_FISH:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+TURTLE:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+VILLAGER:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+WANDERING_TRADER:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+BEE:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+CAVE_SPIDER:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+DOLPHIN:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+ENDERMAN:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+GOAT:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+IRON_GOLEM:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+LLAMA:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+PIGLIN:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+PANDA:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+POLAR_BEAR:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+SPIDER:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+SPIDER_JOCKEY:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+TRADER_LLAMA:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+WOLF:
+  Enabled: true
+  Radius: 35
+  Damage: 6
+ZOMBIFIED_PIGLIN:
+  Enabled: true
+  Radius: 35
+  Damage: 6

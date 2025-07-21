@@ -1,10 +1,8 @@
-package xyz.acyber.oneLife.managers;
+package xyz.acyber.oneLife.Runables;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitScheduler;
 import xyz.acyber.oneLife.Main;
 import xyz.acyber.oneLife.events.HasBecomeDayEvent;
 import xyz.acyber.oneLife.events.HasBecomeNightEvent;

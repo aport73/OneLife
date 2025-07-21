@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.managers;
+package xyz.acyber.oneLife.Runables;
 
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
@@ -11,12 +11,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.managers.ScoreManager;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Objects;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class AFKChecker extends BukkitRunnable {
 
