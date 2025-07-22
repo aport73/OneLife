@@ -4,8 +4,8 @@ import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
 import xyz.acyber.oneLife.Main;
-import xyz.acyber.oneLife.events.HasBecomeDayEvent;
-import xyz.acyber.oneLife.events.HasBecomeNightEvent;
+import xyz.acyber.oneLife.Events.HasBecomeDayEvent;
+import xyz.acyber.oneLife.Events.HasBecomeNightEvent;
 
 public class DayNightChecker extends BukkitRunnable {
 

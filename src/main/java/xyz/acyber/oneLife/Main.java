@@ -1,6 +1,7 @@
 package xyz.acyber.oneLife;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
@@ -34,17 +35,24 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.jetbrains.annotations.NotNull;
+import xyz.acyber.oneLife.DataObjects.ScoreData;
+import xyz.acyber.oneLife.DataObjects.Settings;
+import xyz.acyber.oneLife.DataObjects.SubSettings.PlayerConfig;
 import xyz.acyber.oneLife.Runables.AFKChecker;
 import xyz.acyber.oneLife.Runables.DayNightChecker;
 import xyz.acyber.oneLife.Runables.PassiveMobsModifier;
-import xyz.acyber.oneLife.events.HasBecomeDayEvent;
-import xyz.acyber.oneLife.events.HasBecomeNightEvent;
-import xyz.acyber.oneLife.managers.*;
+import xyz.acyber.oneLife.Events.HasBecomeDayEvent;
+import xyz.acyber.oneLife.Events.HasBecomeNightEvent;
+import xyz.acyber.oneLife.Managers.*;
 
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
@@ -57,6 +65,8 @@ public class Main extends JavaPlugin implements Listener {
     //TODO Idea - Disable Traveling Merchants being able to use Invisibility?
 
     public LuckPerms lpAPI;
+    public Settings settings;
+    public HashMap<UUID,ScoreData> scoreData;
 
     public final MobManager mm = new MobManager(this);
     public final RaceManager rm = new RaceManager(this);
@@ -82,13 +92,38 @@ public class Main extends JavaPlugin implements Listener {
     public BukkitTask pmModifier;
     public long afkCheck;
     public List<UUID> afkPlayers;
+    public HashMap<UUID, ScoreData> scoringMap;
 
     @Override
     public void onEnable() {
+        loadDefaultSettings();
+        scoreData = new HashMap<>();
 
         saveDefaultConfig();
         saveDefaultPlayerConfig();
 
+        Bukkit.getPluginManager().registerEvents(this, this);
+
+        //Register Commands
+        LifecycleEventManager<@NotNull Plugin> manager = this.getLifecycleManager();
+        manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> commands.registrar().register(cm.loadCmds()));
+
+        lpAPI = LuckPermsProvider.get();
+
+        if (livesMEnabled)
+            lm.enableDeathsScoreboard();
+
+        loadAFKChecking();
+        //Start Day Night Checking
+        dnChecker = dnc.runTaskTimer(this,0,20L);
+        loadNightHostiles();
+
+        addPlayerConfigForWhitelist();
+        addWhitelistToScoring();
+        JSONWriter(settings, "settings");
+    }
+
+    private void loadEnabledFeatures() {
         FileConfiguration config = getConfig();
         ConfigurationSection modes = config.getConfigurationSection("Modes");
         assert modes != null;
@@ -98,64 +133,97 @@ public class Main extends JavaPlugin implements Listener {
         scoreMEnabled = modes.getBoolean("ScoreManager");
         lifeGEnabled = modes.getBoolean("LifeGifting");
         livesMEnabled = modes.getBoolean("LivesManager");
-        afkCheckerEnabled = modes.getBoolean("AFKChecker");
+        afkCheckerEnabled = modes.getBoolean("AFKCheckerConfig");
         nightHostiles = modes.getBoolean("NightHostiles");
+    }
 
-        Bukkit.getPluginManager().registerEvents(this, this);
+    private void loadDefaultSettings() {
+        settings = new Settings(this);
+    }
 
-        LifecycleEventManager<@NotNull Plugin> manager = this.getLifecycleManager();
-        manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> commands.registrar().register(cm.loadCmds()));
-
-        if (livesMEnabled)
-            lm.enableDeathsScoreboard();
-
-        lpAPI = LuckPermsProvider.get();
-
-        Group afk = lpAPI.getGroupManager().getGroup("AFK");
-        if (afk == null) {
-            try {
-                afk = lpAPI.getGroupManager().createAndLoadGroup("AFK").get();
-            } catch (InterruptedException | ExecutionException e) {
-                throw new RuntimeException(e);
+    private void addPlayerConfigForWhitelist() {
+        for (OfflinePlayer player : Bukkit.getWhitelistedPlayers()) {
+            if (!settings.getPlayerConfigs().containsKey(player.getUniqueId())) {
+                PlayerConfig playerConfig = new PlayerConfig(player.getUniqueId(), player.getName());
+                settings.addPlayerConfigs(playerConfig);
             }
         }
+    }
 
-        afk.data().clear();
-        PrefixNode prefixNode = PrefixNode.builder("[AFK] ", 200).build();
-        SuffixNode suffixNode = SuffixNode.builder("§7", 200).build();
-        WeightNode weightNode = WeightNode.builder(200).build();
-        afk.data().add(prefixNode);
-        afk.data().add(suffixNode);
-        afk.data().add(weightNode);
-        lpAPI.getGroupManager().saveGroup(afk);
+    private void addWhitelistToScoring() {
+        for (OfflinePlayer p : Bukkit.getWhitelistedPlayers()) {
+            if (!scoreData.containsKey(p.getUniqueId())) {
+                sm.initializePlayerScore(p);
+            }
+        }
+    }
 
-        afkCheck = getConfig().getLong("AFK.secondsInterval");
-        afkLastInput = new HashMap<>();
-        afkChecker = new AFKChecker(this, afkLastInput, afk, lpAPI, sm).runTaskTimerAsynchronously(this,0,afkCheck*20L);
-        dnChecker = dnc.runTaskTimerAsynchronously(this,0,20L);
+    public void reload() {
+        reloadConfig();
+        loadEnabledFeatures();
         loadNightHostiles();
     }
 
-    public void loadNightHostiles() {
-        if (nightHostiles)
-            pmModifier = pmm.runTaskTimer(this, 0, 20L);
+    private void loadNightHostiles() {
+        if (nightHostiles) {
+            if (pmModifier != null)
+                pmModifier = pmm.runTaskTimer(this, 0, 20L);
+        }
         else if (pmModifier != null)
             pmModifier.cancel();
+    }
+
+    private void loadAFKChecking() {
+        if (afkCheckerEnabled) {
+            Group afk = lpAPI.getGroupManager().getGroup("AFK");
+            if (afk == null) {
+                try {
+                    afk = lpAPI.getGroupManager().createAndLoadGroup("AFK").get();
+                } catch (InterruptedException | ExecutionException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+
+            afk.data().clear();
+            PrefixNode prefixNode = PrefixNode.builder("[AFK] ", 200).build();
+            SuffixNode suffixNode = SuffixNode.builder("§7", 200).build();
+            WeightNode weightNode = WeightNode.builder(200).build();
+            afk.data().add(prefixNode);
+            afk.data().add(suffixNode);
+            afk.data().add(weightNode);
+            lpAPI.getGroupManager().saveGroup(afk);
+
+            afkCheck = getConfig().getLong("AFK.secondsInterval");
+            afkLastInput = new HashMap<>();
+            afkChecker = new AFKChecker(this, afkLastInput, afk, lpAPI, sm).runTaskTimer(this,0,afkCheck*20L);
+        } else {
+            if (afkChecker != null)
+                afkChecker.cancel();
+            if (afkLastInput != null)
+                afkLastInput.clear();
+        }
+    }
+
+    public void JSONWriter(Object myObject, String filePath) {
+        ObjectMapper mapper = new ObjectMapper();
+        Path path = Paths.get(getDataFolder() + "/" + filePath + ".json");
+        Path backupPath = Paths.get(getDataFolder() + "/Backups/" + filePath + "-Backup-" + LocalDate.now() + ".json");
+        try {
+            if (Files.exists(path)) {
+                if (!Files.exists(backupPath)) {
+                    Files.createDirectories(backupPath);
+                }
+                Files.move(path, backupPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.REPLACE_EXISTING);
+            }
+            mapper.writeValue(new File(path.toUri()), myObject);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public FileConfiguration getPassiveMobsModifierConfig() {
         File file = new File(getDataFolder(), "PassiveMobsModifier.yml");
         return YamlConfiguration.loadConfiguration(file);
-    }
-
-    public void savePassiveMobsModifierConfig(@NotNull FileConfiguration config) {
-        try {
-            File file = new File(getDataFolder(), "PassiveMobsModifier.yml");
-            config.save(file);
-        } catch (IOException e) {
-            this.getLogger().log(Level.SEVERE, "Failed to save PassiveMobsModifier.yml", e.getCause());
-            this.getLogger().log(Level.INFO, "Stacktrace", e.fillInStackTrace());
-        }
     }
 
     public FileConfiguration getPlayerConfig() {
@@ -193,6 +261,13 @@ public class Main extends JavaPlugin implements Listener {
         } catch (IOException e) {
             this.getLogger().log(Level.SEVERE, "Failed to save Default players.yml", e.getCause());
             this.getLogger().log(Level.INFO, "Stacktrace", e.fillInStackTrace());
+        }
+    }
+
+    public void savePlauerScores() {
+        for (UUID uuid : scoringMap.keySet()) {
+            String path = getDataFolder() + "/" + uuid.toString() + ".json";
+            JSONWriter(scoringMap.get(uuid), path);
         }
     }
 
@@ -285,6 +360,13 @@ public class Main extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
+        // Save Scoring data
+        for (UUID key : scoreData.keySet()) {
+            ScoreData sd = scoreData.get(key);
+            JSONWriter(sd,"scoring/" + sd.getPlayer().getName() + "-" + sd.getPlayer().getUniqueId().toString());
+        }
+        JSONWriter(settings, "settings");
+
     }
 
     @EventHandler
@@ -475,7 +557,7 @@ public class Main extends JavaPlugin implements Listener {
         modes.set("RaceManager", raceMEnabled);
         modes.set("ScoreManager", scoreMEnabled);
         modes.set("LifeGifting", lifeGEnabled);
-        modes.set("AFKChecker", afkCheckerEnabled);
+        modes.set("AFKCheckerConfig", afkCheckerEnabled);
         modes.set("NightHostiles", nightHostiles);
         saveConfig();
     }

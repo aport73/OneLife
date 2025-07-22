@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import xyz.acyber.oneLife.Main;
-import xyz.acyber.oneLife.managers.ScoreManager;
+import xyz.acyber.oneLife.Managers.ScoreManager;
 
 import java.util.HashMap;
 import java.util.Objects;

@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.managers;
+package xyz.acyber.oneLife.Managers;
 
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
@@ -155,7 +155,7 @@ public class CommandManager {
                                 return Command.SINGLE_SUCCESS;
 
                             })))
-                .then(Commands.literal("AFKChecker")
+                .then(Commands.literal("AFKCheckerConfig")
                         .then(Commands.argument("AFKCheckerEnabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
                                     main.afkCheckerEnabled = ctx.getArgument("AFKCheckerEnabled", Boolean.class);
@@ -228,8 +228,7 @@ public class CommandManager {
                 .then(Commands.literal("Reload")
                         .requires(sender -> sender.getSender().hasPermission("OneLife.Reload"))
                         .executes(ctx -> {
-                            main.reloadConfig();
-                            main.loadNightHostiles();
+                            main.reload();
                             ctx.getSource().getSender().sendRichMessage("One Life Plugin Reloaded!");
                             return Command.SINGLE_SUCCESS;
                         }))

@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.managers;
+package xyz.acyber.oneLife.Managers;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
 import io.papermc.paper.registry.RegistryAccess;

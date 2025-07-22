@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.events;
+package xyz.acyber.oneLife.Events;
 
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;

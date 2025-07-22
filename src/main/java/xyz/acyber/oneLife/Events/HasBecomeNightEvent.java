@@ -1,6 +1,5 @@
-package xyz.acyber.oneLife.events;
+package xyz.acyber.oneLife.Events;
 
-import net.kyori.adventure.text.Component;
 import org.bukkit.event.Event;
 import org.bukkit.event.HandlerList;
 import org.jetbrains.annotations.NotNull;

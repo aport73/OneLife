@@ -1,7 +1,5 @@
-package xyz.acyber.oneLife.managers;
+package xyz.acyber.oneLife.Managers;
 
-import com.destroystokyo.paper.entity.Pathfinder;
-import net.luckperms.api.node.metadata.NodeMetadataKey;
 import org.bukkit.*;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
@@ -12,7 +10,6 @@ import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
 import xyz.acyber.oneLife.Main;
 
-import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 

@@ -4,7 +4,7 @@ plugins {
     id("xyz.jpenilla.run-paper") version "2.3.1"
 }
 
-version = '2-Beta-16'
+version = '2-Beta-20'
 repositories {
     mavenCentral()
     maven {
@@ -21,6 +21,11 @@ dependencies {
     compileOnly 'net.luckperms:api:5.5'
     //noinspection GrUnresolvedAccess
     paperweight.paperDevBundle("1.21.8-R0.1-SNAPSHOT")
+
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
+    implementation 'com.fasterxml.jackson.core:jackson-databind:2.19.2'
+    // https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-yaml
+    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.2'
 }
 
 tasks {

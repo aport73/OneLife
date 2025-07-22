@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.managers;
+package xyz.acyber.oneLife.Managers;
 
 import net.kyori.adventure.text.Component;
 import org.bukkit.Bukkit;
