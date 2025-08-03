@@ -11,6 +11,10 @@ public class Team {
     private String suffix;
     private String color;
 
+    public Team() {
+        super();
+    }
+
     public Team(UUID uuid, String teamName, String prefix, String suffix, String color) {
         this.uuid = uuid;
         this.teamName = teamName;

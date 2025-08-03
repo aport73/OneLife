@@ -3,16 +3,16 @@ package xyz.acyber.oneLife.Runables;
 import org.bukkit.Bukkit;
 import org.bukkit.World;
 import org.bukkit.scheduler.BukkitRunnable;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 import xyz.acyber.oneLife.Events.HasBecomeDayEvent;
 import xyz.acyber.oneLife.Events.HasBecomeNightEvent;
 
 public class DayNightChecker extends BukkitRunnable {
 
-    private final Main plugin;
+    private final OneLifePlugin plugin;
     public boolean isNight = false;
 
-    public DayNightChecker(Main plugin) {
+    public DayNightChecker(OneLifePlugin plugin) {
         this.plugin = plugin;
     }
 

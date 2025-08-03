@@ -1,10 +1,12 @@
 package xyz.acyber.oneLife;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.*;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import me.lucko.spark.paper.lib.protobuf.Any;
 import net.kyori.adventure.text.Component;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -35,6 +37,7 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.jetbrains.annotations.NotNull;
+import org.objectweb.asm.TypeReference;
 import xyz.acyber.oneLife.DataObjects.ScoreData;
 import xyz.acyber.oneLife.DataObjects.Settings;
 import xyz.acyber.oneLife.DataObjects.SubSettings.PlayerConfig;
@@ -45,10 +48,7 @@ import xyz.acyber.oneLife.Events.HasBecomeDayEvent;
 import xyz.acyber.oneLife.Events.HasBecomeNightEvent;
 import xyz.acyber.oneLife.Managers.*;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.*;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -56,11 +56,12 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
-public class Main extends JavaPlugin implements Listener {
+public class OneLifePlugin extends JavaPlugin implements Listener {
     //TODO Redo Mob Sounds
     //TODO Idea - Disable Traveling Merchants being able to use Invisibility?
 
@@ -76,14 +77,6 @@ public class Main extends JavaPlugin implements Listener {
     public final DayNightChecker dnc = new DayNightChecker(this);
     public final PassiveMobsModifier pmm = new PassiveMobsModifier(this);
 
-    public boolean mobMEnabled = false;
-    public boolean raceMEnabled = false;
-    public boolean scoreMEnabled = false;
-    public boolean livesMEnabled = false;
-    public boolean lifeGEnabled = false;
-    public boolean afkCheckerEnabled = false;
-    public boolean nightHostiles = true;
-
     public boolean isNight = false;
 
     public HashMap<UUID,Long> afkLastInput;
@@ -92,12 +85,9 @@ public class Main extends JavaPlugin implements Listener {
     public BukkitTask pmModifier;
     public long afkCheck;
     public List<UUID> afkPlayers;
-    public HashMap<UUID, ScoreData> scoringMap;
 
     @Override
     public void onEnable() {
-        loadDefaultSettings();
-        scoreData = new HashMap<>();
 
         saveDefaultConfig();
         saveDefaultPlayerConfig();
@@ -108,9 +98,10 @@ public class Main extends JavaPlugin implements Listener {
         LifecycleEventManager<@NotNull Plugin> manager = this.getLifecycleManager();
         manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> commands.registrar().register(cm.loadCmds()));
 
+        loadSettings();
         lpAPI = LuckPermsProvider.get();
 
-        if (livesMEnabled)
+        if (settings.getEnabledFeatures().getEnabledLivesManager())
             lm.enableDeathsScoreboard();
 
         loadAFKChecking();
@@ -119,26 +110,61 @@ public class Main extends JavaPlugin implements Listener {
         loadNightHostiles();
 
         addPlayerConfigForWhitelist();
+        loadScoring();
         addWhitelistToScoring();
-        JSONWriter(settings, "settings");
+
+        Object myObject = settings;
+        MyJSONWriter(myObject, getDataFolder() + "/settings.json");
+        savePlauerScores();
     }
 
-    private void loadEnabledFeatures() {
-        FileConfiguration config = getConfig();
-        ConfigurationSection modes = config.getConfigurationSection("Modes");
-        assert modes != null;
-
-        mobMEnabled = modes.getBoolean("MobManager");
-        raceMEnabled = modes.getBoolean("RaceManager");
-        scoreMEnabled = modes.getBoolean("ScoreManager");
-        lifeGEnabled = modes.getBoolean("LifeGifting");
-        livesMEnabled = modes.getBoolean("LivesManager");
-        afkCheckerEnabled = modes.getBoolean("AFKCheckerConfig");
-        nightHostiles = modes.getBoolean("NightHostiles");
+    @Override
+    public void onDisable() {
+        // Plugin shutdown logic
+        // Save Scoring data
+        Object myObject = settings;
+        MyJSONWriter(myObject, getDataFolder() + "/settings.json");
+        savePlauerScores();
     }
 
-    private void loadDefaultSettings() {
-        settings = new Settings(this);
+    private void loadSettings() {
+        ObjectMapper mapper = new ObjectMapper();
+        Path path = Paths.get(getDataFolder() + "/settings.json");
+        Settings update = null;
+        Object myObject = MyJSONReader(path.toString());
+        if (myObject != null) 
+            update = mapper.convertValue(myObject, Settings.class);
+        settings = Objects.requireNonNullElseGet(update, () -> new Settings(this));
+    }
+
+    private void loadScoring() {
+        scoreData = new HashMap<>();
+        Path path = Paths.get(getDataFolder() + settings.getPathToScoreData());
+        File[] files = path.toFile().listFiles();
+        ObjectMapper mapper = new ObjectMapper();
+        if (files != null) {
+            for (File file : files) {
+                if (file.getName().endsWith(".json")) {
+                    Object myObject = MyJSONReader(file.getPath());
+                    ScoreData data = mapper.convertValue(myObject, ScoreData.class);
+                    data = Objects.requireNonNullElseGet(data, ScoreData::new);
+                    if (scoreData.containsKey(data.getUUID()))
+                        scoreData.replace(data.getUUID(), data);
+                    else
+                        scoreData.put(data.getUUID(), data);
+                }
+            }
+        }
+    }
+
+    public void savePlauerScores() {
+        if (!scoreData.isEmpty()) {
+            for (UUID uuid : scoreData.keySet()) {
+                ScoreData sd = scoreData.get(uuid);
+                String path = getDataFolder() + settings.getPathToScoreData() + sd.getPlayerName() + " - " + sd.getUUID() + ".json";
+                MyJSONWriter(sd, path);
+            }
+        }
     }
 
     private void addPlayerConfigForWhitelist() {
@@ -160,12 +186,11 @@ public class Main extends JavaPlugin implements Listener {
 
     public void reload() {
         reloadConfig();
-        loadEnabledFeatures();
         loadNightHostiles();
     }
 
     private void loadNightHostiles() {
-        if (nightHostiles) {
+        if (settings.getEnabledFeatures().getEnabledNightHostiles()) {
             if (pmModifier != null)
                 pmModifier = pmm.runTaskTimer(this, 0, 20L);
         }
@@ -174,7 +199,7 @@ public class Main extends JavaPlugin implements Listener {
     }
 
     private void loadAFKChecking() {
-        if (afkCheckerEnabled) {
+        if (settings.getEnabledFeatures().getEnabledAFKChecker()) {
             Group afk = lpAPI.getGroupManager().getGroup("AFK");
             if (afk == null) {
                 try {
@@ -204,19 +229,38 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    public void JSONWriter(Object myObject, String filePath) {
+    public void MyJSONWriter(Object myObject, String filePath) {
         ObjectMapper mapper = new ObjectMapper();
-        Path path = Paths.get(getDataFolder() + "/" + filePath + ".json");
-        Path backupPath = Paths.get(getDataFolder() + "/Backups/" + filePath + "-Backup-" + LocalDate.now() + ".json");
+        ObjectWriter writer = mapper.writer().withDefaultPrettyPrinter();
+        Path path = Paths.get(filePath);
+        Path backupPath = Paths.get(filePath.replace(".json","") + "-Backup-" + LocalDate.now() + ".json");
         try {
             if (Files.exists(path)) {
                 if (!Files.exists(backupPath)) {
                     Files.createDirectories(backupPath);
                 }
                 Files.move(path, backupPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.REPLACE_EXISTING);
-            }
-            mapper.writeValue(new File(path.toUri()), myObject);
+            } else
+                Files.createDirectories(path.getParent());
+            writer.writeValue(new File(path.toUri()), myObject);
         } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public Object MyJSONReader(String filePath) {
+        ObjectMapper mapper = new ObjectMapper();
+        Path path = Paths.get(filePath);
+        try {
+            if (Files.exists(path)) {
+                File file = new File(path.toUri());
+               return mapper.readValue(file, Object.class);
+            }
+            return null;
+        } catch (JsonProcessingException e ) {
+            throw new RuntimeException(e);
+        }
+        catch (IOException e) {
             throw new RuntimeException(e);
         }
     }
@@ -261,13 +305,6 @@ public class Main extends JavaPlugin implements Listener {
         } catch (IOException e) {
             this.getLogger().log(Level.SEVERE, "Failed to save Default players.yml", e.getCause());
             this.getLogger().log(Level.INFO, "Stacktrace", e.fillInStackTrace());
-        }
-    }
-
-    public void savePlauerScores() {
-        for (UUID uuid : scoringMap.keySet()) {
-            String path = getDataFolder() + "/" + uuid.toString() + ".json";
-            JSONWriter(scoringMap.get(uuid), path);
         }
     }
 
@@ -357,18 +394,6 @@ public class Main extends JavaPlugin implements Listener {
         }
     }
 
-    @Override
-    public void onDisable() {
-        // Plugin shutdown logic
-        // Save Scoring data
-        for (UUID key : scoreData.keySet()) {
-            ScoreData sd = scoreData.get(key);
-            JSONWriter(sd,"scoring/" + sd.getPlayer().getName() + "-" + sd.getPlayer().getUniqueId().toString());
-        }
-        JSONWriter(settings, "settings");
-
-    }
-
     @EventHandler
     public void nightFall(HasBecomeNightEvent event) {
         isNight = true;
@@ -381,47 +406,47 @@ public class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void playerHarvest(PlayerHarvestBlockEvent ev) {
-        if (scoreMEnabled)
+        if (settings.getEnabledFeatures().getEnabledScoreManager())
             sm.playerHarvest(ev);
     }
 
     @EventHandler
     public void playerFish(PlayerFishEvent ev) {
-        if (scoreMEnabled)
+        if (settings.getEnabledFeatures().getEnabledScoreManager())
             sm.playerFish(ev);
     }
 
     @EventHandler
     public void blockPlaced(BlockPlaceEvent event) {
         //Check if Scoring Enabled and Run Function if So
-        if (scoreMEnabled)
+        if (settings.getEnabledFeatures().getEnabledScoreManager())
             sm.blocksPlaced(event);
     }
 
     @EventHandler
     public void blockMined(BlockBreakEvent event) {
         //Check if Scoring Enabled and Run Function if So
-        if (scoreMEnabled)
+        if (settings.getEnabledFeatures().getEnabledScoreManager())
             sm.blocksMined(event);
     }
 
     @EventHandler
     public void playerAdvanced(PlayerAdvancementDoneEvent event) {
-        if (scoreMEnabled)
+        if (settings.getEnabledFeatures().getEnabledScoreManager())
             sm.playerAdvanced(event);
     }
 
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent ev) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.onPlayerMove(ev);
-        if (afkCheckerEnabled)
+        if (settings.getEnabledFeatures().getEnabledAFKChecker())
             afkUpdater(ev.getPlayer());
     }
 
     @EventHandler
     public void onChat(AsyncChatEvent event) {
-        if (afkCheckerEnabled)
+        if (settings.getEnabledFeatures().getEnabledAFKChecker())
             afkUpdater(event.getPlayer());
     }
 
@@ -431,11 +456,11 @@ public class Main extends JavaPlugin implements Listener {
         checkPlayerInConfig(player.getUniqueId().toString());
         setPlayerTasks(player, 0);
         player.sendMessage(Component.text("Hello, " + player.getName() + "!"));
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledAFKChecker())
             rm.onPlayerJoin(event);
-        if (livesMEnabled)
+        if (settings.getEnabledFeatures().getEnabledLivesManager())
             lm.setPlayerGameMode(event.getPlayer());
-        if (afkCheckerEnabled) {
+        if (settings.getEnabledFeatures().getEnabledAFKChecker()) {
             if(!player.hasPermission("OneLife.AFK.Bypass"))
                 afkLastInput.put(player.getUniqueId(),System.currentTimeMillis());
         }
@@ -443,40 +468,40 @@ public class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onEntityDeath(EntityDeathEvent event) {
-        if (mobMEnabled)
+        if (settings.getEnabledFeatures().getEnabledMobManager())
             mm.onEntityDeath(event);
-        if (scoreMEnabled)
+        if (settings.getEnabledFeatures().getEnabledScoreManager())
             sm.entityKilled(event);
     }
 
     @EventHandler
     public void onDeath(PlayerDeathEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.onDeath(event);
-        if (scoreMEnabled)
+        if (settings.getEnabledFeatures().getEnabledScoreManager())
             sm.playerDeath(event);
-        if (afkCheckerEnabled)
+        if (settings.getEnabledFeatures().getEnabledAFKChecker())
             afkUpdater(event.getEntity());
     }
 
     @EventHandler
     public void onRespawn(PlayerRespawnEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.applyRace(event.getPlayer(), null);
-        if (livesMEnabled)
+        if (settings.getEnabledFeatures().getEnabledLivesManager())
             lm.setPlayerGameMode(event.getPlayer());
     }
 
     @EventHandler
     public void onEntitySpawn(EntitySpawnEvent event) {
-        if (mobMEnabled)
+        if (settings.getEnabledFeatures().getEnabledMobManager())
             mm.onEntitySpawn(event);
     }
 
     @EventHandler
     public void onPlayerGameModeChange(PlayerGameModeChangeEvent event) {
         /*
-        if (livesMEnabled)
+        if (settings.getEnabledFeatures().getEnabledLivesManager())
             if (!event.getPlayer().isOp())
                 lm.setPlayerGameMode(event.getPlayer());
         */
@@ -484,43 +509,43 @@ public class Main extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onDamage(EntityDamageEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.onDamage(event);
     }
 
     @EventHandler
     public void playerItemConsume(PlayerItemConsumeEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.playerItemConsume(event);
     }
 
     @EventHandler
     public void playerTamePet(EntityTameEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.playerTamePet(event);
     }
 
     @EventHandler
     public void playerArmorChange(PlayerArmorChangeEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.playerArmorChange(event);
     }
 
     @EventHandler
     public void entityPickupEvent(EntityPickupItemEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.entityPickupEvent(event);
     }
 
     @EventHandler
     public void inventoryClickEvent(InventoryClickEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.inventoryClickEvent(event);
     }
 
     @EventHandler
     public void playerDropItem(PlayerDropItemEvent event) {
-        if (raceMEnabled)
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.playerDropItem(event);
     }
 
@@ -529,10 +554,10 @@ public class Main extends JavaPlugin implements Listener {
         FileConfiguration config = getPlayerConfig();
         Player player = event.getPlayer();
         config.set(player.getUniqueId() + ".playerTasks", 0);
-        if (scoreMEnabled)
+        if (settings.getEnabledFeatures().getEnabledScoreManager())
             config.set(player.getUniqueId() + ".playerTotalXp", config.getInt(player.getUniqueId() + ".playerTotalXp") + 1);
         savePlayerConfig(config);
-        if (afkCheckerEnabled) {
+        if (settings.getEnabledFeatures().getEnabledAFKChecker()) {
             User user = lpAPI.getUserManager().getUser(player.getUniqueId());
             assert user != null;
             Group afk = lpAPI.getGroupManager().getGroup("afk");
@@ -547,19 +572,6 @@ public class Main extends JavaPlugin implements Listener {
         FileConfiguration config = getPlayerConfig();
         config.set(player.getUniqueId() + ".playerTasks", task);
         savePlayerConfig(config);
-    }
-
-    public void setFeatures() {
-        FileConfiguration config = getConfig();
-        ConfigurationSection modes = config.getConfigurationSection("Modes");
-        assert modes != null;
-        modes.set("MobManager", mobMEnabled);
-        modes.set("RaceManager", raceMEnabled);
-        modes.set("ScoreManager", scoreMEnabled);
-        modes.set("LifeGifting", lifeGEnabled);
-        modes.set("AFKCheckerConfig", afkCheckerEnabled);
-        modes.set("NightHostiles", nightHostiles);
-        saveConfig();
     }
 
     public int getPlayerTasks(@NotNull Player player) {

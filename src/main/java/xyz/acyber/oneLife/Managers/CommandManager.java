@@ -17,7 +17,7 @@ import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,13 +29,13 @@ public class CommandManager {
     static ScoreManager sm;
     static RaceManager rm;
     static LivesManager lm;
-    static Main main;
+    static OneLifePlugin oneLifePlugin;
 
-    public CommandManager(Main plugin) {
-        main = plugin;
-        sm = main.sm;
-        rm = main.rm;
-        lm = main.lm;
+    public CommandManager(OneLifePlugin plugin) {
+        oneLifePlugin = plugin;
+        sm = oneLifePlugin.sm;
+        rm = oneLifePlugin.rm;
+        lm = oneLifePlugin.lm;
     }
 
     public LiteralCommandNode<CommandSourceStack> loadCmds() {
@@ -76,7 +76,7 @@ public class CommandManager {
                                         .executes(CommandManager::runResetPlayerDeathsLogic))));
 
         LiteralArgumentBuilder<CommandSourceStack> cmdScores = Commands.literal("Scores")
-                .requires(sender -> sender.getSender().hasPermission("OneLife.Scores") && main.scoreMEnabled)
+                .requires(sender -> sender.getSender().hasPermission("OneLife.Scores") && oneLifePlugin.settings.getEnabledFeatures().getEnabledScoreManager())
                 .then(Commands.literal("All")
                         .executes(CommandManager::runAllScoresLogic))
                 .then(Commands.literal("Player")
@@ -88,11 +88,10 @@ public class CommandManager {
                 .then(Commands.literal("MobsTweaks")
                         .then(Commands.argument("mMEnabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
-                                    main.mobMEnabled = ctx.getArgument("mMEnabled", Boolean.class);
-                                    main.setFeatures();
+                                    oneLifePlugin.settings.getEnabledFeatures().setEnabledMobManager(ctx.getArgument("mMEnabled", Boolean.class));
                                     Player player = (Player) ctx.getSource().getSender();
                                     player.updateCommands();
-                                    if (main.mobMEnabled)
+                                    if (oneLifePlugin.settings.getEnabledFeatures().getEnabledMobManager())
                                         ctx.getSource().getSender().sendRichMessage("Mob Tweaks Enabled");
                                     else
                                         ctx.getSource().getSender().sendRichMessage("Mob Tweaks Disabled");
@@ -101,11 +100,10 @@ public class CommandManager {
                 .then(Commands.literal("Races")
                         .then(Commands.argument("rMEnabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
-                                    main.raceMEnabled = ctx.getArgument("rMEnabled", Boolean.class);
-                                    main.setFeatures();
+                                    oneLifePlugin.settings.getEnabledFeatures().setEnabledRaceManager(ctx.getArgument("rMEnabled", Boolean.class));
                                     Player player = (Player) ctx.getSource().getSender();
                                     player.updateCommands();
-                                    if (main.raceMEnabled)
+                                    if (oneLifePlugin.settings.getEnabledFeatures().getEnabledRaceManager())
                                         ctx.getSource().getSender().sendRichMessage("Races Enabled");
                                     else
                                         ctx.getSource().getSender().sendRichMessage("Races Disabled");
@@ -114,11 +112,10 @@ public class CommandManager {
                 .then(Commands.literal("ScoreManager")
                         .then(Commands.argument("scoreMEnabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
-                                    main.scoreMEnabled = ctx.getArgument("scoreMEnabled", Boolean.class);
-                                    main.setFeatures();
+                                    oneLifePlugin.settings.getEnabledFeatures().setEnabledScoreManager(ctx.getArgument("scoreMEnabled", Boolean.class));
                                     Player player = (Player) ctx.getSource().getSender();
                                     player.updateCommands();
-                                    if (main.scoreMEnabled)
+                                    if (oneLifePlugin.settings.getEnabledFeatures().getEnabledScoreManager())
                                         ctx.getSource().getSender().sendRichMessage("Score Manager Enabled");
                                     else
                                         ctx.getSource().getSender().sendRichMessage("Score Manager Disabled");
@@ -127,11 +124,10 @@ public class CommandManager {
                 .then(Commands.literal("LifeGifting")
                         .then(Commands.argument("lifeGEnabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
-                                    main.lifeGEnabled = ctx.getArgument("lifeGEnabled", Boolean.class);
-                                    main.setFeatures();
+                                    oneLifePlugin.settings.getEnabledFeatures().setEnabledLifeGifting(ctx.getArgument("lifeGEnabled", Boolean.class));
                                     Player player = (Player) ctx.getSource().getSender();
                                     player.updateCommands();
-                                    if (main.lifeGEnabled)
+                                    if (oneLifePlugin.settings.getEnabledFeatures().getEnabledLifeGifting())
                                         ctx.getSource().getSender().sendRichMessage("Life Gifting Enabled");
                                     else
                                         ctx.getSource().getSender().sendRichMessage("Life Gifting Disabled");
@@ -148,7 +144,7 @@ public class CommandManager {
                                 Player player = (Player) ctx.getSource().getSender();
                                 player.updateCommands();
 
-                                if (main.livesMEnabled)
+                                if (oneLifePlugin.settings.getEnabledFeatures().getEnabledLivesManager())
                                     ctx.getSource().getSender().sendRichMessage("Lives Manager Enabled");
                                 else
                                     ctx.getSource().getSender().sendRichMessage("Lives Manager Disabled");
@@ -158,11 +154,10 @@ public class CommandManager {
                 .then(Commands.literal("AFKCheckerConfig")
                         .then(Commands.argument("AFKCheckerEnabled", BoolArgumentType.bool())
                                 .executes(ctx -> {
-                                    main.afkCheckerEnabled = ctx.getArgument("AFKCheckerEnabled", Boolean.class);
-                                    main.setFeatures();
+                                    oneLifePlugin.settings.getEnabledFeatures().setEnabledAFKChecker(ctx.getArgument("AFKCheckerEnabled", Boolean.class));
                                     Player player = (Player) ctx.getSource().getSender();
                                     player.updateCommands();
-                                    if (main.afkCheckerEnabled)
+                                    if (oneLifePlugin.settings.getEnabledFeatures().getEnabledAFKChecker())
                                         ctx.getSource().getSender().sendRichMessage("AFK Checking Enabled");
                                     else
                                         ctx.getSource().getSender().sendRichMessage("AFK Checking Disabled");
@@ -171,11 +166,10 @@ public class CommandManager {
                 .then(Commands.literal("NightHostiles")
                         .then(Commands.argument("NightHostiles", BoolArgumentType.bool())
                                 .executes(ctx -> {
-                                    main.nightHostiles = ctx.getArgument("NightHostiles", Boolean.class);
-                                    main.setFeatures();
+                                    oneLifePlugin.settings.getEnabledFeatures().setEnabledNightHostiles(ctx.getArgument("NightHostiles", Boolean.class));
                                     Player player = (Player) ctx.getSource().getSender();
                                     player.updateCommands();
-                                    if (main.nightHostiles)
+                                    if (oneLifePlugin.settings.getEnabledFeatures().getEnabledNightHostiles())
                                         ctx.getSource().getSender().sendRichMessage("Night Hostiles Enabled");
                                     else
                                         ctx.getSource().getSender().sendRichMessage("Night Hostiles Disabled");
@@ -183,7 +177,7 @@ public class CommandManager {
                                 })));
 
         LiteralArgumentBuilder<CommandSourceStack> cmdRaces = Commands.literal("Races")
-                .requires(sender -> main.raceMEnabled)
+                .requires(sender -> oneLifePlugin.settings.getEnabledFeatures().getEnabledRaceManager())
                 .then(Commands.argument("Player", ArgumentTypes.player())
                         .then(Commands.literal("ResetStartItems")
                                 .requires(sender -> sender.getSender().hasPermission("OneLife.Races.ResetStartItems"))
@@ -193,8 +187,8 @@ public class CommandManager {
                                 .then(Commands.argument("Race", StringArgumentType.word())
                                         .suggests((ctx, builder) -> {
                                             List<String> races = new ArrayList<>();
-                                                for (String key : Objects.requireNonNull(main.getConfig().getConfigurationSection("races")).getKeys(false))
-                                                    if (Objects.requireNonNull(main.getConfig().getConfigurationSection("races." + key)).getBoolean("enabled"))
+                                                for (String key : Objects.requireNonNull(oneLifePlugin.getConfig().getConfigurationSection("races")).getKeys(false))
+                                                    if (Objects.requireNonNull(oneLifePlugin.getConfig().getConfigurationSection("races." + key)).getBoolean("enabled"))
                                                         races.add(key);
                                             races.stream()
                                                     .filter(entry -> entry.toLowerCase().startsWith(builder.getRemainingLowerCase()))
@@ -219,23 +213,23 @@ public class CommandManager {
                 .then(cmdScores)
                 .then(cmdRaces)
                 .then(Commands.literal("Climb")
-                        .requires(sender -> sender.getExecutor() instanceof Player player && rm.getPlayerRace(player).equalsIgnoreCase("Arathim") && main.raceMEnabled)
+                        .requires(sender -> sender.getExecutor() instanceof Player player && rm.getPlayerRace(player).equalsIgnoreCase("Arathim") && oneLifePlugin.settings.getEnabledFeatures().getEnabledRaceManager())
                         .executes(CommandManager::runClimbLogic))
                 .then(Commands.literal("GiveLife")
-                        .requires(sender -> main.lifeGEnabled)
+                        .requires(sender -> oneLifePlugin.settings.getEnabledFeatures().getEnabledLifeGifting())
                         .then(Commands.argument("Player", ArgumentTypes.player())
                                 .executes(CommandManager::runGiveLifeLogic)))
                 .then(Commands.literal("Reload")
                         .requires(sender -> sender.getSender().hasPermission("OneLife.Reload"))
                         .executes(ctx -> {
-                            main.reload();
+                            oneLifePlugin.reload();
                             ctx.getSource().getSender().sendRichMessage("One Life Plugin Reloaded!");
                             return Command.SINGLE_SUCCESS;
                         }))
                 .then(cmdLives
-                        .requires(sender -> main.livesMEnabled))
+                        .requires(sender -> oneLifePlugin.settings.getEnabledFeatures().getEnabledLivesManager()))
                 .then(cmdAFK
-                        .requires(sender -> main.afkCheckerEnabled))
+                        .requires(sender -> oneLifePlugin.settings.getEnabledFeatures().getEnabledAFKChecker()))
                 .then(cmdFeatures)
                 .then(cmdHelp);
 
@@ -243,14 +237,14 @@ public class CommandManager {
     }
 
     private static int runGetKickTimeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
-        ctx.getSource().getSender().sendRichMessage("Time before viewed as AFK is currently: " + main.getConfig().getDouble("AFK.minutesAFK") + "m");
+        ctx.getSource().getSender().sendRichMessage("Time before viewed as AFK is currently: " + oneLifePlugin.getConfig().getDouble("AFK.minutesAFK") + "m");
         return Command.SINGLE_SUCCESS;
     }
 
     private static int runSetKickTimeLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
         double kickTime = (double) ctx.getArgument("time", Integer.class);
-        main.getConfig().set("AFK.minutesAFK", kickTime);
-        main.saveConfig();
+        oneLifePlugin.getConfig().set("AFK.minutesAFK", kickTime);
+        oneLifePlugin.saveConfig();
         ctx.getSource().getSender().sendMessage("Time before viewed as AFK  is now set to: " + kickTime + "m");
         return Command.SINGLE_SUCCESS;
     }
@@ -337,7 +331,7 @@ public class CommandManager {
             throw new RuntimeException(e);
         }
 
-        main.giveLife(giver, receiver);
+        oneLifePlugin.giveLife(giver, receiver);
         return Command.SINGLE_SUCCESS;
     }
 
@@ -380,20 +374,20 @@ public class CommandManager {
                     player.getInventory().removeItemAnySlot(Objects.requireNonNull(i));
                 }
             }
-            main.setPlayerTasks(player, 0);
+            oneLifePlugin.setPlayerTasks(player, 0);
             rm.setPlayerRace(player, race);
             rm.applyRace(player, null);
             Player sender = (Player) ctx.getSource().getSender();
             sender.updateCommands();
             stack.getSender().sendMessage(player.getName() + " has been set to " + race);
         } else if (rm.getPlayerRace(player).equalsIgnoreCase("Human")) {
-            main.setPlayerTasks(player, 0);
+            oneLifePlugin.setPlayerTasks(player, 0);
             rm.setPlayerRace(player, race);
             rm.applyRace(player, null);
             stack.getSender().sendMessage("Your race has been set to " + race);
         } else {
             stack.getSender().sendMessage("You are unable to change your race more than once, please ask an op for more assistance.");
-            main.sendMsgOps(stack.getSender().getName() + " tried to change their race.");
+            oneLifePlugin.sendMsgOps(stack.getSender().getName() + " tried to change their race.");
         }
         return Command.SINGLE_SUCCESS;
     }

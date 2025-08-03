@@ -10,7 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 import xyz.acyber.oneLife.Managers.ScoreManager;
 
 import java.util.HashMap;
@@ -19,7 +19,7 @@ import java.util.UUID;
 
 public class AFKChecker extends BukkitRunnable {
 
-    private final Main plugin;
+    private final OneLifePlugin plugin;
     private final HashMap<UUID,Long> lastInput;
     private final double afkTime;
     private final Group afk;
@@ -27,7 +27,7 @@ public class AFKChecker extends BukkitRunnable {
     ScoreManager sm;
     MiniMessage mm = MiniMessage.miniMessage();
 
-    public AFKChecker(@NotNull Main plugin, HashMap<UUID, Long> AKFLastInput, Group afk, LuckPerms lpAPI, ScoreManager sm) {
+    public AFKChecker(@NotNull OneLifePlugin plugin, HashMap<UUID, Long> AKFLastInput, Group afk, LuckPerms lpAPI, ScoreManager sm) {
         this.plugin = plugin;
         this.lastInput = AKFLastInput;
         this.afk = afk;

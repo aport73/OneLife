@@ -5,25 +5,23 @@ import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
 import org.bukkit.scoreboard.*;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.Objects;
 
 public class LivesManager {
 
-    static Main main;
+    static OneLifePlugin oneLifePlugin;
     ScoreboardManager scoreboardManager;
 
 
-    public LivesManager(Main plugin) {
-        main = plugin;
+    public LivesManager(OneLifePlugin plugin) {
+        oneLifePlugin = plugin;
     }
 
     public void enableDeathsScoreboard() {
-        if (!main.livesMEnabled) {
-            main.livesMEnabled = true;
-            main.getConfig().set("Modes.LivesManager", main.livesMEnabled);
-            main.saveConfig();
+        if (!oneLifePlugin.settings.getEnabledFeatures().getEnabledLivesManager()) {
+            oneLifePlugin.settings.getEnabledFeatures().setEnabledLivesManager(true);
         }
 
         scoreboardManager = Bukkit.getScoreboardManager();
@@ -37,10 +35,8 @@ public class LivesManager {
     }
 
     public void disableDeathsScoreboard() {
-        if (main.livesMEnabled) {
-            main.livesMEnabled = false;
-            main.getConfig().set("Modes.LivesManager", main.livesMEnabled);
-            main.saveConfig();
+        if (oneLifePlugin.settings.getEnabledFeatures().getEnabledLivesManager()) {
+            oneLifePlugin.settings.getEnabledFeatures().setEnabledLivesManager(false);
         }
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
         Objective deaths = getObjective("deaths", scoreboard);
@@ -48,28 +44,28 @@ public class LivesManager {
     }
 
     public void setLivesCap(int cap) {
-        main.getConfig().set("Lives.cap", cap);
-        main.saveConfig();
+        oneLifePlugin.getConfig().set("Lives.cap", cap);
+        oneLifePlugin.saveConfig();
     }
 
     public int getLivesCap() {
-        return main.getConfig().getInt("Lives.cap");
+        return oneLifePlugin.getConfig().getInt("Lives.cap");
     }
 
     public String getFinalGameMode() {
-        return main.getConfig().getString("Lives.gameModeAfterLastDeath");
+        return oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath");
     }
 
     public void setFinalGameMode(GameMode mode) {
-        main.getConfig().set("Lives.gameModeAfterLastDeath", mode.toString());
-        main.saveConfig();
+        oneLifePlugin.getConfig().set("Lives.gameModeAfterLastDeath", mode.toString());
+        oneLifePlugin.saveConfig();
     }
 
     public void setPlayerGameMode(Player player) {
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
-        // Causes server crashes main.sendMsgOps(String.valueOf(getPlayerScore(getObjective("deaths",scoreboard), player)));
-        if (getPlayerScore(getObjective("deaths",scoreboard), player) >= main.getConfig().getInt("Lives.cap")) {
-            player.setGameMode(GameMode.valueOf(Objects.requireNonNull(main.getConfig().getString("Lives.gameModeAfterLastDeath")).toUpperCase()));
+        // Causes server crashes oneLifePlugin.sendMsgOps(String.valueOf(getPlayerScore(getObjective("deaths",scoreboard), player)));
+        if (getPlayerScore(getObjective("deaths",scoreboard), player) >= oneLifePlugin.getConfig().getInt("Lives.cap")) {
+            player.setGameMode(GameMode.valueOf(Objects.requireNonNull(oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath")).toUpperCase()));
             player.sendMessage(Component.text("Sorry, You're out of lives! You can continue to play on the server in Adventure Mode"));
         }
         else

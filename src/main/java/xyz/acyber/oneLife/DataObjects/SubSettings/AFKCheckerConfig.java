@@ -2,14 +2,19 @@ package xyz.acyber.oneLife.DataObjects.SubSettings;
 
 public class AFKCheckerConfig {
 
-    private int minutesAFK;
-    private int secondsInterval;
-    private String afkWarning;
-    private String kickedReason;
+    private int minutesAFK = 5;
+    private int secondsInterval = 1;
+    private String afkWarning = "<bold><red>You will be marked afk ing <blue>%seconds% <red>seconds";
+    private String kickedReason = "<red>You have been kicked for being AFK";
 
     public AFKCheckerConfig() {
-        this.minutesAFK = 5;
-        this.secondsInterval = 1;
+        super();
+    }
+    public AFKCheckerConfig(int minutesAFK, int secondsInterval, String afkWarning, String kickedReason) {
+        this.minutesAFK = minutesAFK;
+        this.secondsInterval = secondsInterval;
+        this.afkWarning = afkWarning;
+        this.kickedReason = kickedReason;
     }
 
     /**

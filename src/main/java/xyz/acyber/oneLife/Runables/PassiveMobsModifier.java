@@ -1,13 +1,7 @@
 package xyz.acyber.oneLife.Runables;
 
 import com.destroystokyo.paper.entity.Pathfinder;
-import com.google.common.base.Function;
-import net.minecraft.server.commands.EffectCommands;
-import net.minecraft.world.item.enchantment.EnchantedItemInUse;
-import net.minecraft.world.item.enchantment.Enchantment;
 import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.World;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
@@ -15,17 +9,10 @@ import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
 import org.bukkit.entity.*;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.PlayerInventory;
-import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
-import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.util.BoundingBox;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.*;
 
@@ -33,14 +20,14 @@ import static java.lang.Math.max;
 
 public class PassiveMobsModifier extends BukkitRunnable {
 
-    private final Main plugin;
+    private final OneLifePlugin plugin;
     private final FileConfiguration config;
     private final HashMap<Player,List<UUID>> modifiedMobs;
     private final HashMap<UUID,Player> mobsAssignedPlayers;
     private final List<String> enabledMobs;
     private int maxRadius = 0;
 
-    public PassiveMobsModifier(@NotNull Main plugin) {
+    public PassiveMobsModifier(@NotNull OneLifePlugin plugin) {
         this.plugin = plugin;
         this.config = plugin.getPassiveMobsModifierConfig();
         this.enabledMobs = getEnabledMobs();

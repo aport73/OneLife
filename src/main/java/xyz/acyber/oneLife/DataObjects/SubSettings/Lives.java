@@ -6,12 +6,13 @@ import java.util.UUID;
 
 public class Lives {
 
-    private int cap;
-    private GameMode gameModeAfterLastDeath;
+    private int cap = 2;
+    private GameMode gameModeAfterLastDeath = GameMode.ADVENTURE;
 
     public Lives() {
-        this.cap = 2;
-        this.gameModeAfterLastDeath = GameMode.ADVENTURE;
+        super();
+    }
+    public Lives(int cap, GameMode gameModeAfterLastDeath) {
     }
 
     public int getCap() { return cap; }

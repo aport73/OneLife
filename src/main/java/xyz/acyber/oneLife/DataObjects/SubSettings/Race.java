@@ -38,6 +38,10 @@ public class Race {
     private HashMap<Material, RepeatItem> repeatItems = new HashMap<>();
     private HashMap<Material, Integer> startItems = new HashMap<>();
 
+    public Race() {
+        super();
+    }
+
     public Race(String raceName, boolean enabled, double scale, double reach) {
         this.raceName = raceName;
         this.enabled = enabled;

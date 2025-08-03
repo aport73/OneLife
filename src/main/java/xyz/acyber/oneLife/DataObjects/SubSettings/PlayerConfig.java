@@ -17,6 +17,10 @@ public class PlayerConfig {
     private boolean climbingEnabled;
     private String playerClimbVines;
 
+    public PlayerConfig() {
+        super();
+    }
+
     public PlayerConfig(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;

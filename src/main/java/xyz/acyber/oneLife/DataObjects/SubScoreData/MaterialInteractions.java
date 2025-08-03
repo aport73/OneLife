@@ -1,16 +1,18 @@
 package xyz.acyber.oneLife.DataObjects.SubScoreData;
 
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
-import org.bukkit.entity.EntityType;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.HashMap;
 
 public class MaterialInteractions {
 
-    private Main plugin;
-    private final Material material;
+    private OneLifePlugin plugin;
+    private Material material;
     private HashMap<String, Integer> count;
 
     /**
@@ -22,21 +24,29 @@ public class MaterialInteractions {
     /**
      * @param type can be any of BlocksPlaced, BlocksMined & ItemsHarvested
      */
-    public MaterialInteractions(Main plugin, Material material, HashMap<String, Integer> count, String type) {
+    @JsonIgnore
+    public MaterialInteractions(OneLifePlugin plugin, Material material, HashMap<String, Integer> count, String type) {
         this.plugin = plugin;
         this.material = material;
         this.count = count;
         this.type = type;
     }
-
+    @JsonGetter
     public Material getMaterial() { return material; }
+    @JsonSetter
+    public void setMaterial(Material material) { this.material = material; }
 
+    @JsonGetter
     public HashMap<String, Integer> getCount() { return count; }
+    @JsonSetter
     public void setCount(HashMap<String, Integer> count) { this.count = count; }
 
+    @JsonGetter
     public String getType() { return type; }
+    @JsonSetter
     public void setType(String type) { this.type = type; }
 
+    @JsonIgnore
     public HashMap<String, Double> getPoints() {
         HashMap<String, Double> points = new HashMap<>();
         for (String key: count.keySet()) {
@@ -62,6 +72,7 @@ public class MaterialInteractions {
         return points;
     }
 
+    @JsonIgnore
     public int getTotalCount() {
         int total = 0;
         for (String key: count.keySet()) {

@@ -8,6 +8,9 @@ public class BuffedFood {
     private double hungerBuff;
     private double saturationBuff;
 
+    public BuffedFood() {
+        super();
+    }
     public BuffedFood(Material material, double hungerBuff, double saturationBuff) {
         this.material = material;
         this.hungerBuff = hungerBuff;

@@ -1,6 +1,6 @@
 name: OneLife
 version: '2-Beta-20'
-main: xyz.acyber.oneLife.Main
+main: xyz.acyber.oneLife.OneLifePlugin
 api-version: '1.21.8'
 dependencies:
   server:

@@ -1,5 +1,7 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
+import xyz.acyber.oneLife.Managers.ScoreManager;
+
 public class EnabledFeatures {
     private boolean RaceManager;
     private boolean MobManager;
@@ -10,13 +12,17 @@ public class EnabledFeatures {
     private boolean NightHostiles;
 
     public EnabledFeatures() {
-        this.RaceManager = true;
-        this.MobManager = true;
-        this.ScoreManager = true;
-        this.LivesManager = true;
-        this.LifeGifting = true;
-        this.AFKChecker = true;
-        this.NightHostiles = true;
+        super();
+    }
+
+    public EnabledFeatures(boolean RaceManager, boolean MobManager, boolean ScoreManager, boolean LivesManager, boolean LifeGifting, boolean AFKChecker, boolean NightHostiles) {
+        this.RaceManager = RaceManager;
+        this.MobManager = MobManager;
+        this.ScoreManager = ScoreManager;
+        this.LivesManager = LivesManager;
+        this.LifeGifting = LifeGifting;
+        this.AFKChecker = AFKChecker;
+        this.NightHostiles = NightHostiles;
     }
 
     public boolean getEnabledRaceManager() { return RaceManager; }

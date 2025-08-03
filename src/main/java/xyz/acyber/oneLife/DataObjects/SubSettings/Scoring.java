@@ -1,13 +1,10 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
 import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Mob;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 
-import java.util.Arrays;
 import java.util.HashMap;
 
 public class Scoring {
@@ -26,7 +23,10 @@ public class Scoring {
     private HashMap<Material, Double> blockMineMultipliers;
     private HashMap<Material, Double> HarvestMultipliers;
 
-    public Scoring(Main plugin) {
+    public Scoring() {
+        super();
+    }
+    public Scoring(OneLifePlugin plugin) {
         this.deathMultiplier = -10;
         this.xpMultiplier = 0.0001;
         this.onlineHrMulitplier = 2.5;

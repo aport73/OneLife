@@ -26,6 +26,8 @@ dependencies {
     implementation 'com.fasterxml.jackson.core:jackson-databind:2.19.2'
     // https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-yaml
     implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.19.2'
+    // https://mvnrepository.com/artifact/org.json/json
+    implementation 'org.json:json:20250517'
 }
 
 tasks {

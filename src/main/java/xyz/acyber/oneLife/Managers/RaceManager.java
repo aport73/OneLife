@@ -35,7 +35,7 @@ import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.List;
 import java.util.Objects;
@@ -45,10 +45,10 @@ public class RaceManager {
 
     //TODO Entire Class needs Refactor - Redesign
 
-    static Main main;
+    static OneLifePlugin oneLifePlugin;
 
-    public RaceManager(Main plugin) {
-        main = plugin;
+    public RaceManager(OneLifePlugin plugin) {
+        oneLifePlugin = plugin;
     }
 
     public void onPlayerJoin(PlayerJoinEvent event) {
@@ -65,8 +65,8 @@ public class RaceManager {
 
     public void onPlayerMove(PlayerMoveEvent ev) {
         //Code for Wall Climbing
-        Boolean climbingEnabled = main.getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".climbingEnabled");
-        FileConfiguration config = main.getConfig();
+        Boolean climbingEnabled = oneLifePlugin.getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".climbingEnabled");
+        FileConfiguration config = oneLifePlugin.getConfig();
 
         if (climbingEnabled && getPlayerClimbs(ev.getPlayer())) {
             Block b1 = ev.getPlayer().getLocation().getBlock();
@@ -172,7 +172,7 @@ public class RaceManager {
     }
 
     public void onDamage(EntityDamageEvent event) {
-        FileConfiguration config = main.getConfig();
+        FileConfiguration config = oneLifePlugin.getConfig();
 
         if (event.getEntity() instanceof Player player) {
             double damage = event.getDamage();
@@ -206,7 +206,7 @@ public class RaceManager {
     }
 
     public void playerItemConsume(PlayerItemConsumeEvent event) {
-        FileConfiguration config = main.getConfig();
+        FileConfiguration config = oneLifePlugin.getConfig();
 
         List<String> allowedFoods = config.getStringList("races." + getPlayerRace(event.getPlayer()) + ".allowedFoods");
         ConfigurationSection buffedFoods = config.getConfigurationSection("races." + getPlayerRace(event.getPlayer()) + ".buffedFoods");
@@ -255,7 +255,7 @@ public class RaceManager {
                     applyRace(event.getPlayer(), null);
                 }
             };
-            runnable.runTaskLater(main, 5);
+            runnable.runTaskLater(oneLifePlugin, 5);
         }
     }
 
@@ -272,7 +272,7 @@ public class RaceManager {
         //Run code to check for armor enchants for race.
         ItemStack item = event.getNewItem();
         String race = getPlayerRace(event.getPlayer());
-        ConfigurationSection equipConfig = main.getConfig().getConfigurationSection("races." + race + ".equipment");
+        ConfigurationSection equipConfig = oneLifePlugin.getConfig().getConfigurationSection("races." + race + ".equipment");
         if (equipConfig != null && !item.isEmpty()) {
             applyRace(event.getPlayer(), null);
         }
@@ -368,25 +368,25 @@ public class RaceManager {
     }
 
     public String getPlayerRace(Player player) {
-        FileConfiguration config = main.getPlayerConfig();
+        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         String race = config.getString(player.getUniqueId() + ".playerRace");
         return !(race == null) ? race : "";
     }
 
     public void setPlayerRace(Player player, String playerRace) {
-        FileConfiguration config = main.getPlayerConfig();
+        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         config.set(player.getUniqueId() + ".playerRace", playerRace);
-        main.savePlayerConfig(config);
+        oneLifePlugin.savePlayerConfig(config);
     }
 
     public void setPlayerStartItem(Player player, Boolean start) {
-        FileConfiguration config = main.getPlayerConfig();
+        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         config.set(player.getUniqueId() + ".playerStartItem", start);
-        main.savePlayerConfig(config);
+        oneLifePlugin.savePlayerConfig(config);
     }
 
     public void setRaceEnchants(ItemStack item, String enchants) {
-        NamespacedKey key = new NamespacedKey(main, "oneLifeRaces-enchants");
+        NamespacedKey key = new NamespacedKey(oneLifePlugin, "oneLifeRaces-enchants");
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer itemContainer = meta.getPersistentDataContainer();
         itemContainer.set(key, PersistentDataType.STRING, enchants);
@@ -395,7 +395,7 @@ public class RaceManager {
 
     public String getRaceEnchants(ItemStack item) {
         try {
-            NamespacedKey key = new NamespacedKey(main, "oneLifeRaces-enchants");
+            NamespacedKey key = new NamespacedKey(oneLifePlugin, "oneLifeRaces-enchants");
             PersistentDataContainer itemContainer = item.getItemMeta().getPersistentDataContainer();
             if (itemContainer.has(key)) {
                 return itemContainer.get(key, PersistentDataType.STRING);
@@ -408,7 +408,7 @@ public class RaceManager {
     }
 
     public void setIsRaceItem(ItemStack item, Boolean value) {
-        NamespacedKey key = new NamespacedKey(main, "oneLifeRaces-raceItem");
+        NamespacedKey key = new NamespacedKey(oneLifePlugin, "oneLifeRaces-raceItem");
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer itemContainer = meta.getPersistentDataContainer();
         itemContainer.set(key, PersistentDataType.BOOLEAN, value);
@@ -417,7 +417,7 @@ public class RaceManager {
 
     public Boolean isRaceItem(ItemStack item) {
         try {
-            NamespacedKey key = new NamespacedKey(main, "oneLifeRaces-raceItem");
+            NamespacedKey key = new NamespacedKey(oneLifePlugin, "oneLifeRaces-raceItem");
             PersistentDataContainer itemContainer = item.getItemMeta().getPersistentDataContainer();
             if (itemContainer.has(key)) {
                 return itemContainer.get(key, PersistentDataType.BOOLEAN);
@@ -431,24 +431,24 @@ public class RaceManager {
     }
 
     public void setPlayerClimbs(Player player, Boolean climbOn) {
-        FileConfiguration config = main.getPlayerConfig();
+        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         config.set(player.getUniqueId() + ".playerClimbs", climbOn);
-        main.savePlayerConfig(config);
+        oneLifePlugin.savePlayerConfig(config);
     }
 
     public Boolean getPlayerClimbs(Player player) {
-        FileConfiguration config = main.getPlayerConfig();
+        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         return config.getBoolean(player.getUniqueId() + ".playerClimbs");
     }
 
     public void setPlayerClimbVines(Player player, String climbed) {
-        FileConfiguration config = main.getPlayerConfig();
+        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         config.set(player.getUniqueId() + ".playerClimbVines", climbed);
-        main.savePlayerConfig(config);
+        oneLifePlugin.savePlayerConfig(config);
     }
 
     public String getPlayerClimbVines(Player player) {
-        FileConfiguration config = main.getPlayerConfig();
+        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         String vines = config.getString(player.getUniqueId() + ".playerClimbVines");
         if (vines == null) return "";
         return vines;
@@ -543,7 +543,7 @@ public class RaceManager {
     }
 
     public void giveStartItems(Player player, ConfigurationSection startItems) {
-        FileConfiguration config = main.getPlayerConfig();
+        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         if (startItems != null && !config.getBoolean(player.getUniqueId() + ".playerStartItem")) {
             for (String key : startItems.getKeys(false)) {
                 ItemStack startItem = new ItemStack(Objects.requireNonNull(Material.getMaterial(key)));
@@ -564,11 +564,11 @@ public class RaceManager {
                 final int Max = repeatItems.getInt(key + ".Max");
                 final int QtyPer = repeatItems.getInt(key + ".QtyPer");
                 int TimeSec = repeatItems.getInt(key + ".TimeSec") * 20;
-                if (main.getPlayerTasks(player) <= 0) {
-                    main.setPlayerTasks(player, 1);
+                if (oneLifePlugin.getPlayerTasks(player) <= 0) {
+                    oneLifePlugin.setPlayerTasks(player, 1);
                     BukkitRunnable runnable = new BukkitRunnable() {
                         public void run() {
-                            if (main.getPlayerTasks(player) <= 0) {
+                            if (oneLifePlugin.getPlayerTasks(player) <= 0) {
                                 this.cancel();
                             }
 
@@ -595,7 +595,7 @@ public class RaceManager {
 
                         }
                     };
-                    runnable.runTaskTimerAsynchronously(main, 0L, TimeSec);
+                    runnable.runTaskTimerAsynchronously(oneLifePlugin, 0L, TimeSec);
                 }
             }
         }
@@ -606,7 +606,7 @@ public class RaceManager {
         player.clearActivePotionEffects();
         String race = this.getPlayerRace(player);
         if (race != null) {
-            ConfigurationSection raceConfig = main.getConfig().getConfigurationSection("races." + race);
+            ConfigurationSection raceConfig = oneLifePlugin.getConfig().getConfigurationSection("races." + race);
 
             assert raceConfig != null;
             if (raceConfig.getBoolean("enabled")) {

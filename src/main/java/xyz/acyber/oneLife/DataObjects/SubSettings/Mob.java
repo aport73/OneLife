@@ -15,6 +15,10 @@ public class Mob {
     private HashMap<Material, HashMap<String, Integer>> drops;
     private HashMap<Attribute, HashMap<String, Double>> buffedAttributes;
 
+    public Mob () {
+        super();
+    }
+
     public Mob(EntityType mobType) {
         this.mobType = mobType;
         equipment = new HashMap<>();

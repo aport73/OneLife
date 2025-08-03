@@ -8,17 +8,17 @@ import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import xyz.acyber.oneLife.Main;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.Objects;
 import java.util.Random;
 
 public class MobManager {
 
-    static Main main;
+    static OneLifePlugin oneLifePlugin;
 
-    public MobManager(Main plugin) {
-        main = plugin;
+    public MobManager(OneLifePlugin plugin) {
+        oneLifePlugin = plugin;
     }
 
     public void onEntityDeath(EntityDeathEvent event) {
@@ -30,7 +30,7 @@ public class MobManager {
             }
         }
         event.getDrops().remove(new ItemStack(Material.ROTTEN_FLESH, numbFlesh));
-        ConfigurationSection mobConfig = main.getConfig().getConfigurationSection("MOBS." + event.getEntityType().name());
+        ConfigurationSection mobConfig = oneLifePlugin.getConfig().getConfigurationSection("MOBS." + event.getEntityType().name());
         if (mobConfig != null) {
             ConfigurationSection mobDrops = mobConfig.getConfigurationSection("DROPS");
             if (mobDrops != null) {
@@ -50,7 +50,7 @@ public class MobManager {
     public void onEntitySpawn(EntitySpawnEvent event) {
         //Handle Mob Adjustments from Config
         if (event.getEntity() instanceof LivingEntity spawnedEntity) {
-            ConfigurationSection mobConfig = main.getConfig().getConfigurationSection("MOBS." + spawnedEntity.getType().name());
+            ConfigurationSection mobConfig = oneLifePlugin.getConfig().getConfigurationSection("MOBS." + spawnedEntity.getType().name());
             if (mobConfig != null) {
                 if (mobConfig.getBoolean("NOBABYS")) {
                     if (event.getEntityType() == EntityType.ZOMBIE) {
@@ -63,7 +63,7 @@ public class MobManager {
                 ConfigurationSection mobItems = mobConfig.getConfigurationSection("ITEMS");
                 if (mobItems != null) {
                     for (var key : mobItems.getKeys(false)) {
-                        main.getLogger().config(mobItems.getString(key));
+                        oneLifePlugin.getLogger().config(mobItems.getString(key));
                         ItemStack item = ItemStack.of(Material.valueOf(mobItems.getString(key)));
                         /* Color of Leather Armor Code. Still needs work.
                         if (item.getType().toString().contains("LEATHER")) {

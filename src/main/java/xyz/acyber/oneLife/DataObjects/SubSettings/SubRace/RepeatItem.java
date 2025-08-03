@@ -9,6 +9,10 @@ public class RepeatItem {
     private int qtyPerRepeat;
     private int secondsTillRepeat;
 
+    public RepeatItem() {
+        super();
+    }
+
     public RepeatItem(Material material, int max, int qtyPerRepeat, int secondsTillRepeat) {
         this.material = material;
         this.max = max;
