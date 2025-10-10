@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/OneLife.iml" filepath="$PROJECT_DIR$/.idea/modules/OneLife.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/OneLife.main.iml" filepath="$PROJECT_DIR$/.idea/modules/OneLife.main.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/OneLife.test.iml" filepath="$PROJECT_DIR$/.idea/modules/OneLife.test.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/modules/OneLifeRaces.main.iml" filepath="$PROJECT_DIR$/.idea/modules/OneLifeRaces.main.iml" />
