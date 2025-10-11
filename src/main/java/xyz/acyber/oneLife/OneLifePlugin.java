@@ -128,7 +128,7 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
 
     private void saveSettings() {
         Path path = Paths.get(getDataFolder() + "/settings.json");
-        directoryCheck(path.toUri().toString());
+        directoryCheck(path);
         try {
             objectMapper.writer().withDefaultPrettyPrinter().writeValue(new File(path.toUri()), settings);
         } catch (IOException e) {
@@ -139,11 +139,11 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
     }
 
     private void loadSettings() {
-        settings = new Settings();
+        settings = new Settings(this);
         Path path = Paths.get(getDataFolder() + "/settings.json");
         if (!Files.exists(path)) {
             getLogger().log(Level.INFO, "settings.json does not exist. Creating new one.");
-            settings = new Settings();
+            settings = new Settings(this);
             saveSettings();
             return;
         }
@@ -187,10 +187,10 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
         if (scoreDataMap != null) {
             for (UUID uuid : scoreDataMap.keySet()) {
                 ScoreData sd = scoreDataMap.get(uuid);
-                String path = getDataFolder() + settings.getPathToScoreData() + sd.getPlayerName() + " - " + sd.getUUID() + ".json";
+                Path path = Path.of(getDataFolder() + settings.getPathToScoreData() + sd.getPlayerName() + " - " + sd.getUUID() + ".json");
                 directoryCheck(path);
                 try {
-                    objectMapper.writer().withDefaultPrettyPrinter().writeValue(new File(path), sd);
+                    objectMapper.writer().withDefaultPrettyPrinter().writeValue(new File(path.toUri()), sd);
                 } catch (IOException e) {
                     getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
                     getLogger().log(Level.SEVERE, e.getMessage());
@@ -265,10 +265,9 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
         }
     }
 
-    public void directoryCheck(String filePath) {
-        Path path = Paths.get(filePath);
-        Path backupPath = Paths.get(filePath.replace(".json","") + "-Backup-" + LocalDate.now() + ".json");
+    public void directoryCheck(Path path) {
         try {
+            Path backupPath = Paths.get(path.toString().replace(".json","") + "-Backup-" + LocalDate.now() + ".json");
             if (Files.exists(path)) {
                 if (!Files.exists(backupPath)) {
                     Files.createDirectories(backupPath);
@@ -474,7 +473,7 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
         checkPlayerInConfig(player.getUniqueId().toString());
         setPlayerTasks(player, 0);
         player.sendMessage(Component.text("Hello, " + player.getName() + "!"));
-        if (settings.getEnabledFeatures().getEnabledAFKChecker())
+        if (settings.getEnabledFeatures().getEnabledRaceManager())
             rm.onPlayerJoin(event);
         if (settings.getEnabledFeatures().getEnabledLivesManager())
             lm.setPlayerGameMode(event.getPlayer());

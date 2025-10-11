@@ -54,6 +54,8 @@ public class PassiveMobsModifier extends BukkitRunnable {
                             int mobRadius = config.getInt(mobType + ".Radius") * config.getInt(mobType + ".Radius");
                             Player target = p;
 
+
+                            //Mob point view
                             List<Player> nearbyPlayers = new ArrayList<>();
                             mob.getNearbyEntities(maxRadius, maxRadius, maxRadius).forEach((entity1) -> {
                                 if (entity1 instanceof Player) {
@@ -115,6 +117,7 @@ public class PassiveMobsModifier extends BukkitRunnable {
                                         double defensePoints = 0;
                                         if (armor != null) defensePoints = armor.getValue();
                                         double finalDamage = damage * (1 - max(defensePoints / 5, defensePoints - damage / 2) / 25);
+                                        //TODO look into correcting below damage type to show mob name on death
                                         DamageSource damageSource = DamageSource.builder(DamageType.GENERIC).build();
                                         target.damage(finalDamage, damageSource);
                                     }
