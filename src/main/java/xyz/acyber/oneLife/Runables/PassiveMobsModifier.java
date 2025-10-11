@@ -35,7 +35,8 @@ public class PassiveMobsModifier extends BukkitRunnable {
         mobsAssignedPlayers = new HashMap<>();
         updateMaxRadius();
     }
-// sdhiabuihabiba
+// This code is to turn passive mobs to "hostile" *(Starts the loop)*
+
     @Override
     public void run() {
         if (plugin.isNight) {
@@ -77,6 +78,7 @@ public class PassiveMobsModifier extends BukkitRunnable {
                                     }
                                 }
                             }
+// Sets hostile mob pathfinding to check block above and below sight block *(to break)*
 
                             if (dist <= mobRadius) {
                                 mob.setTarget(target);
@@ -95,6 +97,7 @@ public class PassiveMobsModifier extends BukkitRunnable {
                                     if (b2.getType().toString().contains("FENCE"))
                                         b2.breakNaturally();
                                 });
+// Sets fish in server to jump *(start attack code for passive (underwater))*
 
                                 if (pathResult != null)
                                     pfinder.moveTo(pathResult);
@@ -103,6 +106,8 @@ public class PassiveMobsModifier extends BukkitRunnable {
                                     mob.addPotionEffect(PotionEffectType.JUMP_BOOST.createEffect(1, 3));
                                     if (mob.getAttribute(Attribute.ATTACK_DAMAGE) != null)
                                         mob.attack(target);
+                            // Sets the *(attack damage)* for *(hostile mobs)* and runs damage math to calculate the *(amount)*
+                            
                                 }
                                 if (dist <= 1 && (mob.getLocation().getY() - target.getLocation().getY()) >= -0.5) {
                                     if (mob.getAttribute(Attribute.ATTACK_DAMAGE) != null)
