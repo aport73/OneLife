@@ -35,6 +35,7 @@ public class PassiveMobsModifier extends BukkitRunnable {
         mobsAssignedPlayers = new HashMap<>();
         updateMaxRadius();
     }
+    
 // This code is to turn passive mobs to "hostile" *(Starts the loop)*
 
     @Override
@@ -78,6 +79,7 @@ public class PassiveMobsModifier extends BukkitRunnable {
                                     }
                                 }
                             }
+
 // Sets hostile mob pathfinding to check block above and below sight block *(to break)*
 
                             if (dist <= mobRadius) {
@@ -106,8 +108,9 @@ public class PassiveMobsModifier extends BukkitRunnable {
                                     mob.addPotionEffect(PotionEffectType.JUMP_BOOST.createEffect(1, 3));
                                     if (mob.getAttribute(Attribute.ATTACK_DAMAGE) != null)
                                         mob.attack(target);
+
                             // Sets the *(attack damage)* for *(hostile mobs)* and runs damage math to calculate the *(amount)*
-                            
+
                                 }
                                 if (dist <= 1 && (mob.getLocation().getY() - target.getLocation().getY()) >= -0.5) {
                                     if (mob.getAttribute(Attribute.ATTACK_DAMAGE) != null)
