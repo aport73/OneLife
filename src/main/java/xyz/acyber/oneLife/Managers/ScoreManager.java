@@ -16,7 +16,6 @@ import org.bukkit.event.player.PlayerAdvancementDoneEvent;
 import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerHarvestBlockEvent;
 import org.bukkit.inventory.ItemStack;
-import org.bukkit.scoreboard.Score;
 import org.jetbrains.annotations.NotNull;
 import xyz.acyber.oneLife.DataObjects.SubScoreData.MaterialInteractions;
 import xyz.acyber.oneLife.DataObjects.SubSettings.Team;
@@ -28,8 +27,6 @@ import java.math.RoundingMode;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
-import static java.lang.Math.round;
 
 public class ScoreManager {
 
@@ -43,7 +40,7 @@ public class ScoreManager {
     public ScoreData initializePlayerScore(OfflinePlayer player) {
         Team team = oneLifePlugin.settings.getPlayerConfigs().get(player.getUniqueId()).getTeam();
         ScoreData scoreData = new ScoreData(oneLifePlugin, player, team);
-        oneLifePlugin.scoreData.put(player.getUniqueId(),scoreData);
+        oneLifePlugin.scoreDataMap.put(player.getUniqueId(),scoreData);
         return scoreData;
     }
 
@@ -54,7 +51,7 @@ public class ScoreManager {
         String gameMode = player.getGameMode().name();
         if (event.getCaught() != null) {
 
-            if (oneLifePlugin.scoreData.containsKey(player.getUniqueId())) scoreData = oneLifePlugin.scoreData.get(player.getUniqueId());
+            if (oneLifePlugin.scoreDataMap.containsKey(player.getUniqueId())) scoreData = oneLifePlugin.scoreDataMap.get(player.getUniqueId());
             else scoreData = initializePlayerScore(player);
 
             HashMap<String, Integer> caught = scoreData.getCaught();
@@ -68,7 +65,7 @@ public class ScoreManager {
             }
 
             scoreData.setCaught(caught);
-            oneLifePlugin.scoreData.replace(player.getUniqueId(), scoreData);
+            oneLifePlugin.scoreDataMap.replace(player.getUniqueId(), scoreData);
         }
     }
 
@@ -79,8 +76,8 @@ public class ScoreManager {
         String gameMode = player.getGameMode().name();
         List<ItemStack> harvest = event.getItemsHarvested();
 
-        if (oneLifePlugin.scoreData.containsKey(player.getUniqueId()))
-            scoreData = oneLifePlugin.scoreData.get(player.getUniqueId());
+        if (oneLifePlugin.scoreDataMap.containsKey(player.getUniqueId()))
+            scoreData = oneLifePlugin.scoreDataMap.get(player.getUniqueId());
         else
             scoreData = initializePlayerScore(player);
 
@@ -124,7 +121,7 @@ public class ScoreManager {
 
         scoreData.setHarvested(harvested);
         scoreData.setTypeItemsHarvested(typeItemsHarvested);
-        oneLifePlugin.scoreData.replace(player.getUniqueId(), scoreData);
+        oneLifePlugin.scoreDataMap.replace(player.getUniqueId(), scoreData);
     }
 
     public void blocksPlaced(@NotNull BlockPlaceEvent event) {
@@ -187,8 +184,8 @@ public class ScoreManager {
         ScoreData scoreData;
         GameMode gameMode = player.getGameMode();
 
-        if (oneLifePlugin.scoreData.containsKey(player.getUniqueId()))
-            scoreData = oneLifePlugin.scoreData.get(player.getUniqueId());
+        if (oneLifePlugin.scoreDataMap.containsKey(player.getUniqueId()))
+            scoreData = oneLifePlugin.scoreDataMap.get(player.getUniqueId());
         else
             scoreData = initializePlayerScore(player);
 
@@ -197,7 +194,7 @@ public class ScoreManager {
         else deaths.put(gameMode, 1.0);
 
         scoreData.setDeaths(deaths);
-        oneLifePlugin.scoreData.replace(player.getUniqueId(), scoreData);
+        oneLifePlugin.scoreDataMap.replace(player.getUniqueId(), scoreData);
     }
 
     public void entityKilled(@NotNull EntityDeathEvent event) {
@@ -239,7 +236,7 @@ public class ScoreManager {
         Map<String, Double> teamScore = new HashMap<>();
         for (OfflinePlayer offlinePlayer : Bukkit.getWhitelistedPlayers()) {
             if (offlinePlayer.getStatistic(Statistic.PLAY_ONE_MINUTE) != 0) {
-                ScoreData score = oneLifePlugin.scoreData.get(offlinePlayer.getUniqueId());;
+                ScoreData score = oneLifePlugin.scoreDataMap.get(offlinePlayer.getUniqueId());
                 scores.add(score);
                 if (score.getTeam() != null) {
                     if (!teamScore.containsKey(score.getTeam().getTeamName()))
@@ -272,8 +269,7 @@ public class ScoreManager {
     }
 
     public void singlePlayerScores(CommandSourceStack stack, @NotNull Player player) {
-        OfflinePlayer offlinePlayer = Bukkit.getOfflinePlayer(player.getUniqueId());
-        ScoreData scoreData = oneLifePlugin.scoreData.get(player.getUniqueId());
+        ScoreData scoreData = oneLifePlugin.scoreDataMap.get(player.getUniqueId());
         if (scoreData == null)
             scoreData = initializePlayerScore(player);
         showPlayerScore(stack,scoreData);

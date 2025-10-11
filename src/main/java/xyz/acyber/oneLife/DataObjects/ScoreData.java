@@ -2,9 +2,7 @@ package xyz.acyber.oneLife.DataObjects;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
-import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -188,10 +186,10 @@ public class ScoreData {
         double xpPoints = 0;
         for (String key : xp.keySet()) {
             if (key.equals("AFK")) {
-                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getXpMultiplier() * plugin.settings.getAFKMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getXpMultiplier() * plugin.settings.getAFKMultiplier();
                 afkPointsOffset += xp.get(key) * multiplier;
             } else {
-                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getXpMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getXpMultiplier();
                 xpPoints += xp.get(key) * multiplier;
             }
         }
@@ -202,10 +200,10 @@ public class ScoreData {
         double onlineHrPoints = 0;
         for (String key : onlineHr.keySet()) {
             if (key.equals("AFK")) {
-                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getXpMultiplier() * plugin.settings.getAFKMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getXpMultiplier() * plugin.settings.getAFKMultiplier();
                 afkPointsOffset += onlineHr.get(key) * multiplier;
             } else {
-                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getXpMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getXpMultiplier();
                 onlineHrPoints += onlineHr.get(key) * multiplier;
             }
         }
@@ -213,17 +211,17 @@ public class ScoreData {
     }
     @JsonIgnore
     public double getLivesBuyBackPoints() {
-        return livesBuyBack * plugin.settings.getLivesBuyBackMulitplier();
+        return livesBuyBack * plugin.settings.getLivesBuyBackMultiplier();
     }
     @JsonIgnore
     public double getDefaultBlocksPlacedPoints() {
         double defaultBlocksPlacedPoints = 0;
         for (String key : blocksPlaced.keySet()) {
             if (key.equals("AFK")) {
-                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getXpMultiplier() * plugin.settings.getAFKMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getXpMultiplier() * plugin.settings.getAFKMultiplier();
                 afkPointsOffset += blocksPlaced.get(key) * multiplier;
             } else {
-                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getXpMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getXpMultiplier();
                 defaultBlocksPlacedPoints += blocksPlaced.get(key) * multiplier;
             }
         }
@@ -234,10 +232,10 @@ public class ScoreData {
         double defaultBlocksMinedPoints = 0;
         for (String key : blocksMined.keySet()) {
             if (key.equals("AFK")) {
-                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getXpMultiplier() * plugin.settings.getAFKMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getXpMultiplier() * plugin.settings.getAFKMultiplier();
                 afkPointsOffset += blocksMined.get(key) * multiplier;
             } else {
-                double mulitpler = plugin.settings.getScoring().get(GameMode.valueOf(key)).getXpMultiplier();
+                double mulitpler = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getXpMultiplier();
                 defaultBlocksMinedPoints += blocksMined.get(key) * mulitpler;
             }
         }
@@ -248,10 +246,10 @@ public class ScoreData {
         double defaultHarvestedPoints = 0;
         for (String key : harvested.keySet()) {
             if (key.equals("AFK")) {
-                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getXpMultiplier()  * plugin.settings.getAFKMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getXpMultiplier()  * plugin.settings.getAFKMultiplier();
                 afkPointsOffset += harvested.get(key) * multiplier;
             } else {
-                double mulitpler = plugin.settings.getScoring().get(GameMode.valueOf(key)).getXpMultiplier();
+                double mulitpler = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getXpMultiplier();
                 defaultHarvestedPoints += harvested.get(key) * mulitpler;
             }
         }
@@ -262,10 +260,10 @@ public class ScoreData {
         double defaultCaughtPoints = 0;
         for (String key : caught.keySet()) {
             if (key.equals("AFK")) {
-                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getXpMultiplier() * plugin.settings.getAFKMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getXpMultiplier() * plugin.settings.getAFKMultiplier();
                 afkPointsOffset += caught.get(key) * multiplier;
             } else {
-                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getXpMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getXpMultiplier();
                 defaultCaughtPoints += caught.get(key) * multiplier;
             }
         }
@@ -276,10 +274,10 @@ public class ScoreData {
         double defaultAchievementPoints = 0;
         for (String key : achievements.keySet()) {
             if (key.equals("AFK")) {
-                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getXpMultiplier() * plugin.settings.getAFKMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getXpMultiplier() * plugin.settings.getAFKMultiplier();
                 afkPointsOffset += achievements.get(key) * multiplier;
             } else {
-                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getXpMultiplier();
+                double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getXpMultiplier();
                 defaultAchievementPoints += achievements.get(key) * multiplier;
             }
         }
@@ -291,10 +289,10 @@ public class ScoreData {
         for (EntityType mob : typeMobs.keySet()) {
             for (String key : typeMobs.get(mob).getCount().keySet()) {
                 if (key.equals("AFK")) {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getMobKillMultipliers().get(mob) * plugin.settings.getAFKMultiplier();
+                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getMobKillMultipliers().get(mob) * plugin.settings.getAFKMultiplier();
                     afkPointsOffset += typeMobs.get(mob).getCount().get(key) * multiplier;
                 } else {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getMobKillMultipliers().get(mob);
+                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getMobKillMultipliers().get(mob);
                     typeMobTotalPoints += typeMobs.get(mob).getCount().get(key) * multiplier;
                 }
             }
@@ -307,10 +305,10 @@ public class ScoreData {
         for (Material material : typeBlocksMined.keySet()) {
             for (String key : typeBlocksMined.get(material).getCount().keySet()) {
                 if (key.equals("AFK")) {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getBlockMineMultipliers().get(material) * plugin.settings.getAFKMultiplier();
+                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getBlockMineMultipliers().get(material) * plugin.settings.getAFKMultiplier();
                     afkPointsOffset += typeBlocksMined.get(material).getCount().get(key) * multiplier;
                 } else {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getBlockMineMultipliers().get(material);
+                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getBlockMineMultipliers().get(material);
                     typeBlocksMinedTotalPoints += typeBlocksMined.get(material).getCount().get(key) * multiplier;
                 }
             }
@@ -323,10 +321,10 @@ public class ScoreData {
         for (Material material : typeBlocksPlaced.keySet()) {
             for (String key : typeBlocksPlaced.get(material).getCount().keySet()) {
                 if (key.equals("AFK")) {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getBlockPlaceMultipliers().get(material) * plugin.settings.getAFKMultiplier();
+                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getBlockPlaceMultipliers().get(material) * plugin.settings.getAFKMultiplier();
                     afkPointsOffset += typeBlocksPlaced.get(material).getCount().get(key) * multiplier;
                 } else {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getBlockPlaceMultipliers().get(material);
+                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getBlockPlaceMultipliers().get(material);
                     typeBlocksPlacedTotalPoints += typeBlocksPlaced.get(material).getCount().get(key) * multiplier;
                 }
             }
@@ -339,10 +337,10 @@ public class ScoreData {
         for (Material material : typeItemsHarvested.keySet()) {
             for (String key : typeItemsHarvested.get(material).getCount().keySet()) {
                 if (key.equals("AFK")) {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getHarvestMultipliers().get(material) * plugin.settings.getAFKMultiplier();
+                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getHarvestMultipliers().get(material) * plugin.settings.getAFKMultiplier();
                     afkPointsOffset += typeItemsHarvested.get(material).getCount().get(key) * multiplier;
                 } else {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getHarvestMultipliers().get(material);
+                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getHarvestMultipliers().get(material);
                     typeItemsHarvestedTotalPoints += typeItemsHarvested.get(material).getCount().get(key) * multiplier;
                 }
             }

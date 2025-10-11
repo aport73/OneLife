@@ -22,10 +22,10 @@ dependencies {
     //noinspection GrUnresolvedAccess
     paperweight.paperDevBundle("1.21.10-R0.1-SNAPSHOT")
 
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.core/jackson-databind
-    implementation 'com.fasterxml.jackson.core:jackson-databind:2.20.0'
-    // https://mvnrepository.com/artifact/com.fasterxml.jackson.dataformat/jackson-dataformat-yaml
-    implementation 'com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:2.20.0'
+    // https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind
+    implementation 'tools.jackson.core:jackson-databind:3.0.0'
+    // https://mvnrepository.com/artifact/tools.jackson.dataformat/jackson-dataformat-yaml
+    implementation 'tools.jackson.dataformat:jackson-dataformat-yaml:3.0.0'
     // https://mvnrepository.com/artifact/org.json/json
     implementation 'org.json:json:20250517'
 }

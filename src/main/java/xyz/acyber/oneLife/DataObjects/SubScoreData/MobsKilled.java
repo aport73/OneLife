@@ -1,5 +1,6 @@
 package xyz.acyber.oneLife.DataObjects.SubScoreData;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -14,6 +15,9 @@ public class MobsKilled {
     private OneLifePlugin plugin;
     private EntityType entityType;
     private HashMap<String, Integer> count;
+
+    @JsonCreator
+    public MobsKilled() {} // Default constructor
 
     @JsonIgnore
     public MobsKilled(OneLifePlugin plugin, EntityType entityType, HashMap<String, Integer> count) {
@@ -38,9 +42,9 @@ public class MobsKilled {
         for (String key: count.keySet()) {
             double multiplier = 0;
             if (key.equals("AFK"))
-                multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getMobKillMultipliers().get(entityType) * plugin.settings.getAFKMultiplier();
+                multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getMobKillMultipliers().get(entityType) * plugin.settings.getAFKMultiplier();
             else
-                multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getMobKillMultipliers().get(entityType);
+                multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getMobKillMultipliers().get(entityType);
             points.put(key,(count.get(key)*multiplier));
         }
         return points;

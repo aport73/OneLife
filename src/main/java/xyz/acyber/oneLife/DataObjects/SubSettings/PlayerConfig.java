@@ -1,53 +1,72 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
-import org.bukkit.GameMode;
+import com.fasterxml.jackson.annotation.JsonCreator;
+import com.fasterxml.jackson.annotation.JsonGetter;
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonSetter;
 import org.bukkit.scheduler.BukkitTask;
 
-import java.util.HashMap;
+import javax.annotation.Nullable;
 import java.util.UUID;
 
 public class PlayerConfig {
 
-    private UUID uuid;
-    private String name;
-    Team team;
-    private Race race;
+    private @Nullable UUID uuid;
+    private @Nullable String name;
+    private @Nullable Team team;
+    private @Nullable Race race;
     private boolean givenStartItems;
-    private BukkitTask repeatItemsTask;
+    private @Nullable BukkitTask repeatItemsTask;
     private boolean climbingEnabled;
-    private String playerClimbVines;
+    private @Nullable String playerClimbVines;
 
-    public PlayerConfig() {
-        super();
-    }
+    @JsonCreator
+    public PlayerConfig() { super(); } // Default constructor
 
-    public PlayerConfig(UUID uuid, String name) {
+    @JsonIgnore
+    public PlayerConfig(@org.jetbrains.annotations.Nullable UUID uuid, @org.jetbrains.annotations.Nullable String name) {
         this.uuid = uuid;
         this.name = name;
     }
 
-    public Team getTeam() { return team; }
-    public void setTeam(Team team) { this.team = team; }
+    @JsonGetter
+    public @Nullable Team getTeam() { return team; }
+    @JsonSetter
+    public void setTeam(@Nullable Team team) { this.team = team; }
 
+    @JsonGetter
     public UUID getUUID() { return uuid; }
+    @JsonSetter
     public void setUUID(UUID uuid) { this.uuid = uuid; }
 
-    public String getName() { return name; }
-    public void setName(String name) { this.name = name; }
+    @JsonGetter
+    public @org.jetbrains.annotations.Nullable String getName() { return name; }
+    @JsonSetter
+    public void setName(@org.jetbrains.annotations.Nullable String name) { this.name = name; }
 
-    public Race getRace() { return race; }
-    public void setRace(Race race) { this.race = race; }
+    @JsonGetter
+    public @Nullable Race getRace() { return race; }
+    @JsonSetter
+    public void setRace(@Nullable Race race) { this.race = race; }
 
+    @JsonGetter
     public boolean isGivenStartItems() { return givenStartItems; }
+    @JsonSetter
     public void setGivenStartItems(boolean givenStartItems) { this.givenStartItems = givenStartItems; }
 
-    public BukkitTask getRepeatItemsTask() { return repeatItemsTask; }
-    public void setRepeatItemsTask(BukkitTask bukkitTask) { this.repeatItemsTask = bukkitTask; }
+    @JsonGetter
+    public @Nullable BukkitTask getRepeatItemsTask() { return repeatItemsTask; }
+    @JsonSetter
+    public void setRepeatItemsTask(@Nullable BukkitTask bukkitTask) { this.repeatItemsTask = bukkitTask; }
 
+    @JsonGetter
     public boolean isClimbingEnabled() { return climbingEnabled; }
-    public void setclimbingEnabled(boolean enabled) { this.climbingEnabled = enabled; }
+    @JsonSetter
+    public void setClimbingEnabled(boolean enabled) { this.climbingEnabled = enabled; }
 
-    public String getPlayerClimbVines() { return playerClimbVines; }
-    public void setPlayerClimbVines(String playerClimbVines) {  this.playerClimbVines = playerClimbVines; }
+    @JsonGetter
+    public @org.jetbrains.annotations.Nullable String getPlayerClimbVines() { return playerClimbVines; }
+    @JsonSetter
+    public void setPlayerClimbVines(@org.jetbrains.annotations.Nullable String playerClimbVines) {  this.playerClimbVines = playerClimbVines; }
 
 }

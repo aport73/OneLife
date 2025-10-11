@@ -1,5 +1,6 @@
 package xyz.acyber.oneLife.DataObjects.SubScoreData;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonSetter;
@@ -20,6 +21,8 @@ public class MaterialInteractions {
      */
     private String type;
 
+    @JsonCreator
+    public MaterialInteractions() {} // Default constructor
 
     /**
      * @param type can be any of BlocksPlaced, BlocksMined & ItemsHarvested
@@ -53,19 +56,19 @@ public class MaterialInteractions {
             double multiplier = 0;
             if (type.equals("BlocksPlaced")) {
                 if (key.equals("AFK"))
-                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getBlockPlaceMultipliers().get(material) * plugin.settings.getAFKMultiplier();
+                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getBlockPlaceMultipliers().get(material) * plugin.settings.getAFKMultiplier();
                 else
-                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getBlockPlaceMultipliers().get(material);
+                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getBlockPlaceMultipliers().get(material);
             } else if (type.equals("BlocksMined")) {
                 if (key.equals("AFK"))
-                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getBlockMineMultipliers().get(material) * plugin.settings.getAFKMultiplier();
+                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getBlockMineMultipliers().get(material) * plugin.settings.getAFKMultiplier();
                 else
-                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getBlockMineMultipliers().get(material);
+                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getBlockMineMultipliers().get(material);
             } else if (type.equals("ItemsHarvested")) {
                 if (key.equals("AFK"))
-                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL).getHarvestMultipliers().get(material) * plugin.settings.getAFKMultiplier();
+                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getHarvestMultipliers().get(material) * plugin.settings.getAFKMultiplier();
                 else
-                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key)).getHarvestMultipliers().get(material);
+                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getHarvestMultipliers().get(material);
             }
             points.put(key,(count.get(key)*multiplier));
         }

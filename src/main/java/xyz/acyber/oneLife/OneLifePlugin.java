@@ -6,7 +6,6 @@ import com.fasterxml.jackson.databind.*;
 import io.papermc.paper.event.player.AsyncChatEvent;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import me.lucko.spark.paper.lib.protobuf.Any;
 import net.kyori.adventure.text.Component;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.LuckPermsProvider;
@@ -37,7 +36,6 @@ import org.bukkit.scoreboard.Objective;
 import org.bukkit.scoreboard.Scoreboard;
 import org.bukkit.scoreboard.ScoreboardManager;
 import org.jetbrains.annotations.NotNull;
-import org.objectweb.asm.TypeReference;
 import xyz.acyber.oneLife.DataObjects.ScoreData;
 import xyz.acyber.oneLife.DataObjects.Settings;
 import xyz.acyber.oneLife.DataObjects.SubSettings.PlayerConfig;
@@ -54,10 +52,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
@@ -67,7 +62,7 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
 
     public LuckPerms lpAPI;
     public Settings settings;
-    public HashMap<UUID,ScoreData> scoreData;
+    public HashMap<UUID,ScoreData> scoreDataMap;
 
     public final MobManager mm = new MobManager(this);
     public final RaceManager rm = new RaceManager(this);
@@ -85,6 +80,8 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
     public BukkitTask pmModifier;
     public long afkCheck;
     public List<UUID> afkPlayers;
+
+    private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Override
     public void onEnable() {
@@ -110,75 +107,114 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
         loadNightHostiles();
 
         addPlayerConfigForWhitelist();
-        loadScoring();
+        try {
+            loadScoring();
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
         addWhitelistToScoring();
 
-        Object myObject = settings;
-        MyJSONWriter(myObject, getDataFolder() + "/settings.json");
-        savePlauerScores();
+        saveSettings();
+        savePlayerScores();
     }
 
     @Override
     public void onDisable() {
         // Plugin shutdown logic
         // Save Scoring data
-        Object myObject = settings;
-        MyJSONWriter(myObject, getDataFolder() + "/settings.json");
-        savePlauerScores();
+        saveSettings();
+        savePlayerScores();
+    }
+
+    private void saveSettings() {
+        Path path = Paths.get(getDataFolder() + "/settings.json");
+        directoryCheck(path.toUri().toString());
+        try {
+            objectMapper.writer().withDefaultPrettyPrinter().writeValue(new File(path.toUri()), settings);
+        } catch (IOException e) {
+            getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
+            getLogger().log(Level.SEVERE, e.getMessage());
+            getLogger().log(Level.SEVERE, "Failed to save settings.json", e.getCause());
+        }
     }
 
     private void loadSettings() {
-        ObjectMapper mapper = new ObjectMapper();
+        settings = new Settings();
         Path path = Paths.get(getDataFolder() + "/settings.json");
-        Settings update = null;
-        Object myObject = MyJSONReader(path.toString());
-        if (myObject != null) 
-            update = mapper.convertValue(myObject, Settings.class);
-        settings = Objects.requireNonNullElseGet(update, () -> new Settings(this));
+        if (!Files.exists(path)) {
+            getLogger().log(Level.INFO, "settings.json does not exist. Creating new one.");
+            settings = new Settings();
+            saveSettings();
+            return;
+        }
+        try {
+            settings = objectMapper.readerFor(Settings.class).readValue(new File(path.toUri()));
+        } catch (IOException e) {
+            getLogger().log(Level.SEVERE, e.getMessage());
+            getLogger().log(Level.SEVERE, "Failed to load settings.json", e.getCause());
+            settings = new Settings(this);
+            saveSettings();
+        }
     }
 
-    private void loadScoring() {
-        scoreData = new HashMap<>();
+    private void loadScoring() throws JsonProcessingException {
+        scoreDataMap = new HashMap<>();
         Path path = Paths.get(getDataFolder() + settings.getPathToScoreData());
         File[] files = path.toFile().listFiles();
-        ObjectMapper mapper = new ObjectMapper();
         if (files != null) {
             for (File file : files) {
                 if (file.getName().endsWith(".json")) {
-                    Object myObject = MyJSONReader(file.getPath());
-                    ScoreData data = mapper.convertValue(myObject, ScoreData.class);
+                    ScoreData data = null;
+                    try {
+                        data = objectMapper.readerFor(ScoreData.class).readValue(file);
+                    } catch (IOException e) {
+                        getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
+                        getLogger().log(Level.SEVERE, e.getMessage());
+                        getLogger().log(Level.SEVERE, "Failed to load ScoreData", e.getCause());
+                        data = new ScoreData(this);
+                    }
                     data = Objects.requireNonNullElseGet(data, ScoreData::new);
-                    if (scoreData.containsKey(data.getUUID()))
-                        scoreData.replace(data.getUUID(), data);
+                    if (scoreDataMap.containsKey(data.getUUID()))
+                        scoreDataMap.replace(data.getUUID(), data);
                     else
-                        scoreData.put(data.getUUID(), data);
+                        scoreDataMap.put(data.getUUID(), data);
                 }
             }
         }
     }
 
-    public void savePlauerScores() {
-        if (!scoreData.isEmpty()) {
-            for (UUID uuid : scoreData.keySet()) {
-                ScoreData sd = scoreData.get(uuid);
+    public void savePlayerScores() {
+        if (scoreDataMap != null) {
+            for (UUID uuid : scoreDataMap.keySet()) {
+                ScoreData sd = scoreDataMap.get(uuid);
                 String path = getDataFolder() + settings.getPathToScoreData() + sd.getPlayerName() + " - " + sd.getUUID() + ".json";
-                MyJSONWriter(sd, path);
+                directoryCheck(path);
+                try {
+                    objectMapper.writer().withDefaultPrettyPrinter().writeValue(new File(path), sd);
+                } catch (IOException e) {
+                    getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
+                    getLogger().log(Level.SEVERE, e.getMessage());
+                    getLogger().log(Level.SEVERE, "Failed to save ScoreData", e.getCause());
+                }
             }
         }
     }
 
     private void addPlayerConfigForWhitelist() {
         for (OfflinePlayer player : Bukkit.getWhitelistedPlayers()) {
-            if (!settings.getPlayerConfigs().containsKey(player.getUniqueId())) {
-                PlayerConfig playerConfig = new PlayerConfig(player.getUniqueId(), player.getName());
-                settings.addPlayerConfigs(playerConfig);
+            if (settings != null) {
+                assert settings.getPlayerConfigs() != null;
+                if (!settings.getPlayerConfigs().containsKey(player.getUniqueId())) {
+                    PlayerConfig playerConfig = new PlayerConfig(player.getUniqueId(), player.getName());
+                    settings.addPlayerConfigs(playerConfig);
+                }
             }
         }
     }
 
     private void addWhitelistToScoring() {
         for (OfflinePlayer p : Bukkit.getWhitelistedPlayers()) {
-            if (!scoreData.containsKey(p.getUniqueId())) {
+            if (!scoreDataMap.containsKey(p.getUniqueId())) {
                 sm.initializePlayerScore(p);
             }
         }
@@ -229,9 +265,7 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
         }
     }
 
-    public void MyJSONWriter(Object myObject, String filePath) {
-        ObjectMapper mapper = new ObjectMapper();
-        ObjectWriter writer = mapper.writer().withDefaultPrettyPrinter();
+    public void directoryCheck(String filePath) {
         Path path = Paths.get(filePath);
         Path backupPath = Paths.get(filePath.replace(".json","") + "-Backup-" + LocalDate.now() + ".json");
         try {
@@ -242,26 +276,10 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
                 Files.move(path, backupPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.REPLACE_EXISTING);
             } else
                 Files.createDirectories(path.getParent());
-            writer.writeValue(new File(path.toUri()), myObject);
         } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    public Object MyJSONReader(String filePath) {
-        ObjectMapper mapper = new ObjectMapper();
-        Path path = Paths.get(filePath);
-        try {
-            if (Files.exists(path)) {
-                File file = new File(path.toUri());
-               return mapper.readValue(file, Object.class);
-            }
-            return null;
-        } catch (JsonProcessingException e ) {
-            throw new RuntimeException(e);
-        }
-        catch (IOException e) {
-            throw new RuntimeException(e);
+            getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
+            getLogger().log(Level.SEVERE, e.getMessage());
+            getLogger().log(Level.SEVERE, "Failed to create backup of settings.json", e.getCause());
         }
     }
 
