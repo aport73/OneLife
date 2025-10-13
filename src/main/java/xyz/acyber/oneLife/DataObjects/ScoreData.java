@@ -2,11 +2,11 @@ package xyz.acyber.oneLife.DataObjects;
 
 import com.fasterxml.jackson.annotation.JsonGetter;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.annotation.JsonSetter;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.EntityType;
 import org.bukkit.plugin.java.JavaPlugin;
 import xyz.acyber.oneLife.DataObjects.SubScoreData.MaterialInteractions;
 import xyz.acyber.oneLife.DataObjects.SubScoreData.MobsKilled;
@@ -20,27 +20,43 @@ import java.util.UUID;
 
 public class ScoreData {
 
+    @JsonIgnore
     private OneLifePlugin plugin = JavaPlugin.getPlugin(OneLifePlugin.class);
 
-    private UUID uuid;
-    private String playerName;
-    private Team team;
-    private int livesBuyBack;
-    private HashMap<GameMode, Double> deaths;
-    private HashMap<String, Double> xp;
-    private HashMap<String, Double> onlineHr;
-    private HashMap<String, Integer> blocksPlaced;
-    private HashMap<String, Integer> blocksMined;
-    private HashMap<String, Integer> harvested;
-    private HashMap<String, Integer> caught;
-    private HashMap<String, Integer> achievements;
+    @JsonProperty("uuid")
+    private UUID uuid = null;
+    @JsonProperty("playerName")
+    private String playerName = null;
+    @JsonProperty("team")
+    private Team team = null;
+    @JsonProperty("livesBuyBack")
+    private int livesBuyBack = 0;
+    @JsonProperty("deaths")
+    private HashMap<String, Double> deaths = new HashMap<>();
+    @JsonProperty("xp")
+    private HashMap<String, Double> xp = new HashMap<>();
+    @JsonProperty("onlineHr")
+    private HashMap<String, Double> onlineHr = new HashMap<>();
+    @JsonProperty("blocksPlaced")
+    private HashMap<String, Integer> blocksPlaced = new HashMap<>();
+    @JsonProperty("blocksMined")
+    private HashMap<String, Integer> blocksMined = new HashMap<>();
+    @JsonProperty("harvested")
+    private HashMap<String, Integer> harvested = new HashMap<>();
+    @JsonProperty("caught")
+    private HashMap<String, Integer> caught = new HashMap<>();
+    @JsonProperty("achievements")
+    private HashMap<String, Integer> achievements = new HashMap<>();
+    @JsonProperty("typeMobsKilled")
+    private HashMap<String, MobsKilled> typeMobsKilled = new HashMap<>(); // key is entity type, value is MobsKilled object
+    @JsonProperty("typeBlocksMined")
+    private HashMap<Material, MaterialInteractions> typeBlocksMined = new HashMap<>();
+    @JsonProperty("typeBlocksPlaced")
+    private HashMap<Material, MaterialInteractions> typeBlocksPlaced = new HashMap<>();
+    @JsonProperty("typeBlocksHarvested")
+    private HashMap<Material, MaterialInteractions> typeItemsHarvested = new HashMap<>();
 
-    private HashMap<EntityType, MobsKilled> typeMobs;
-    private HashMap<Material, MaterialInteractions> typeBlocksMined;
-    private HashMap<Material, MaterialInteractions> typeBlocksPlaced;
-    private HashMap<Material, MaterialInteractions> typeItemsHarvested;
-
-    private double afkPointsOffset;
+    private double afkPointsOffset = 0;
 
 
     public ScoreData() {
@@ -60,7 +76,7 @@ public class ScoreData {
         this.harvested = new HashMap<>();
         this.caught = new HashMap<>();
         this.achievements = new HashMap<>();
-        this.typeMobs = new HashMap<>();
+        this.typeMobsKilled = new HashMap<>();
         this.typeBlocksMined = new HashMap<>();
         this.typeBlocksPlaced = new HashMap<>();
         this.typeItemsHarvested = new HashMap<>();
@@ -80,7 +96,7 @@ public class ScoreData {
         this.harvested = new HashMap<>();
         this.caught = new HashMap<>();
         this.achievements = new HashMap<>();
-        this.typeMobs = new HashMap<>();
+        this.typeMobsKilled = new HashMap<>();
         this.typeBlocksMined = new HashMap<>();
         this.typeBlocksPlaced = new HashMap<>();
         this.typeItemsHarvested = new HashMap<>();
@@ -113,9 +129,9 @@ public class ScoreData {
     public void setLivesBuyBack(int livesBuyBack) { this.livesBuyBack = livesBuyBack; }
 
     @JsonGetter
-    public HashMap<GameMode, Double> getDeaths() { return deaths; }
+    public HashMap<String, Double> getDeaths() { return deaths; }
     @JsonSetter
-    public void setDeaths(HashMap<GameMode, Double> deaths) {  this.deaths = deaths; }
+    public void setDeaths(HashMap<String, Double> deaths) {  this.deaths = deaths; }
 
     @JsonGetter
     public HashMap<String, Double> getXp() { return xp; }
@@ -153,9 +169,9 @@ public class ScoreData {
     public void setAchievements(HashMap<String, Integer> achievements) { this.achievements = achievements; }
 
     @JsonGetter
-    public HashMap<EntityType, MobsKilled> getTypeMobs() { return typeMobs; }
+    public HashMap<String, MobsKilled> getTypeMobs() { return typeMobsKilled; }
     @JsonSetter
-    public void setTypeMobs(HashMap<EntityType, MobsKilled> typeMobs) { this.typeMobs = typeMobs; }
+    public void setTypeMobs(HashMap<String, MobsKilled> typeMobs) { this.typeMobsKilled = typeMobs; }
 
     @JsonGetter
     public HashMap<Material, MaterialInteractions> getTypeBlocksMined() { return typeBlocksMined; }
@@ -175,12 +191,12 @@ public class ScoreData {
     @JsonIgnore
     public double getDeathPoints() {
         double deathPoints = 0;
-        for (GameMode key : deaths.keySet()) {
+        for (String key : deaths.keySet()) {
             double multiplier = plugin.settings.getScoring().get(key).getDeathMultiplier();
             deathPoints += deaths.get(key) * multiplier;
         }
         return deathPoints;
-    };
+    }
     @JsonIgnore
     public double getXpPoints() {
         double xpPoints = 0;
@@ -286,14 +302,14 @@ public class ScoreData {
     @JsonIgnore
     public double getTypeMobTotalPoints() {
         double typeMobTotalPoints = 0;
-        for (EntityType mob : typeMobs.keySet()) {
-            for (String key : typeMobs.get(mob).getCount().keySet()) {
+        for (String mobEntityType : typeMobsKilled.keySet()) {
+            for (String key : typeMobsKilled.get(mobEntityType).getCount().keySet()) {
                 if (key.equals("AFK")) {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getMobKillMultipliers().get(mob) * plugin.settings.getAFKMultiplier();
-                    afkPointsOffset += typeMobs.get(mob).getCount().get(key) * multiplier;
+                    double multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getMobKillMultipliers().get(mobEntityType) * plugin.settings.getAFKMultiplier();
+                    afkPointsOffset += typeMobsKilled.get(mobEntityType).getCount().get(key) * multiplier;
                 } else {
-                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getMobKillMultipliers().get(mob);
-                    typeMobTotalPoints += typeMobs.get(mob).getCount().get(key) * multiplier;
+                    double multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getMobKillMultipliers().get(mobEntityType);
+                    typeMobTotalPoints += typeMobsKilled.get(mobEntityType).getCount().get(key) * multiplier;
                 }
             }
         }

@@ -1,18 +1,22 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 import xyz.acyber.oneLife.Managers.ScoreManager;
 
 public class EnabledFeatures {
+    @JsonProperty("enabledRaceManager")
     private boolean RaceManager;
+    @JsonProperty("enabledMobManager")
     private boolean MobManager;
+    @JsonProperty("enabledScoreManager")
     private boolean ScoreManager;
+    @JsonProperty("enabledLivesManager")
     private boolean LivesManager;
+    @JsonProperty("enabledLifeGifting")
     private boolean LifeGifting;
+    @JsonProperty("enabledAFKChecker")
     private boolean AFKChecker;
+    @JsonProperty("enabledNightHostiles")
     private boolean NightHostiles;
 
     @JsonCreator

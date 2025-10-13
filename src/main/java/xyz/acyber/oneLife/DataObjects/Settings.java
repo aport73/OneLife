@@ -1,33 +1,42 @@
 package xyz.acyber.oneLife.DataObjects;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 import org.bukkit.GameMode;
 import org.bukkit.entity.EntityType;
 import xyz.acyber.oneLife.DataObjects.SubSettings.*;
 import xyz.acyber.oneLife.OneLifePlugin;
-import org.jetbrains.annotations.Nullable;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.UUID;
 
 public class Settings {
 
-    private int backupsToKeep;
+    @JsonProperty("backupsToKeep")
+    private int backupsToKeep = 1;
 
-    private double livesBuyBackMultiplier;
-    private double AFKMultiplier;
-    private String pathToScoreData;
+    @JsonProperty("livesBuyBackMultiplier")
+    private double livesBuyBackMultiplier = 0;
+    @JsonProperty("AFKMultiplier")
+    private double AFKMultiplier = 0;
+    @JsonProperty("pathToScoreData")
+    private String pathToScoreData = "/scoreData/";
 
-    private AFKCheckerConfig afkCheckerConfig;
-    private Lives lives;
-    private HashMap<String,Mob> mobs;
-    private EnabledFeatures enabledFeatures;
-    private @Nullable HashMap<UUID,PlayerConfig> playerConfigs;
-    private @Nullable HashMap<String, Race> races;
-    private HashMap<String, Scoring> scoring;
-    private @Nullable HashMap<String,Team> teams;
+    @JsonProperty("afkCheckerConfig")
+    private AFKCheckerConfig afkCheckerConfig = null;
+    @JsonProperty("lives")
+    private Lives lives = null;
+    @JsonProperty("mobs")
+    private HashMap<String,Mob> mobs = new HashMap<>();
+    @JsonProperty("enabledFeatures")
+    private EnabledFeatures enabledFeatures = null;
+    @JsonProperty("playerConfigs")
+    private HashMap<UUID,PlayerConfig> playerConfigs = new HashMap<>();
+    @JsonProperty("races")
+    private HashMap<String, Race> races = new HashMap<>();
+    @JsonProperty("scoring")
+    private HashMap<String, Scoring> scoring = new HashMap<>();
+    @JsonProperty("teams")
+    private HashMap<String,Team> teams = new HashMap<>();
 
     @JsonCreator
     public Settings() { super(); } // Default constructor
@@ -60,7 +69,7 @@ public class Settings {
         this.mobs = new HashMap<>();
         for (EntityType type : EntityType.values()) {
             if (type.isAlive() && type != EntityType.PLAYER) {
-                Mob mob = new Mob(type);
+                Mob mob = new Mob(type.name());
                 this.mobs.put(type.name(), mob);
             }
         }
@@ -97,26 +106,26 @@ public class Settings {
     public void setLives(Lives lives) { this.lives = lives; }
 
     @JsonGetter
-    public HashMap<String,Mob> getMobs() { return mobs; }
+    public HashMap<String,Mob> getMobs() { if (mobs == null) mobs = new HashMap<>(); return mobs; }
     @JsonSetter
-    public void setMobs(HashMap<String,Mob> mobs) { this.mobs = mobs; }
+    public void setMobs(HashMap<String,Mob> mobs) { if (mobs == null) mobs = new HashMap<>(); this.mobs = mobs; }
     @JsonIgnore
     public boolean addMob(Mob mob) {
-        if (mobs.containsKey(mob.getMobType().name()))
+        if (mobs.containsKey(mob.getMobType()))
             return false;
-        mobs.put(mob.getMobType().name(), mob);
+        mobs.put(mob.getMobType(), mob);
         return true;
     }
     @JsonIgnore
     public boolean replaceMob(Mob mob) {
-        if (mobs.containsKey(mob.getMobType().name())) {
-            mobs.replace(mob.getMobType().name(), mob);
+        if (mobs.containsKey(mob.getMobType())) {
+            mobs.replace(mob.getMobType(), mob);
             return true;
         }
          return false;
     }
     @JsonIgnore
-    public void removeMob(Mob mob) { mobs.remove(mob.getMobType().name()); }
+    public void removeMob(Mob mob) { mobs.remove(mob.getMobType()); }
 
     @JsonGetter
     public EnabledFeatures getEnabledFeatures() { return enabledFeatures; }
@@ -124,9 +133,9 @@ public class Settings {
     public void setEnabledFeatures(EnabledFeatures enabledFeatures) { this.enabledFeatures = enabledFeatures; }
 
     @JsonGetter
-    public @Nullable HashMap<UUID,PlayerConfig> getPlayerConfigs() { return playerConfigs; }
+    public HashMap<UUID,PlayerConfig> getPlayerConfigs() { if (playerConfigs == null) playerConfigs = new HashMap<>(); return playerConfigs; }
     @JsonSetter
-    public void setPlayerConfigs(@Nullable HashMap<UUID,PlayerConfig> playerConfigs) { if (playerConfigs == null) this.playerConfigs = null; this.playerConfigs = playerConfigs; }
+    public void setPlayerConfigs(HashMap<UUID,PlayerConfig> playerConfigs) { if (playerConfigs == null) playerConfigs = new HashMap<>(); this.playerConfigs = playerConfigs; }
     @JsonIgnore
     public void addPlayerConfigs(PlayerConfig playerConfig) {
         if (playerConfigs == null) playerConfigs = new HashMap<>();
@@ -149,9 +158,9 @@ public class Settings {
     }
 
     @JsonGetter
-    public @Nullable HashMap<String, Race> getRaces() { return races; }
+    public HashMap<String, Race> getRaces() { if (races == null) races = new HashMap<>(); return races; }
     @JsonSetter
-    public void setRaces(@Nullable HashMap<String, Race> races) { this.races = races; }
+    public void setRaces(HashMap<String, Race> races) { if (races == null) races = new HashMap<>(); this.races = races; }
     @JsonIgnore
     public boolean addRace(Race race) {
         if (races == null) races = new HashMap<>();
@@ -176,9 +185,9 @@ public class Settings {
 
 
     @JsonGetter
-    public HashMap<String, Scoring> getScoring() { return scoring; }
+    public HashMap<String, Scoring> getScoring() { if (scoring == null) scoring = new HashMap<>(); return scoring; }
     @JsonSetter
-    public void setScoring(HashMap<String, Scoring> scoring) { this.scoring = scoring; }
+    public void setScoring(HashMap<String, Scoring> scoring) { if (scoring == null) scoring = new HashMap<>(); this.scoring = scoring; }
     @JsonIgnore
     public boolean addScoring(String gameMode, Scoring scoringConfig) {
         if (scoring.containsKey(gameMode))
@@ -198,9 +207,9 @@ public class Settings {
     public void removeScoring(String gameMode) {  scoring.remove(gameMode); }
 
     @JsonGetter
-    public @Nullable HashMap<String,Team> getTeams() { return teams; }
+    public HashMap<String,Team> getTeams() { if (teams == null) teams = new HashMap<>(); return teams; }
     @JsonSetter
-    public void setTeams(@Nullable HashMap<String, Team> teams) { this.teams = teams; }
+    public void setTeams(HashMap<String, Team> teams) { if (teams == null) teams = new HashMap<>(); this.teams = teams; }
     @JsonIgnore
     public boolean addTeam(Team team) {
         if (teams != null && teams.containsKey(team.getTeamName()))

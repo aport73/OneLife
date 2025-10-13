@@ -1,9 +1,6 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 import org.bukkit.GameMode;
 
 import javax.annotation.Nullable;
@@ -11,8 +8,10 @@ import java.util.UUID;
 
 public class Lives {
 
+    @JsonProperty("cap")
     private int cap = 2;
-    private @Nullable GameMode gameModeAfterLastDeath = GameMode.ADVENTURE;
+    @JsonProperty("gameModeAfterLastDeath")
+    private String gameModeAfterLastDeath = GameMode.ADVENTURE.name();
 
     @JsonCreator
     public Lives() { super(); } // Default constructor
@@ -27,8 +26,8 @@ public class Lives {
     public void setCap(int cap) { this.cap = cap; }
 
     @JsonGetter
-    public @Nullable GameMode getGameModeAfterLastDeath() { return gameModeAfterLastDeath; }
+    public  String getGameModeAfterLastDeath() { return gameModeAfterLastDeath; }
     @JsonSetter
-    public void SetGameModeAfterLastDeath(@Nullable GameMode gameModeAfterLastDeath) {  this.gameModeAfterLastDeath = gameModeAfterLastDeath; }
+    public void SetGameModeAfterLastDeath( String gameModeAfterLastDeath) {  this.gameModeAfterLastDeath = gameModeAfterLastDeath; }
 
 }

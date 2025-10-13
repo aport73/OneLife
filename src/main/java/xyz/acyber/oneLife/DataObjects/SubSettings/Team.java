@@ -1,20 +1,20 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
-
-import javax.annotation.Nullable;
+import com.fasterxml.jackson.annotation.*;
 import java.util.UUID;
 
 public class Team {
 
-    private UUID uuid;
-    private String teamName;
-    private String prefix;
-    private String suffix;
-    private String color;
+    @JsonProperty("uuid")
+    private UUID uuid = null;
+    @JsonProperty("teamName")
+    private String teamName = "";
+    @JsonProperty("prefix")
+    private String prefix = "";
+    @JsonProperty("suffix")
+    private String suffix = "";
+    @JsonProperty("color")
+    private String color = "";
 
     @JsonCreator
     public Team() { super(); } // Default constructor

@@ -1,33 +1,31 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings.SubRace;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 import org.bukkit.Material;
-
-import javax.annotation.Nullable;
 
 public class BuffedFood {
 
-    private @Nullable Material material;
-    private double hungerBuff;
-    private double saturationBuff;
+    @JsonProperty("material")
+    private Material material = null;
+    @JsonProperty("hungerBuff")
+    private double hungerBuff = 0;
+    @JsonProperty("saturationBuff")
+    private double saturationBuff = 0;
 
     @JsonCreator
     public BuffedFood() { super(); } // Default constructor
 
     @JsonIgnore
-    public BuffedFood(@Nullable Material material, double hungerBuff, double saturationBuff) {
+    public BuffedFood(Material material, double hungerBuff, double saturationBuff) {
         this.material = material;
         this.hungerBuff = hungerBuff;
         this.saturationBuff = saturationBuff;
     }
 
     @JsonGetter
-    public @Nullable Material getMaterial() { return material; }
+    public  Material getMaterial() { return material; }
     @JsonSetter
-    public void setMaterial(@Nullable Material material) { this.material = material; }
+    public void setMaterial( Material material) { this.material = material; }
 
     @JsonGetter
     public double getHungerBuff() { return hungerBuff; }

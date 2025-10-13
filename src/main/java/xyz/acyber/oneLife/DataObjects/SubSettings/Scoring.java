@@ -1,31 +1,47 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
+import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.text.event.DataComponentValue;
+import net.minecraft.core.component.DataComponentType;
+import net.minecraft.core.component.DataComponents;
 import org.bukkit.Material;
+import org.bukkit.Registry;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.EntityType;
+import org.bukkit.craftbukkit.legacy.MaterialRerouting;
+import org.bukkit.inventory.ItemStack;
 import xyz.acyber.oneLife.OneLifePlugin;
 
+import java.util.Arrays;
 import java.util.HashMap;
 
 public class Scoring {
 
+    @JsonProperty("deathMultiplier")
     private double deathMultiplier;
+    @JsonProperty("xpMultiplier")
     private double xpMultiplier;
+    @JsonProperty("onlineHrMultiplier")
     private double onlineHrMultiplier;
+    @JsonProperty("defaultBlocksPlacedMultiplier")
     private double defaultBlocksPlacedMultiplier;
+    @JsonProperty("defaultBlocksMinedMultiplier")
     private double defaultBlocksMinedMultiplier;
+    @JsonProperty("defaultHarvestedMultiplier")
     private double defaultHarvestedMultiplier;
+    @JsonProperty("defaultCaughtMultiplier")
     private double defaultCaughtMultiplier;
+    @JsonProperty("defaultAchievementMultiplier")
     private double defaultAchievementMultiplier;
 
-    private HashMap<EntityType, Double> mobKillMultipliers;
-    private HashMap<Material, Double> blockPlaceMultipliers;
-    private HashMap<Material, Double> blockMineMultipliers;
-    private HashMap<Material, Double> HarvestMultipliers;
+    @JsonProperty("mobKillMultipliers")
+    private HashMap<String, Double> mobKillMultipliers = new HashMap<>(); // Key is entity type, value is multiplier
+    @JsonProperty("blockPlaceMultipliers")
+    private HashMap<String, Double> blockPlaceMultipliers = new HashMap<>(); // Key is block type, value is multiplier
+    @JsonProperty("blockMineMultipliers")
+    private HashMap<String, Double> blockMineMultipliers = new HashMap<>(); // Key is block type, value is multiplier
+    @JsonProperty("harvestMultipliers")
+    private HashMap<String, Double> harvestMultipliers = new HashMap<>(); // Key is item type, value is multiplier
 
     @JsonCreator
     public Scoring() { super(); } // Default constructor
@@ -45,21 +61,18 @@ public class Scoring {
         ConfigurationSection section = plugin.getConfig().getConfigurationSection("Scoring.MobKills");
         assert section != null;
         for (String key : section.getKeys(false)) {
-            mobKillMultipliers.put(EntityType.valueOf(key), section.getDouble(key));
+            mobKillMultipliers.put(key, section.getDouble(key));
         }
         this.blockPlaceMultipliers = new HashMap<>();
         this.blockMineMultipliers = new HashMap<>();
+        this.harvestMultipliers = new HashMap<>();
         double multiplier = 0.00;
         for (Material key : Material.values()) {
             if (key.isBlock()) {
-                blockPlaceMultipliers.put(key,multiplier);
-                blockMineMultipliers.put(key,multiplier);
-            }
-        }
-        this.HarvestMultipliers = new HashMap<>();
-        for (Material key : Material.values()) {
-            if (key.isItem()) {
-                HarvestMultipliers.put(key,multiplier);
+                blockPlaceMultipliers.put(key.name(),multiplier);
+                blockMineMultipliers.put(key.name(),multiplier);
+            } else if (key.isItem()) {
+                harvestMultipliers.put(key.name(),multiplier);
             }
         }
     }
@@ -105,42 +118,42 @@ public class Scoring {
     public void setDefaultAchievementMultiplier(double defaultAchievementMultiplier) { this.defaultAchievementMultiplier = defaultAchievementMultiplier; }
 
     @JsonGetter
-    public HashMap<EntityType, Double> getMobKillMultipliers() { return mobKillMultipliers; }
+    public HashMap<String, Double> getMobKillMultipliers() { if (mobKillMultipliers == null) mobKillMultipliers = new HashMap<>(); return mobKillMultipliers; }
     @JsonSetter
-    public void setMobKillMultipliers(HashMap<EntityType, Double> mobKillMultipliers) {  this.mobKillMultipliers = mobKillMultipliers; }
+    public void setMobKillMultipliers(HashMap<String, Double> mobKillMultipliers) { if (mobKillMultipliers == null) mobKillMultipliers = new HashMap<>(); this.mobKillMultipliers = mobKillMultipliers; }
     @JsonIgnore
-    public boolean addMobKillMultiplier(EntityType type, double multiplier) {
-        if (mobKillMultipliers.containsKey(type))
+    public boolean addMobKillMultiplier(String entityType, double multiplier) {
+        if (mobKillMultipliers.containsKey(entityType))
             return false;
-        mobKillMultipliers.put(type, multiplier);
+        mobKillMultipliers.put(entityType, multiplier);
         return true;
     }
     @JsonIgnore
-    public boolean modifyMobKillMultiplier(EntityType type, double multiplier) {
-        if (mobKillMultipliers.containsKey(type)) {
-            mobKillMultipliers.replace(type, multiplier);
+    public boolean modifyMobKillMultiplier(String entityType, double multiplier) {
+        if (mobKillMultipliers.containsKey(entityType)) {
+            mobKillMultipliers.replace(entityType, multiplier);
             return true;
         }
         return false;
     }
     @JsonIgnore
-    public void removeMobKillMultiplier(EntityType type) {
-        mobKillMultipliers.remove(type);
+    public void removeMobKillMultiplier(String entityType) {
+        mobKillMultipliers.remove(entityType);
     }
 
     @JsonGetter
-    public HashMap<Material, Double> getBlockPlaceMultipliers() { return blockPlaceMultipliers; }
+    public HashMap<String, Double> getBlockPlaceMultipliers() { if (blockPlaceMultipliers == null) blockPlaceMultipliers = new HashMap<>(); return blockPlaceMultipliers; }
     @JsonSetter
-    public void setBlockPlaceMultipliers(HashMap<Material, Double>  blockPlaceMultipliers) {  this.blockPlaceMultipliers = blockPlaceMultipliers; }
+    public void setBlockPlaceMultipliers(HashMap<String, Double>  blockPlaceMultipliers) { if (blockPlaceMultipliers == null) blockPlaceMultipliers = new HashMap<>();  this.blockPlaceMultipliers = blockPlaceMultipliers; }
     @JsonIgnore
-    public boolean addBlockPlaceMultiplier(Material type, double multiplier) {
+    public boolean addBlockPlaceMultiplier(String type, double multiplier) {
         if (blockPlaceMultipliers.containsKey(type))
             return false;
         blockPlaceMultipliers.put(type, multiplier);
         return true;
     }
     @JsonIgnore
-    public boolean modifyBlockPlaceMultiplier(Material type, double multiplier) {
+    public boolean modifyBlockPlaceMultiplier(String type, double multiplier) {
         if (blockPlaceMultipliers.containsKey(type)) {
             blockPlaceMultipliers.replace(type,multiplier);
             return true;
@@ -148,16 +161,16 @@ public class Scoring {
         return false;
     }
     @JsonIgnore
-    public void removeBlockPlaceMultiplier(Material type) {
+    public void removeBlockPlaceMultiplier(String type) {
         blockPlaceMultipliers.remove(type);
     }
 
     @JsonGetter
-    public HashMap<Material, Double> getBlockMineMultipliers() { return blockMineMultipliers; }
+    public HashMap<String, Double> getBlockMineMultipliers() { if (blockMineMultipliers == null) blockMineMultipliers = new HashMap<>(); return blockMineMultipliers; }
     @JsonSetter
-    public void setBlockMineMultipliers(HashMap<Material, Double> blockMineMultipliers) {  this.blockMineMultipliers = blockMineMultipliers; }
+    public void setBlockMineMultipliers(HashMap<String, Double> blockMineMultipliers) { if (blockMineMultipliers == null) blockMineMultipliers = new HashMap<>(); this.blockMineMultipliers = blockMineMultipliers; }
     @JsonIgnore
-    public boolean addBlockMineMultiplier(Material type, double multiplier) {
+    public boolean addBlockMineMultiplier(String type, double multiplier) {
         if (blockMineMultipliers.containsKey(type)) {
             return false;
         }
@@ -165,7 +178,7 @@ public class Scoring {
         return true;
     }
     @JsonIgnore
-    public boolean modifyBlockMineMultiplier(Material type, double multiplier) {
+    public boolean modifyBlockMineMultiplier(String type, double multiplier) {
         if (blockMineMultipliers.containsKey(type)) {
             blockMineMultipliers.replace(type,multiplier);
             return true;
@@ -173,32 +186,31 @@ public class Scoring {
         return false;
     }
     @JsonIgnore
-    public void removeBlockMineMultiplier(Material type) {
+    public void removeBlockMineMultiplier(String type) {
         blockMineMultipliers.remove(type);
     }
 
     @JsonGetter
-    public HashMap<Material, Double> getHarvestMultipliers() { return HarvestMultipliers; }
+    public HashMap<String, Double> getHarvestMultipliers() { if (harvestMultipliers == null) harvestMultipliers = new HashMap<>(); return harvestMultipliers; }
     @JsonSetter
-    public void setHarvestMultipliers(HashMap<Material, Double> harvestMultipliers) {  this.HarvestMultipliers = harvestMultipliers; }
+    public void setHarvestMultipliers(HashMap<String, Double> harvestMultipliers) { if (harvestMultipliers == null) harvestMultipliers = new HashMap<>();  this.harvestMultipliers = harvestMultipliers; }
     @JsonIgnore
-    public boolean addHarvestMultiplier(Material type, double multiplier) {
-        if (HarvestMultipliers.containsKey(type)) {
+    public boolean addHarvestMultiplier(String type, double multiplier) {
+        if (harvestMultipliers.containsKey(type)) {
             return false;
         }
-        HarvestMultipliers.put(type, multiplier);
+        harvestMultipliers.put(type, multiplier);
         return true;
     }
     @JsonIgnore
-    public boolean modifyHarvestMultiplier(Material type, double multiplier) {
-        if (HarvestMultipliers.containsKey(type)) {
-            HarvestMultipliers.replace(type, multiplier);
+    public boolean modifyHarvestMultiplier(String type, double multiplier) {
+        if (harvestMultipliers.containsKey(type)) {
+            harvestMultipliers.replace(type, multiplier);
             return true;
         }
         return false;
     }
     @JsonIgnore
-    public void removeHarvestMultiplier(Material type) {
-        HarvestMultipliers.remove(type);
+    public void removeHarvestMultiplier(String type) {harvestMultipliers.remove(type);
     }
 }
