@@ -30,9 +30,9 @@ public class Settings {
     private @Nullable HashMap<String,Team> teams;
 
     @JsonCreator
-    public Settings() {} // Default constructor
+    public Settings() { super(); } // Default constructor
 
-    @JsonIgnore
+    @JsonCreator
     public Settings(OneLifePlugin plugin) {
         this.afkCheckerConfig = new AFKCheckerConfig();
         this.lives = new Lives();
