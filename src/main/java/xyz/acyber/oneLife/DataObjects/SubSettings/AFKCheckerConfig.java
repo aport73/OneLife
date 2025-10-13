@@ -1,15 +1,16 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 
 public class AFKCheckerConfig {
 
+    @JsonProperty("minutesAFK")
     private int minutesAFK = 5;
+    @JsonProperty("secondsInterval")
     private int secondsInterval = 1;
+    @JsonProperty("afkWarning")
     private String afkWarning = "<bold><red>You will be marked afk ing <blue>%seconds% <red>seconds";
+    @JsonProperty("kickedReason")
     private String kickedReason = "<red>You have been kicked for being AFK";
 
     @JsonCreator

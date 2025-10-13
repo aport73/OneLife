@@ -38,7 +38,7 @@ public class ScoreManager {
     }
 
     public ScoreData initializePlayerScore(OfflinePlayer player) {
-        Team team = oneLifePlugin.settings.getPlayerConfigs().get(player.getUniqueId()).getTeam();
+        Team team = oneLifePlugin.settings.getTeams().get(oneLifePlugin.settings.getPlayerConfigs().get(player.getUniqueId()).getTeamUUID());
         ScoreData scoreData = new ScoreData(oneLifePlugin, player, team);
         oneLifePlugin.scoreDataMap.put(player.getUniqueId(),scoreData);
         return scoreData;
@@ -189,9 +189,9 @@ public class ScoreManager {
         else
             scoreData = initializePlayerScore(player);
 
-        HashMap<GameMode, Double> deaths = scoreData.getDeaths();
-        if (deaths.containsKey(gameMode)) deaths.replace(gameMode, (deaths.get(gameMode) + 1));
-        else deaths.put(gameMode, 1.0);
+        HashMap<String, Double> deaths = scoreData.getDeaths();
+        if (deaths.containsKey(gameMode.name())) deaths.replace(gameMode.name(), (deaths.get(gameMode.name()) + 1));
+        else deaths.put(gameMode.name(), 1.0);
 
         scoreData.setDeaths(deaths);
         oneLifePlugin.scoreDataMap.replace(player.getUniqueId(), scoreData);
@@ -322,7 +322,7 @@ public class ScoreManager {
             oneLifePlugin.logToFile("", path);
             oneLifePlugin.logToFile("Mob Killed Breakdown", path);
             if (!scoreData.getTypeMobs().isEmpty()) {
-                scoreData.getTypeMobs().keySet().forEach(key -> oneLifePlugin.logToFile(key.name() + "s Killed: " + scoreData.getTypeMobs().get(key).getTotalCount() + " , Points: " + scoreData.getTypeMobs().get(key).getPoints(), path));
+                scoreData.getTypeMobs().keySet().forEach(key -> oneLifePlugin.logToFile(key + "s Killed: " + scoreData.getTypeMobs().get(key).getTotalCount() + " , Points: " + scoreData.getTypeMobs().get(key).getPoints(), path));
             }
             oneLifePlugin.logToFile("", path);
             oneLifePlugin.logToFile("Blocks Mined Breakdown", path);

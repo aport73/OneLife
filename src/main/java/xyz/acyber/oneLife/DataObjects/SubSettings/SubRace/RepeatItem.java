@@ -1,19 +1,20 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings.SubRace;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import com.fasterxml.jackson.annotation.*;
 import org.bukkit.Material;
 
 import javax.annotation.Nullable;
 
 public class RepeatItem {
 
-    private Material material;
-    private int max;
-    private int qtyPerRepeat;
-    private int secondsTillRepeat;
+    @JsonProperty("material")
+    private Material material = null;
+    @JsonProperty("max")
+    private int max = 0;
+    @JsonProperty("qtyPerRepeat")
+    private int qtyPerRepeat = 0;
+    @JsonProperty("secondsTillRepeat")
+    private int secondsTillRepeat = 0;
 
     @JsonCreator
     public RepeatItem() { super(); } // Default constructor

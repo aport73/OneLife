@@ -9,6 +9,8 @@ import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.Objects;
 
+import static java.lang.Math.max;
+
 public class LivesManager {
 
     static OneLifePlugin oneLifePlugin;
@@ -61,12 +63,20 @@ public class LivesManager {
         oneLifePlugin.saveConfig();
     }
 
+    public int getPlayerLivesRemaining(Player player) {
+        Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
+        int lives = oneLifePlugin.getConfig().getInt("Lives.cap") - getPlayerScore(getObjective("deaths",scoreboard), player);
+        return max(lives, 0);
+    }
+
     public void setPlayerGameMode(Player player) {
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
-        // Causes server crashes oneLifePlugin.sendMsgOps(String.valueOf(getPlayerScore(getObjective("deaths",scoreboard), player)));
-        if (getPlayerScore(getObjective("deaths",scoreboard), player) >= oneLifePlugin.getConfig().getInt("Lives.cap")) {
-            player.setGameMode(GameMode.valueOf(Objects.requireNonNull(oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath")).toUpperCase()));
-            player.sendMessage(Component.text("Sorry, You're out of lives! You can continue to play on the server in Adventure Mode"));
+        if (getPlayerLivesRemaining(player) <= 0) {
+            GameMode gmAfterDeath = GameMode.valueOf(Objects.requireNonNull(oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath")).toUpperCase());
+            if (gmAfterDeath != player.getGameMode() && !player.isOp()) {
+                player.setGameMode(gmAfterDeath);
+                player.sendMessage(Component.text("Sorry, You're out of lives! You can continue to play on the server in " + gmAfterDeath.name() + " Mode"));
+            }
         }
         else
             player.setGameMode(GameMode.SURVIVAL);

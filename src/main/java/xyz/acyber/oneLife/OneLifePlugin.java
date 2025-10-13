@@ -89,7 +89,7 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
         saveDefaultConfig();
         saveDefaultPlayerConfig();
 
-        Bukkit.getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(this, this);
 
         //Register Commands
         LifecycleEventManager<@NotNull Plugin> manager = this.getLifecycleManager();
@@ -121,7 +121,6 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        // Save Scoring data
         saveSettings();
         savePlayerScores();
     }
@@ -130,7 +129,8 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
         Path path = Paths.get(getDataFolder() + "/settings.json");
         directoryCheck(path);
         try {
-            objectMapper.writer().withDefaultPrettyPrinter().writeValue(new File(path.toUri()), settings);
+            String jsonString = objectMapper.writer().withDefaultPrettyPrinter().writeValueAsString(settings);
+            Files.write(path, jsonString.getBytes());
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
             getLogger().log(Level.SEVERE, e.getMessage());
@@ -148,7 +148,8 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
             return;
         }
         try {
-            settings = objectMapper.readerFor(Settings.class).readValue(new File(path.toUri()));
+            String json = Files.readString(path);
+            settings = objectMapper.readValue(json, Settings.class);
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, e.getMessage());
             getLogger().log(Level.SEVERE, "Failed to load settings.json", e.getCause());
@@ -517,11 +518,9 @@ public class OneLifePlugin extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerGameModeChange(PlayerGameModeChangeEvent event) {
-        /*
         if (settings.getEnabledFeatures().getEnabledLivesManager())
-            if (!event.getPlayer().isOp())
+            if (!event.getPlayer().isOp() && lm.getPlayerLivesRemaining(event.getPlayer()) <= 0)
                 lm.setPlayerGameMode(event.getPlayer());
-        */
     }
 
     @EventHandler
