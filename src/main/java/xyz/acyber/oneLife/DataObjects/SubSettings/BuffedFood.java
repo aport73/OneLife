@@ -1,4 +1,4 @@
-package xyz.acyber.oneLife.DataObjects.SubSettings.SubRace;
+package xyz.acyber.oneLife.DataObjects.SubSettings;
 
 import com.fasterxml.jackson.annotation.*;
 import org.bukkit.Material;

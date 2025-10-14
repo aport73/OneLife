@@ -1,14 +1,12 @@
-package xyz.acyber.oneLife.DataObjects.SubSettings.SubRace;
+package xyz.acyber.oneLife.DataObjects.SubSettings;
 
 import com.fasterxml.jackson.annotation.*;
 import org.bukkit.Material;
 
-import javax.annotation.Nullable;
-
 public class RepeatItem {
 
-    @JsonProperty("material")
-    private Material material = null;
+    @JsonProperty("materialType")
+    private String materialType = null;
     @JsonProperty("max")
     private int max = 0;
     @JsonProperty("qtyPerRepeat")
@@ -20,17 +18,19 @@ public class RepeatItem {
     public RepeatItem() { super(); } // Default constructor
 
     @JsonIgnore
-    public RepeatItem( Material material, int max, int qtyPerRepeat, int secondsTillRepeat) {
-        this.material = material;
+    public RepeatItem(String materialType, int max, int qtyPerRepeat, int secondsTillRepeat) {
+        this.materialType = materialType;
         this.max = max;
         this.qtyPerRepeat = qtyPerRepeat;
         this.secondsTillRepeat = secondsTillRepeat;
     }
 
     @JsonGetter
-    public Material getMaterial() { return material; }
+    public String getMaterialType() { return materialType; }
     @JsonSetter
-    public void setMaterial(Material material) { this.material = material; }
+    public void setMaterialType(String materialType) { this.materialType = materialType; }
+    @JsonIgnore
+    public Material getMaterial() { return Material.valueOf(materialType); }
 
     @JsonGetter
     public int getMax() { return max; }

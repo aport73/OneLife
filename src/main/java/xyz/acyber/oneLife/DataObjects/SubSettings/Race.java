@@ -3,12 +3,8 @@ package xyz.acyber.oneLife.DataObjects.SubSettings;
 import com.fasterxml.jackson.annotation.*;
 import org.bukkit.Effect;
 import org.bukkit.Material;
-import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.inventory.ItemStack;
-import xyz.acyber.oneLife.DataObjects.SubSettings.SubRace.BuffedFood;
-import xyz.acyber.oneLife.DataObjects.SubSettings.SubRace.RepeatItem;
+import org.bukkit.potion.PotionEffect;
 
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,9 +13,9 @@ import java.util.UUID;
 public class Race {
 
     @JsonProperty("raceName")
-    private String raceName = null;
+    private String raceName = "";
     @JsonProperty("raceUUID")
-    private UUID raceUUID = null;
+    private UUID raceUUID = UUID.randomUUID();
     @JsonProperty("enabled")
     private boolean enabled = false;
 
@@ -48,19 +44,20 @@ public class Race {
     @JsonProperty("isWeakUnderGround")
     private boolean isWeakUnderGround = false;
 
+    @JsonProperty("assignedArmor")
+    private AssignedArmor assignedArmor = new AssignedArmor();
+    @JsonProperty("assignedItems")
+    private List<AssignedItem> assignedItem = new ArrayList<>();
     @JsonProperty("allowedFoods")
     private List<Material> allowedFoods = new ArrayList<>();
     @JsonProperty("effects")
-    private List<Effect> effects = new ArrayList<>();
-
+    private List<PotionEffect> effects = new ArrayList<>();
     @JsonProperty("buffedFoods")
-    private HashMap<Material, BuffedFood> buffedFoods = new HashMap<>();
-    @JsonProperty("equipment")
-    private HashMap<String, String> equipment = new HashMap<>(); // Key is inventory slotType, value is item string
+    private List<BuffedFood> buffedFoods = new ArrayList<>();
     @JsonProperty("repeatItems")
-    private HashMap<Material, RepeatItem> repeatItems = new HashMap<>();
+    private List<RepeatItem> repeatItems = new ArrayList<>();
     @JsonProperty("startItems")
-    private HashMap<Material, Integer> startItems = new HashMap<>();
+    private HashMap<String, Integer> startItems = new HashMap<>(); // Key is material, value is the number of items to give
 
     @JsonCreator
     public Race() { super(); } // Default constructor
@@ -154,103 +151,33 @@ public class Race {
     public void setAllowedFoods(List<Material> allowedFoods) { this.allowedFoods = allowedFoods; }
 
     @JsonGetter
-    public List<Effect> getEffects() { return effects; }
+    public List<PotionEffect> getEffects() { return effects; }
     @JsonSetter
-    public void setEffects(List<Effect> appliedEffects) {  this.effects = appliedEffects; }
+    public void setEffects(List<PotionEffect> appliedEffects) {  this.effects = appliedEffects; }
 
     @JsonGetter
-    public HashMap<Material, BuffedFood> getBuffedFoods() { return buffedFoods; }
+    public List<BuffedFood> getBuffedFoods() { return buffedFoods; }
     @JsonSetter
-    public void setBuffedFoods(HashMap<Material, BuffedFood> buffedFoods) {  this.buffedFoods = buffedFoods; }
-    @JsonIgnore
-    public boolean addBuffedFood(Material mat, BuffedFood food) {
-        if (buffedFoods == null) buffedFoods = new HashMap<>();
-        if (buffedFoods.containsKey(mat))
-            return false;
-        buffedFoods.put(mat, food);
-        return true;
-    }
-    @JsonIgnore
-    public boolean modifyBuffedFood(Material mat, BuffedFood food) {
-        if (buffedFoods == null) buffedFoods = new HashMap<>();
-        if (buffedFoods.containsKey(mat)) {
-            buffedFoods.replace(mat, food);
-            return true;
-        }
-        return false;
-    }
-    @JsonIgnore
-    public void removeBuffedFood(Material mat) { if (buffedFoods == null) buffedFoods = new HashMap<>(); buffedFoods.remove(mat); }
+    public void setBuffedFoods(List<BuffedFood> buffedFoods) {  this.buffedFoods = buffedFoods; }
 
     @JsonGetter
-    public @Nullable HashMap<String, String> getEquipment() { return equipment; }
+    public AssignedArmor getArmor() { return assignedArmor; }
     @JsonSetter
-    public void setEquipment(HashMap<String, String> equipment) { this.equipment = equipment; }
-    @JsonIgnore
-    public boolean addEquipment(String slot, ItemStack item) {
-        if (equipment == null) equipment = new HashMap<>();
-        if (equipment.containsKey(slot))
-            return false;
-        equipment.put(slot, item.toString());
-        return true;
-    }
-    @JsonIgnore
-    public boolean modifyEquipment(String slot, ItemStack item) {
-        if (equipment == null) equipment = new HashMap<>();
-        if (equipment.containsKey(slot)) {
-            equipment.replace(slot, item.toString());
-            return true;
-        }
-        return false;
-    }
-    @JsonIgnore
-    public void removeEquipment(String slot) { if (equipment == null) return; equipment.remove(slot); }
+    public void setArmor(AssignedArmor armor) { this.assignedArmor = armor; }
 
     @JsonGetter
-    public HashMap<Material, RepeatItem> getRepeatItems() { return repeatItems; }
+    public List<AssignedItem> getAssignedItems() { return assignedItem; }
     @JsonSetter
-    public void setRepeatItems(HashMap<Material, RepeatItem> repeatItems) { this.repeatItems = repeatItems; }
-    @JsonIgnore
-    public boolean addRepeatItem(Material mat, RepeatItem item) {
-        if (repeatItems == null) repeatItems = new HashMap<>();
-        if (repeatItems.containsKey(mat))
-            return false;
-        repeatItems.put(mat, item);
-        return true;
-    }
-    @JsonIgnore
-    public boolean modifyRepeatItem(Material mat, RepeatItem item) {
-        if (repeatItems == null) repeatItems = new HashMap<>();
-        if (repeatItems.containsKey(mat)) {
-            repeatItems.put(mat, item);
-            return true;
-        }
-        return false;
-    }
-    @JsonIgnore
-    public void removeRepeatItem(Material mat) { if (repeatItems == null) return; repeatItems.remove(mat); }
+    public void setAssignedItems(List<AssignedItem> items) { this.assignedItem = items; }
 
     @JsonGetter
-    public HashMap<Material, Integer> getStartItems() { return startItems; }
+    public List<RepeatItem> getRepeatItems() { return repeatItems; }
     @JsonSetter
-    public void setStartItems(HashMap<Material, Integer> startItems) { this.startItems = startItems; }
-    @JsonIgnore
-    public boolean addStartItem(Material mat, Integer startItem) {
-        if (startItems == null) startItems = new HashMap<>();
-        if (startItems.containsKey(mat))
-            return false;
-        startItems.put(mat, startItem);
-        return true;
-    }
-    @JsonIgnore
-    public boolean modifyStartItem(Material mat, Integer startItem) {
-        if (startItems == null) startItems = new HashMap<>();
-        if (startItems.containsKey(mat)) {
-            startItems.put(mat, startItem);
-            return true;
-        }
-        return false;
-    }
-    @JsonIgnore
-    public void removeStartItem(Material mat) { if (startItems == null) return; startItems.remove(mat); }
+    public void setRepeatItems(List<RepeatItem> repeatItems) { this.repeatItems = repeatItems; }
+
+    @JsonGetter
+    public HashMap<String, Integer> getStartItems() { return startItems; }
+    @JsonSetter
+    public void setStartItems(HashMap<String, Integer> startItems) { this.startItems = startItems; }
+
 }

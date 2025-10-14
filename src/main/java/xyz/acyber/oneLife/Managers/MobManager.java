@@ -48,7 +48,7 @@ public class MobManager {
     }
 
     public void onEntitySpawn(EntitySpawnEvent event) {
-        //Handle Mob Adjustments from Config
+        //Handle MobConfig Adjustments from Config
         if (event.getEntity() instanceof LivingEntity spawnedEntity) {
             ConfigurationSection mobConfig = oneLifePlugin.getConfig().getConfigurationSection("MOBS." + spawnedEntity.getType().name());
             if (mobConfig != null) {

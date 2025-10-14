@@ -1,11 +1,8 @@
 package xyz.acyber.oneLife.Managers;
 
 import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import org.bukkit.*;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
@@ -17,10 +14,8 @@ import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerHarvestBlockEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.DataObjects.SubScoreData.MaterialInteractions;
-import xyz.acyber.oneLife.DataObjects.SubSettings.Team;
+import xyz.acyber.oneLife.DataObjects.PlayerScore;
 import xyz.acyber.oneLife.OneLifePlugin;
-import xyz.acyber.oneLife.DataObjects.ScoreData;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -30,220 +25,95 @@ import java.util.stream.Collectors;
 
 public class ScoreManager {
 
-    static OneLifePlugin oneLifePlugin;
-    private double adventureMultiplier;
+    private final OneLifePlugin OLP;
 
     public ScoreManager(OneLifePlugin plugin) {
-        oneLifePlugin = plugin;
-    }
-
-    public ScoreData initializePlayerScore(OfflinePlayer player) {
-        Team team = oneLifePlugin.settings.getTeams().get(oneLifePlugin.settings.getPlayerConfigs().get(player.getUniqueId()).getTeamUUID());
-        ScoreData scoreData = new ScoreData(oneLifePlugin, player, team);
-        oneLifePlugin.scoreDataMap.put(player.getUniqueId(),scoreData);
-        return scoreData;
+        OLP = plugin;
     }
 
     public void playerFish(@NotNull PlayerFishEvent event) {
-        //Update Players Fished Placed
+        //Update Players Caught Items
+        //TODO Look into ability to record the number of specific items caught not just total number of items caught
         Player player = event.getPlayer();
-        ScoreData scoreData;
         String gameMode = player.getGameMode().name();
-        if (event.getCaught() != null) {
-
-            if (oneLifePlugin.scoreDataMap.containsKey(player.getUniqueId())) scoreData = oneLifePlugin.scoreDataMap.get(player.getUniqueId());
-            else scoreData = initializePlayerScore(player);
-
-            HashMap<String, Integer> caught = scoreData.getCaught();
-
-            if (playerAFK(player)) {
-                if (caught.containsKey("AFK")) caught.replace("AFK", (caught.get("AFK") + 1));
-                else caught.put("AFK", 1);
-            } else {
-                if (caught.containsKey(gameMode)) caught.replace(gameMode, (caught.get(gameMode) + 1));
-                else caught.put(gameMode, 1);
-            }
-
-            scoreData.setCaught(caught);
-            oneLifePlugin.scoreDataMap.replace(player.getUniqueId(), scoreData);
-        }
+        if (playerAFK(player)) gameMode = "AFK";
+        if (event.getCaught() != null) OLP.scoreData.get(player.getUniqueId()).incrementCaughtItems(gameMode);
     }
 
     public void playerHarvest(@NotNull PlayerHarvestBlockEvent event) {
-        //Update Players Fished Placed
+        //Update Players Items Harvested
         Player player = event.getPlayer();
-        ScoreData scoreData;
         String gameMode = player.getGameMode().name();
         List<ItemStack> harvest = event.getItemsHarvested();
 
-        if (oneLifePlugin.scoreDataMap.containsKey(player.getUniqueId()))
-            scoreData = oneLifePlugin.scoreDataMap.get(player.getUniqueId());
-        else
-            scoreData = initializePlayerScore(player);
+        if (playerAFK(player)) gameMode = "AFK";
 
-        HashMap<String, Integer> harvested = scoreData.getHarvested();
-        HashMap<Material,MaterialInteractions> typeItemsHarvested = scoreData.getTypeItemsHarvested();
-
-        if (playerAFK(player)) {
-            for (ItemStack item : harvest) {
-                Material material = item.getType();
-                if (typeItemsHarvested.containsKey(material)) {
-                    MaterialInteractions materialInteractions = typeItemsHarvested.get(material);
-                    if (materialInteractions == null)
-                        materialInteractions = new MaterialInteractions(oneLifePlugin, material, new HashMap<>(), "ItemsHarvested");
-                    if (materialInteractions.getCount().containsKey("AFK"))
-                        materialInteractions.getCount().replace("AFK", (materialInteractions.getCount().get("AFK") + 1));
-                    else
-                        materialInteractions.getCount().put("AFK", 1);
-                }
-                if (harvested.containsKey("AFK"))
-                    harvested.replace("AFK", (harvested.get("AFK") + 1));
-                else harvested.put("AFK", 1);
-            }
-        } else {
-            for (ItemStack item : harvest) {
-                Material material = item.getType();
-                if (typeItemsHarvested.containsKey(material)) {
-                    MaterialInteractions materialInteractions = typeItemsHarvested.get(material);
-                    if (materialInteractions == null)
-                        materialInteractions = new MaterialInteractions(oneLifePlugin, material, new HashMap<>(), "ItemsHarvested");
-                    if (materialInteractions.getCount().containsKey(gameMode))
-                        materialInteractions.getCount().replace(gameMode, (materialInteractions.getCount().get(gameMode) + 1));
-                    else
-                        materialInteractions.getCount().put(gameMode, 1);
-                }
-                if (harvested.containsKey(gameMode))
-                    harvested.replace(gameMode, (harvested.get(gameMode) + 1));
-                else
-                    harvested.put(gameMode, 1);
-            }
+        for (ItemStack item : harvest) {
+            Material material = item.getType();
+            OLP.scoreData.get(player.getUniqueId()).incrementTypeItemsHarvested(material,gameMode);
+            OLP.scoreData.get(player.getUniqueId()).incrementHarvestedItems(gameMode);
         }
-
-        scoreData.setHarvested(harvested);
-        scoreData.setTypeItemsHarvested(typeItemsHarvested);
-        oneLifePlugin.scoreDataMap.replace(player.getUniqueId(), scoreData);
     }
 
     public void blocksPlaced(@NotNull BlockPlaceEvent event) {
         //Update Players Blocks Placed
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         Player player = event.getPlayer();
-        ConfigurationSection scoring = oneLifePlugin.getConfig().getConfigurationSection("Scoring");
-
-        if (playerAFK(player)) {
-            assert scoring != null;
-            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("BlocksPlaced")));
-            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("playerPlaced." + event.getBlock().getType().name())));
-        }
-        else {
-            //Update Total Blocks Placed Count
-            config.set(player.getUniqueId() + ".playerBlocksPlaced", config.getInt(player.getUniqueId() + ".playerBlocksPlaced") + 1);
-            //Update Specific Blocks Placed Count
-            config.set(player.getUniqueId() + ".playerPlaced." + event.getBlock().getType().name(), config.getInt(player.getUniqueId() + ".playerPlaced." + event.getBlock().getType().name()) + 1);
-        }
-        oneLifePlugin.savePlayerConfig(config);
+        String gameMode = player.getGameMode().name();
+        if (playerAFK(player)) gameMode = "AFK";
+        //Update Total Blocks Placed Count
+        OLP.scoreData.get(player.getUniqueId()).incrementBlocksPlaced(gameMode);
+        OLP.scoreData.get(player.getUniqueId()).incrementTypeBlocksPlaced(event.getBlock().getType(),gameMode);
     }
 
     public void blocksMined(@NotNull BlockBreakEvent event) {
-        //Update Players Blocks Placed
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
+        //Update Players Blocks Mined
         Player player = event.getPlayer();
-        ConfigurationSection scoring = oneLifePlugin.getConfig().getConfigurationSection("Scoring");
-
-        if (playerAFK(player)) {
-            assert scoring != null;
-            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("BlocksMined")));
-            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("playerMined." + event.getBlock().getType().name())));
-        }
-        else {
-            config.set(player.getUniqueId() + ".playerMined." + event.getBlock().getType().name(), config.getDouble(player.getUniqueId() + ".playerMined." + event.getBlock().getType().name()) + 1);
-            config.set(player.getUniqueId() + ".playerBlocksMined", config.getDouble(player.getUniqueId() + ".playerBlocksMined") + 1);
-        }
-
-        oneLifePlugin.savePlayerConfig(config);
+        String gameMode = player.getGameMode().name();
+        if (playerAFK(player)) gameMode = "AFK";
+        OLP.scoreData.get(player.getUniqueId()).incrementBlocksMined(gameMode);
+        OLP.scoreData.get(player.getUniqueId()).incrementTypeBlocksMined(event.getBlock().getType(),gameMode);
     }
 
     public void playerAdvanced(@NotNull PlayerAdvancementDoneEvent event) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
         Player player = event.getPlayer();
         event.getAdvancement().getDisplay();
-        ConfigurationSection scoring = oneLifePlugin.getConfig().getConfigurationSection("Scoring");
-        assert scoring != null;
-
-        if (playerAFK(player)) {
-
-            config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("Achevements")));
-        }
-        else
-            config.set(player.getUniqueId() + ".playerAdvancements", config.getInt(player.getUniqueId() + ".playerAdvancements") - 1);
-        oneLifePlugin.savePlayerConfig(config);
+        String gameMode = player.getGameMode().name();
+        if (playerAFK(player)) gameMode = "AFK";
+        OLP.scoreData.get(player.getUniqueId()).incrementAchievements(gameMode);
     }
 
     public void playerDeath(@NotNull PlayerDeathEvent event) {
         Player player = event.getEntity();
-        ScoreData scoreData;
-        GameMode gameMode = player.getGameMode();
-
-        if (oneLifePlugin.scoreDataMap.containsKey(player.getUniqueId()))
-            scoreData = oneLifePlugin.scoreDataMap.get(player.getUniqueId());
-        else
-            scoreData = initializePlayerScore(player);
-
-        HashMap<String, Double> deaths = scoreData.getDeaths();
-        if (deaths.containsKey(gameMode.name())) deaths.replace(gameMode.name(), (deaths.get(gameMode.name()) + 1));
-        else deaths.put(gameMode.name(), 1.0);
-
-        scoreData.setDeaths(deaths);
-        oneLifePlugin.scoreDataMap.replace(player.getUniqueId(), scoreData);
+        String gameMode = player.getGameMode().name();
+        if (playerAFK(player)) gameMode = "AFK";
+        OLP.scoreData.get(player.getUniqueId()).incrementDeaths(gameMode);
     }
 
     public void entityKilled(@NotNull EntityDeathEvent event) {
         if (event.getDamageSource().getCausingEntity() != null && event.getDamageSource().getCausingEntity().getType() == EntityType.PLAYER) {
-            FileConfiguration config = oneLifePlugin.getPlayerConfig();
             Player player = (Player) event.getDamageSource().getCausingEntity();
-            ConfigurationSection scoring = oneLifePlugin.getConfig().getConfigurationSection("Scoring");
-
-            if (playerAFK(player)) {
-                assert scoring != null;
-                config.set(player.getUniqueId() + ".afkPointsOffset", config.getDouble(player.getUniqueId() + ".afkPointsOffset") - (1 * scoring.getDouble("MobKills." + event.getEntity().getType().name().toUpperCase())));
-            }
-            else
-                config.set(player.getUniqueId() + ".MobKills." + event.getEntity().getType().name().toUpperCase(), config.getDouble(player.getUniqueId() + ".MobKills." + event.getEntity().getType().name().toUpperCase()) + 1);
-
-            oneLifePlugin.savePlayerConfig(config);
+            String gameMode = player.getGameMode().name();
+            if (playerAFK(player)) gameMode = "AFK";
+            OLP.scoreData.get(player.getUniqueId()).incrementTypeMobsKilled(event.getEntityType(),gameMode);
         }
     }
 
     public void timeOnline(@NotNull Player player) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
-        ConfigurationSection scoring = oneLifePlugin.getConfig().getConfigurationSection("Scoring");
-        assert scoring != null;
-        if (player.getGameMode().equals(GameMode.ADVENTURE)) {
-            config.set(player.getUniqueId() + ".adventureSec", config.getDouble(player.getUniqueId() + ".adventureSec") + 1);
-            config.set(player.getUniqueId() + ".adventureHr", (config.getDouble(player.getUniqueId() + ".adventureSec") + 1)/60/60);
-        } else if (playerAFK(player)) {
-            config.set(player.getUniqueId() + ".afkSec", config.getDouble(player.getUniqueId() + ".afkSec") + 1);
-            config.set(player.getUniqueId() + ".afkHr", (config.getDouble(player.getUniqueId() + ".afkSec") + 1)/60/60);
-        } else {
-            config.set(player.getUniqueId() + ".survivalSec", config.getDouble(player.getUniqueId() + ".survivalSec") + 1);
-            config.set(player.getUniqueId() + ".survivalHr", (config.getDouble(player.getUniqueId() + ".survivalSec") + 1)/60/60);
-        }
-        oneLifePlugin.savePlayerConfig(config);
+        String gameMode = player.getGameMode().name();
+        if (playerAFK(player)) gameMode = "AFK";
+        OLP.scoreData.get(player.getUniqueId()).incrementOnlineHr(gameMode,"Sec");
     }
 
     public void allPlayerScores(CommandSourceStack stack, Boolean showInChat) {
-        List<ScoreData> scores = new ArrayList<>();
+        List<PlayerScore> scores = new ArrayList<>();
         Map<String, Double> teamScore = new HashMap<>();
-        for (OfflinePlayer offlinePlayer : Bukkit.getWhitelistedPlayers()) {
-            if (offlinePlayer.getStatistic(Statistic.PLAY_ONE_MINUTE) != 0) {
-                ScoreData score = oneLifePlugin.scoreDataMap.get(offlinePlayer.getUniqueId());
-                scores.add(score);
-                if (score.getTeam() != null) {
-                    if (!teamScore.containsKey(score.getTeam().getTeamName()))
-                        teamScore.put(score.getTeam().getTeamName(), score.totalPoints());
-                    else
-                        teamScore.replace(score.getTeam().getTeamName(), teamScore.getOrDefault(score.getTeam().getTeamName(), 0.00) + score.totalPoints());
-                }
+        for (PlayerScore score : OLP.scoreData.values()) {
+            scores.add(score);
+            if (score.getTeam() != null) {
+                if (!teamScore.containsKey(score.getTeam().getTeamName()))
+                    teamScore.put(score.getTeam().getTeamName(), score.totalPoints());
+                else
+                    teamScore.replace(score.getTeam().getTeamName(), teamScore.getOrDefault(score.getTeam().getTeamName(), 0.00) + score.totalPoints());
             }
         }
         scores.sort((o1, o2) -> {
@@ -260,8 +130,8 @@ public class ScoreManager {
                         Map.Entry::getValue,
                 (oldValue, newValue) -> oldValue, LinkedHashMap::new));
         if (showInChat) {
-            for(ScoreData scoreData : scores) {
-                showPlayerScore(stack,scoreData);
+            for(PlayerScore playerScore : scores) {
+                showPlayerScore(stack, playerScore);
             }
         }
         csvPlayerScore(scores);
@@ -269,132 +139,105 @@ public class ScoreManager {
     }
 
     public void singlePlayerScores(CommandSourceStack stack, @NotNull Player player) {
-        ScoreData scoreData = oneLifePlugin.scoreDataMap.get(player.getUniqueId());
-        if (scoreData == null)
-            scoreData = initializePlayerScore(player);
-        showPlayerScore(stack,scoreData);
+        PlayerScore playerScore = OLP.scoreData.get(player.getUniqueId());
+        showPlayerScore(stack, playerScore);
     }
 
-    public void csvPlayerScore(@NotNull List<ScoreData> scores) {
+    public void csvPlayerScore(@NotNull List<PlayerScore> scores) {
         String[] headers = new String[]{"Player", "Team", "Total", "Deaths", "DeathPoints", "Xp", "XpPoints", "OnlineHr", "SurvivalHr", "AdventureHr", "AfkHr",
-                "OnlineHrPoints", "Total Mob Kill Points", "Blocks Mined", "Blocks Mined Points", "Blocks Placed", "Blocks Placed Points", "Items Harvested",
+                "OnlineHrPoints", "Total MobConfig Kill Points", "Blocks Mined", "Blocks Mined Points", "Blocks Placed", "Blocks Placed Points", "Items Harvested",
                 "Items Harvested Points", "Items Caught", "Items Caught Points", "Achievements", "Achievement Points"};
         List<String[]> data = new ArrayList<>();
-        for (ScoreData scoreData : scores) {
-            data.add(new String[]{scoreData.getPlayerName(), scoreData.getTeam().getTeamName(), String.valueOf(scoreData.totalPoints()), String.valueOf(scoreData.getDeaths()), String.valueOf(scoreData.getDeathPoints()),
-                    String.valueOf(scoreData.getXp()), String.valueOf(scoreData.getXpPoints()), String.valueOf(scoreData.onlineHr()), String.valueOf(scoreData.getOnlineHr().get("SURVIVAL")), String.valueOf(scoreData.getOnlineHr().get("ADVENTURE")),
-                    String.valueOf(scoreData.getOnlineHr().get("AFK")), String.valueOf(scoreData.getOnlineHrPoints()), String.valueOf(scoreData.getTypeMobTotalPoints()), String.valueOf(scoreData.getBlocksMined()),
-                    String.valueOf(scoreData.getDefaultBlocksMinedPoints()), String.valueOf(scoreData.getBlocksPlaced()), String.valueOf(scoreData.getDefaultBlocksPlacedPoints()), String.valueOf(scoreData.getHarvested()),
-                    String.valueOf(scoreData.getDefaultHarvestedPoints()), String.valueOf(scoreData.getCaught()), String.valueOf(scoreData.getDefaultCaughtPoints()), String.valueOf(scoreData.getAchievements()), String.valueOf(scoreData.getDefaultAchievementPoints())});
+        for (PlayerScore playerScore : scores) {
+            data.add(new String[]{playerScore.getPlayerName(), playerScore.getTeam().getTeamName(), String.valueOf(playerScore.totalPoints()), String.valueOf(playerScore.getDeaths()), String.valueOf(playerScore.getDeathPoints()),
+                    String.valueOf(playerScore.getXp()), String.valueOf(playerScore.getXpPoints()), String.valueOf(playerScore.onlineHr()), String.valueOf(playerScore.getOnlineHr().get("SURVIVAL")), String.valueOf(playerScore.getOnlineHr().get("ADVENTURE")),
+                    String.valueOf(playerScore.getOnlineHr().get("AFK")), String.valueOf(playerScore.getOnlineHrPoints()), String.valueOf(playerScore.getTypeMobTotalPoints()), String.valueOf(playerScore.getBlocksMined()),
+                    String.valueOf(playerScore.getDefaultBlocksMinedPoints()), String.valueOf(playerScore.getBlocksPlaced()), String.valueOf(playerScore.getDefaultBlocksPlacedPoints()), String.valueOf(playerScore.getHarvested()),
+                    String.valueOf(playerScore.getDefaultHarvestedPoints()), String.valueOf(playerScore.getCaught()), String.valueOf(playerScore.getDefaultCaughtPoints()), String.valueOf(playerScore.getAchievements()), String.valueOf(playerScore.getDefaultAchievementPoints())});
         }
-        oneLifePlugin.exportToCsv("Score", data, headers);
+        OLP.exportToCsv("Score", data, headers);
     }
 
-    public void logPlayerScore(@NotNull List<ScoreData> scores, @NotNull Map<String, Double> teamScores) {
+    public void logPlayerScore(@NotNull List<PlayerScore> scores, @NotNull Map<String, Double> teamScores) {
         String path = "Score";
-        oneLifePlugin.logToFile("--- Team Scores ---", path);
-        oneLifePlugin.logToFile("", path);
+        OLP.logToFile("--- Team Scores ---", path);
+        OLP.logToFile("", path);
         teamScores.forEach((key, value) -> {
-            oneLifePlugin.logToFile(key + "'s Score: " + value, path);
-            oneLifePlugin.logToFile("--- Member Ranking ---", path);
-            scores.stream().filter(score -> Objects.equals(score.getTeam().getTeamName(), key)).forEach(score -> oneLifePlugin.logToFile(score.getPlayerName() +"'s Score: " + score.totalPoints(), path));
-            oneLifePlugin.logToFile("--- End Members ---", path);
-            oneLifePlugin.logToFile("",path);
+            OLP.logToFile(key + "'s Score: " + value, path);
+            OLP.logToFile("--- Member Ranking ---", path);
+            scores.stream().filter(score -> Objects.equals(score.getTeam().getTeamName(), key)).forEach(score -> OLP.logToFile(score.getPlayerName() +"'s Score: " + score.totalPoints(), path));
+            OLP.logToFile("--- End Members ---", path);
+            OLP.logToFile("",path);
         });
-        oneLifePlugin.logToFile("",path);
-        oneLifePlugin.logToFile("--- Individualised Ranking ---", path);
-        for(ScoreData scoreData : scores) {
-            oneLifePlugin.logToFile(scoreData.getPlayerName() + " - Team: " + scoreData.getTeam().getTeamName() + ":", path);
-            oneLifePlugin.logToFile("Total Points: " + scoreData.totalPoints(), path);
-            oneLifePlugin.logToFile("--- Category Totals ---", path);
-            oneLifePlugin.logToFile("Deaths: " + scoreData.getDeaths().get(GameMode.SURVIVAL) + ", Adventure Deaths: " + scoreData.getDeaths().get(GameMode.ADVENTURE), path);
-            oneLifePlugin.logToFile("Death Points: " + scoreData.getDeathPoints(), path);
-            oneLifePlugin.logToFile("AFK Penalty: " + scoreData.getAFKPointsOffset(), path);
-            oneLifePlugin.logToFile("Xp: " + scoreData.getXp() + ", Points: " + scoreData.getXpPoints(), path);
-            oneLifePlugin.logToFile("OnlineHr: " + scoreData.onlineHr() + ", Points: " + scoreData.getOnlineHrPoints(), path);
-            oneLifePlugin.logToFile("SurvivalHr: " + scoreData.getOnlineHr().get("SURVIVIAL") + ", AdventureHr: " + scoreData.getOnlineHr().get("ADVENTURE") + ", AfkHr: " + scoreData.getOnlineHr().get("AFK"), path);
-            oneLifePlugin.logToFile("Total Mob Kill Points: " + scoreData.getTypeMobTotalPoints(), path);
-            oneLifePlugin.logToFile("Blocks Mined: " + scoreData.getBlocksMined() + ", Points: " + scoreData.getDefaultBlocksMinedPoints(), path);
-            oneLifePlugin.logToFile("Blocks Placed: " + scoreData.getBlocksPlaced() + ", Points: " + scoreData.getDefaultBlocksPlacedPoints(), path);
-            oneLifePlugin.logToFile("Items Harvested: " + scoreData.getHarvested() + ", Points: " + scoreData.getDefaultHarvestedPoints(), path);
-            oneLifePlugin.logToFile("Items Caught: " + scoreData.getCaught() + ", Points: " + scoreData.getDefaultCaughtPoints(), path);
-            oneLifePlugin.logToFile("Achievements: " + scoreData.getAchievements() + ", Points: " + scoreData.getDefaultAchievementPoints(), path);
-            oneLifePlugin.logToFile("", path);
-            oneLifePlugin.logToFile("Mob Killed Breakdown", path);
-            if (!scoreData.getTypeMobs().isEmpty()) {
-                scoreData.getTypeMobs().keySet().forEach(key -> oneLifePlugin.logToFile(key + "s Killed: " + scoreData.getTypeMobs().get(key).getTotalCount() + " , Points: " + scoreData.getTypeMobs().get(key).getPoints(), path));
+        OLP.logToFile("",path);
+        OLP.logToFile("--- Individualised Ranking ---", path);
+        for(PlayerScore playerScore : scores) {
+            OLP.logToFile(playerScore.getPlayerName() + " - Team: " + playerScore.getTeam().getTeamName() + ":", path);
+            OLP.logToFile("Total Points: " + playerScore.totalPoints(), path);
+            OLP.logToFile("--- Category Totals ---", path);
+            OLP.logToFile("Deaths: " + playerScore.getDeaths().get(GameMode.SURVIVAL.name()) + ", Adventure Deaths: " + playerScore.getDeaths().get(GameMode.ADVENTURE.name()), path);
+            OLP.logToFile("Death Points: " + playerScore.getDeathPoints(), path);
+            OLP.logToFile("AFK Penalty: " + playerScore.getAFKPointsOffset(), path);
+            OLP.logToFile("Xp: " + playerScore.getXp() + ", Points: " + playerScore.getXpPoints(), path);
+            OLP.logToFile("OnlineHr: " + playerScore.onlineHr() + ", Points: " + playerScore.getOnlineHrPoints(), path);
+            OLP.logToFile("SurvivalHr: " + playerScore.getOnlineHr().get("SURVIVIAL") + ", AdventureHr: " + playerScore.getOnlineHr().get("ADVENTURE") + ", AfkHr: " + playerScore.getOnlineHr().get("AFK"), path);
+            OLP.logToFile("Total MobConfig Kill Points: " + playerScore.getTypeMobTotalPoints(), path);
+            OLP.logToFile("Blocks Mined: " + playerScore.getBlocksMined() + ", Points: " + playerScore.getDefaultBlocksMinedPoints(), path);
+            OLP.logToFile("Blocks Placed: " + playerScore.getBlocksPlaced() + ", Points: " + playerScore.getDefaultBlocksPlacedPoints(), path);
+            OLP.logToFile("Items Harvested: " + playerScore.getHarvested() + ", Points: " + playerScore.getDefaultHarvestedPoints(), path);
+            OLP.logToFile("Items Caught: " + playerScore.getCaught() + ", Points: " + playerScore.getDefaultCaughtPoints(), path);
+            OLP.logToFile("Achievements: " + playerScore.getAchievements() + ", Points: " + playerScore.getDefaultAchievementPoints(), path);
+            OLP.logToFile("", path);
+            OLP.logToFile("MobConfig Killed Breakdown", path);
+            if (!playerScore.getTypeMobsKilled().isEmpty()) {
+                playerScore.getTypeMobsKilled().keySet().forEach(key -> OLP.logToFile(key + "s Killed: " + playerScore.getTypeMobsKilled().get(key).getTotalCount() + " , Points: " + playerScore.getIndividualMobKilledPoints(key), path));
             }
-            oneLifePlugin.logToFile("", path);
-            oneLifePlugin.logToFile("Blocks Mined Breakdown", path);
-            if (!scoreData.getTypeBlocksMined().isEmpty()) {
-                scoreData.getTypeBlocksMined().keySet().forEach(key -> oneLifePlugin.logToFile(key.name() + " Mined: " + scoreData.getTypeBlocksMined().get(key).getTotalCount() + " , Points: " + scoreData.getTypeBlocksMined().get(key).getPoints(), path));
+            OLP.logToFile("", path);
+            OLP.logToFile("Blocks Mined Breakdown", path);
+            if (!playerScore.getTypeBlocksMined().isEmpty()) {
+                playerScore.getTypeBlocksMined().keySet().forEach(key -> OLP.logToFile(key.name() + " Mined: " + playerScore.getTypeBlocksMined().get(key).getTotalCount() + " , Points: " + playerScore.getIndividualBlocksMinedPoints(key), path));
             }
-            oneLifePlugin.logToFile("", path);
-            oneLifePlugin.logToFile("Blocks Placed Breakdown", path);
-            if (!scoreData.getTypeBlocksPlaced().isEmpty()) {
-                scoreData.getTypeBlocksPlaced().keySet().forEach(key -> oneLifePlugin.logToFile(key.name() + " Placed: " + scoreData.getTypeBlocksPlaced().get(key).getTotalCount() + " , Points: " + scoreData.getTypeBlocksPlaced().get(key).getPoints(), path));
+            OLP.logToFile("", path);
+            OLP.logToFile("Blocks Placed Breakdown", path);
+            if (!playerScore.getTypeBlocksPlaced().isEmpty()) {
+                playerScore.getTypeBlocksPlaced().keySet().forEach(key -> OLP.logToFile(key.name() + " Placed: " + playerScore.getTypeBlocksPlaced().get(key).getTotalCount() + " , Points: " + playerScore.getIndividualBlocksPlacedPoints(key), path));
             }
-            oneLifePlugin.logToFile("", path);
-            oneLifePlugin.logToFile("Items Harvested Breakdown", path);
-            if (!scoreData.getTypeItemsHarvested().isEmpty()) {
-                scoreData.getTypeItemsHarvested().keySet().forEach(key -> oneLifePlugin.logToFile(key + " Havested: " + scoreData.getTypeItemsHarvested().get(key).getTotalCount() + " , Points: " + scoreData.getTypeItemsHarvested().get(key).getPoints(), path));
+            OLP.logToFile("", path);
+            OLP.logToFile("Items Harvested Breakdown", path);
+            if (!playerScore.getTypeItemsHarvested().isEmpty()) {
+                playerScore.getTypeItemsHarvested().keySet().forEach(key -> OLP.logToFile(key + " Havested: " + playerScore.getTypeItemsHarvested().get(key).getTotalCount() + " , Points: " + playerScore.getIndividualItemsHarvestedPoints(key), path));
             }
-            oneLifePlugin.logToFile("", path);
-            oneLifePlugin.logToFile("------- END -----", path);
-            oneLifePlugin.logToFile("", path);
+            OLP.logToFile("", path);
+            OLP.logToFile("------- END -----", path);
+            OLP.logToFile("", path);
         }
     }
 
-    public void showPlayerScore(@NotNull CommandSourceStack stack, @NotNull ScoreData scoreData) {
+    public void showPlayerScore(@NotNull CommandSourceStack stack, @NotNull PlayerScore playerScore) {
         String Team = "N/A";
-        if (scoreData.getTeam() != null)
-            Team = scoreData.getTeam().getTeamName();
-        stack.getSender().sendMessage(scoreData.getPlayerName() + " - Team: " + Team + ":");
-        stack.getSender().sendMessage("Total Points: " + scoreData.totalPoints());
+        if (playerScore.getTeam() != null)
+            Team = playerScore.getTeam().getTeamName();
+        stack.getSender().sendMessage(playerScore.getPlayerName() + " - Team: " + Team + ":");
+        stack.getSender().sendMessage("Total Points: " + playerScore.totalPoints());
         stack.getSender().sendMessage("--- Category Totals ---");
-        stack.getSender().sendMessage("Deaths: " + scoreData.getDeaths().get(GameMode.SURVIVAL) + ", Adventure Deaths: " + scoreData.getDeaths().get(GameMode.ADVENTURE));
-        stack.getSender().sendMessage("Death Points: " + scoreData.getDeathPoints());
-        stack.getSender().sendMessage("AFK Penalty: " + scoreData.getAFKPointsOffset());
-        stack.getSender().sendMessage("Xp: " + scoreData.getXp() + ", Points: " + scoreData.getXpPoints());
-        stack.getSender().sendMessage("OnlineHr: " + scoreData.onlineHr() + ", Points: " + scoreData.getOnlineHrPoints());
-        stack.getSender().sendMessage("SurvivalHr: " + scoreData.getOnlineHr().get("SURVIVIAL") + ", AdventureHr: " + scoreData.getOnlineHr().get("ADVENTURE") + ", AfkHr: " + scoreData.getOnlineHr().get("AFK"));
-        stack.getSender().sendMessage("Total Mob Kill Points: " + scoreData.getTypeMobTotalPoints());
-        stack.getSender().sendMessage("Blocks Mined: " + scoreData.getBlocksMined() + ", Points: " + scoreData.getDefaultBlocksMinedPoints());
-        stack.getSender().sendMessage("Blocks Placed: " + scoreData.getBlocksPlaced() + ", Points: " + scoreData.getDefaultBlocksPlacedPoints());
-        stack.getSender().sendMessage("Items Harvested: " + scoreData.getHarvested() + ", Points: " + scoreData.getDefaultHarvestedPoints());
-        stack.getSender().sendMessage("Items Caught: " + scoreData.getCaught() + ", Points: " + scoreData.getDefaultCaughtPoints());
-        stack.getSender().sendMessage("Achievements: " + scoreData.getAchievements() + ", Points: " + scoreData.getDefaultAchievementPoints());
+        stack.getSender().sendMessage("Deaths: " + playerScore.getDeaths().get(GameMode.SURVIVAL.name()) + ", Adventure Deaths: " + playerScore.getDeaths().get(GameMode.ADVENTURE.name()));
+        stack.getSender().sendMessage("Death Points: " + playerScore.getDeathPoints());
+        stack.getSender().sendMessage("AFK Penalty: " + playerScore.getAFKPointsOffset());
+        stack.getSender().sendMessage("Xp: " + playerScore.getXp() + ", Points: " + playerScore.getXpPoints());
+        stack.getSender().sendMessage("OnlineHr: " + playerScore.onlineHr() + ", Points: " + playerScore.getOnlineHrPoints());
+        stack.getSender().sendMessage("SurvivalHr: " + playerScore.getOnlineHr().get("SURVIVIAL") + ", AdventureHr: " + playerScore.getOnlineHr().get("ADVENTURE") + ", AfkHr: " + playerScore.getOnlineHr().get("AFK"));
+        stack.getSender().sendMessage("Total MobConfig Kill Points: " + playerScore.getTypeMobTotalPoints());
+        stack.getSender().sendMessage("Blocks Mined: " + playerScore.getBlocksMined() + ", Points: " + playerScore.getDefaultBlocksMinedPoints());
+        stack.getSender().sendMessage("Blocks Placed: " + playerScore.getBlocksPlaced() + ", Points: " + playerScore.getDefaultBlocksPlacedPoints());
+        stack.getSender().sendMessage("Items Harvested: " + playerScore.getHarvested() + ", Points: " + playerScore.getDefaultHarvestedPoints());
+        stack.getSender().sendMessage("Items Caught: " + playerScore.getCaught() + ", Points: " + playerScore.getDefaultCaughtPoints());
+        stack.getSender().sendMessage("Achievements: " + playerScore.getAchievements() + ", Points: " + playerScore.getDefaultAchievementPoints());
         stack.getSender().sendMessage("Use /OneLife Scores All for a Detailed Breakdown");
         stack.getSender().sendMessage("------- END -----");
     }
 
-    public Team getTeam(@NotNull OfflinePlayer player) {
-        List<String> teams = oneLifePlugin.getConfig().getStringList("Team");
-        User user;
-        try {
-            user = oneLifePlugin.lpAPI.getUserManager().loadUser(player.getUniqueId()).get();
-        } catch (ExecutionException | InterruptedException e) {
-            throw new RuntimeException(e);
-        }
-        String pg;
-        if (user == null)
-            pg = "default";
-        else
-            pg = user.getPrimaryGroup();
-        if (pg.isEmpty())
-            pg = "default";
-        Group group = oneLifePlugin.lpAPI.getGroupManager().getGroup(pg);
-        assert group != null;
-        for (String team : teams) {
-            if (Objects.requireNonNull(group.getName()).equalsIgnoreCase(team)) {
-                return oneLifePlugin.settings.getTeams().get(Objects.requireNonNullElse(group.getDisplayName(), group.getName()));
-            }
-        }
-        return null;
-    }
-
     public boolean playerAFK(@NotNull OfflinePlayer player) {
-        User user = oneLifePlugin.lpAPI.getUserManager().getUser(player.getUniqueId());
+        User user = OLP.lpAPI.getUserManager().getUser(player.getUniqueId());
         assert user != null;
         return user.getPrimaryGroup().equalsIgnoreCase("AFK");
     }

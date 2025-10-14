@@ -1,6 +1,12 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
 import com.fasterxml.jackson.annotation.*;
+import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.plugin.Plugin;
+import org.jetbrains.annotations.NotNull;
+import xyz.acyber.oneLife.OneLifePlugin;
+
 import java.util.UUID;
 
 public class PlayerConfig {
@@ -15,12 +21,8 @@ public class PlayerConfig {
     private UUID raceUUID = null;
     @JsonProperty("givenStartItems")
     private boolean givenStartItems = false;
-    @JsonProperty("repeatItemsTask")
-    private int repeatItemsTaskId = 0;
     @JsonProperty("climbingEnabled")
     private boolean climbingEnabled = false;
-    @JsonProperty("playerClimbVines")
-    private String playerClimbVines = null;
 
     @JsonCreator
     public PlayerConfig() { super(); } // Default constructor
@@ -29,7 +31,12 @@ public class PlayerConfig {
     public PlayerConfig(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;
+    }
 
+    @JsonIgnore
+    public PlayerConfig(@NotNull OfflinePlayer player) {
+        this.uuid = player.getUniqueId();
+        this.name = player.getName();
     }
 
     @JsonGetter
@@ -51,25 +58,16 @@ public class PlayerConfig {
     public UUID getRaceUUID() { return raceUUID; }
     @JsonSetter
     public void setRaceUUID(UUID raceUUID) { this.raceUUID = raceUUID; }
-
     @JsonGetter
-    public boolean isGivenStartItems() { return givenStartItems; }
+    public boolean getGivenStartItems() { return givenStartItems; }
     @JsonSetter
     public void setGivenStartItems(boolean givenStartItems) { this.givenStartItems = givenStartItems; }
-
-    @JsonGetter
-    public int getRepeatItemsTask() { return repeatItemsTaskId; }
-    @JsonSetter
-    public void setRepeatItemsTask(int bukkitTask) { this.repeatItemsTaskId = bukkitTask; }
 
     @JsonGetter
     public boolean isClimbingEnabled() { return climbingEnabled; }
     @JsonSetter
     public void setClimbingEnabled(boolean enabled) { this.climbingEnabled = enabled; }
 
-    @JsonGetter
-    public String getPlayerClimbVines() { return playerClimbVines; }
-    @JsonSetter
-    public void setPlayerClimbVines(String playerClimbVines) {  this.playerClimbVines = playerClimbVines; }
+
 
 }

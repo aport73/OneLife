@@ -1,12 +1,13 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
 import com.fasterxml.jackson.annotation.*;
+
 import java.util.UUID;
 
 public class Team {
 
     @JsonProperty("uuid")
-    private UUID uuid = null;
+    private UUID uuid = UUID.randomUUID();
     @JsonProperty("teamName")
     private String teamName = "";
     @JsonProperty("prefix")

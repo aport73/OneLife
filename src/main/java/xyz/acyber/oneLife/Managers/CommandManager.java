@@ -92,9 +92,9 @@ public class CommandManager {
                                     Player player = (Player) ctx.getSource().getSender();
                                     player.updateCommands();
                                     if (oneLifePlugin.settings.getEnabledFeatures().getEnabledMobManager())
-                                        ctx.getSource().getSender().sendRichMessage("Mob Tweaks Enabled");
+                                        ctx.getSource().getSender().sendRichMessage("MobConfig Tweaks Enabled");
                                     else
-                                        ctx.getSource().getSender().sendRichMessage("Mob Tweaks Disabled");
+                                        ctx.getSource().getSender().sendRichMessage("MobConfig Tweaks Disabled");
                                     return Command.SINGLE_SUCCESS;
                                 })))
                 .then(Commands.literal("Races")
@@ -202,7 +202,6 @@ public class CommandManager {
                                         .then(Commands.argument("state", BoolArgumentType.bool())
                                                 .executes(CommandManager::runSetPlayerClimbLogic)))));
 
-        //TODO Build out help cmd argument stack
         LiteralArgumentBuilder<CommandSourceStack> cmdHelp = Commands.literal("Help")
                 .executes(ctx -> {
                     ctx.getSource().getSender().sendRichMessage("One Life Help! - To Be Implemented");

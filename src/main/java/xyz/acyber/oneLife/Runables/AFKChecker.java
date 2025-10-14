@@ -23,7 +23,7 @@ public class AFKChecker extends BukkitRunnable {
     private final HashMap<UUID,Long> lastInput;
     private final double afkTime;
     private final Group afk;
-    private LuckPerms lpAPI;
+    private final LuckPerms lpAPI;
     ScoreManager sm;
     MiniMessage mm = MiniMessage.miniMessage();
 

@@ -32,26 +32,30 @@ import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.persistence.PersistentDataContainer;
 import org.bukkit.persistence.PersistentDataType;
+import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
+import org.jetbrains.annotations.NotNull;
+import xyz.acyber.oneLife.DataObjects.SubSettings.AssignedArmor;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Enchant;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Race;
 import xyz.acyber.oneLife.OneLifePlugin;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
 
 public class RaceManager {
 
-    //TODO Entire Class needs Refactor - Redesign
-
-    static OneLifePlugin oneLifePlugin;
+    static OneLifePlugin OLP;
 
     public RaceManager(OneLifePlugin plugin) {
-        oneLifePlugin = plugin;
+        OLP = plugin;
     }
 
-    public void onPlayerJoin(PlayerJoinEvent event) {
+    public void onPlayerJoin(@NotNull PlayerJoinEvent event) {
         Player player = event.getPlayer();
         String race = getPlayerRace(player);
         if (race != null) {
@@ -65,8 +69,8 @@ public class RaceManager {
 
     public void onPlayerMove(PlayerMoveEvent ev) {
         //Code for Wall Climbing
-        Boolean climbingEnabled = oneLifePlugin.getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".climbingEnabled");
-        FileConfiguration config = oneLifePlugin.getConfig();
+        Boolean climbingEnabled = OLP.getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".climbingEnabled");
+        FileConfiguration config = OLP.getConfig();
 
         if (climbingEnabled && getPlayerClimbs(ev.getPlayer())) {
             Block b1 = ev.getPlayer().getLocation().getBlock();
@@ -172,7 +176,7 @@ public class RaceManager {
     }
 
     public void onDamage(EntityDamageEvent event) {
-        FileConfiguration config = oneLifePlugin.getConfig();
+        FileConfiguration config = OLP.getConfig();
 
         if (event.getEntity() instanceof Player player) {
             double damage = event.getDamage();
@@ -206,7 +210,7 @@ public class RaceManager {
     }
 
     public void playerItemConsume(PlayerItemConsumeEvent event) {
-        FileConfiguration config = oneLifePlugin.getConfig();
+        FileConfiguration config = OLP.getConfig();
 
         List<String> allowedFoods = config.getStringList("races." + getPlayerRace(event.getPlayer()) + ".allowedFoods");
         ConfigurationSection buffedFoods = config.getConfigurationSection("races." + getPlayerRace(event.getPlayer()) + ".buffedFoods");
@@ -255,7 +259,7 @@ public class RaceManager {
                     applyRace(event.getPlayer(), null);
                 }
             };
-            runnable.runTaskLater(oneLifePlugin, 5);
+            runnable.runTaskLater(OLP, 5);
         }
     }
 
@@ -272,7 +276,7 @@ public class RaceManager {
         //Run code to check for armor enchants for race.
         ItemStack item = event.getNewItem();
         String race = getPlayerRace(event.getPlayer());
-        ConfigurationSection equipConfig = oneLifePlugin.getConfig().getConfigurationSection("races." + race + ".equipment");
+        ConfigurationSection equipConfig = OLP.getConfig().getConfigurationSection("races." + race + ".equipment");
         if (equipConfig != null && !item.isEmpty()) {
             applyRace(event.getPlayer(), null);
         }
@@ -367,26 +371,8 @@ public class RaceManager {
 
     }
 
-    public String getPlayerRace(Player player) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
-        String race = config.getString(player.getUniqueId() + ".playerRace");
-        return !(race == null) ? race : "";
-    }
-
-    public void setPlayerRace(Player player, String playerRace) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
-        config.set(player.getUniqueId() + ".playerRace", playerRace);
-        oneLifePlugin.savePlayerConfig(config);
-    }
-
-    public void setPlayerStartItem(Player player, Boolean start) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
-        config.set(player.getUniqueId() + ".playerStartItem", start);
-        oneLifePlugin.savePlayerConfig(config);
-    }
-
     public void setRaceEnchants(ItemStack item, String enchants) {
-        NamespacedKey key = new NamespacedKey(oneLifePlugin, "oneLifeRaces-enchants");
+        NamespacedKey key = new NamespacedKey(OLP, "oneLifeRaces-enchants");
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer itemContainer = meta.getPersistentDataContainer();
         itemContainer.set(key, PersistentDataType.STRING, enchants);
@@ -395,7 +381,7 @@ public class RaceManager {
 
     public String getRaceEnchants(ItemStack item) {
         try {
-            NamespacedKey key = new NamespacedKey(oneLifePlugin, "oneLifeRaces-enchants");
+            NamespacedKey key = new NamespacedKey(OLP, "oneLifeRaces-enchants");
             PersistentDataContainer itemContainer = item.getItemMeta().getPersistentDataContainer();
             if (itemContainer.has(key)) {
                 return itemContainer.get(key, PersistentDataType.STRING);
@@ -408,7 +394,7 @@ public class RaceManager {
     }
 
     public void setIsRaceItem(ItemStack item, Boolean value) {
-        NamespacedKey key = new NamespacedKey(oneLifePlugin, "oneLifeRaces-raceItem");
+        NamespacedKey key = new NamespacedKey(OLP, "oneLifeRaces-raceItem");
         ItemMeta meta = item.getItemMeta();
         PersistentDataContainer itemContainer = meta.getPersistentDataContainer();
         itemContainer.set(key, PersistentDataType.BOOLEAN, value);
@@ -417,7 +403,7 @@ public class RaceManager {
 
     public Boolean isRaceItem(ItemStack item) {
         try {
-            NamespacedKey key = new NamespacedKey(oneLifePlugin, "oneLifeRaces-raceItem");
+            NamespacedKey key = new NamespacedKey(OLP, "oneLifeRaces-raceItem");
             PersistentDataContainer itemContainer = item.getItemMeta().getPersistentDataContainer();
             if (itemContainer.has(key)) {
                 return itemContainer.get(key, PersistentDataType.BOOLEAN);
@@ -430,105 +416,73 @@ public class RaceManager {
 
     }
 
-    public void setPlayerClimbs(Player player, Boolean climbOn) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
-        config.set(player.getUniqueId() + ".playerClimbs", climbOn);
-        oneLifePlugin.savePlayerConfig(config);
+    private void recordItemEnchants(List<Enchant> enchantsList, ItemStack item, NamespacedKey key) {
+        StringBuilder enchants = new StringBuilder();
+        for (Enchant enchant: enchantsList) {
+            enchants.append(enchant.getEnchantment().getKey().getKey()).append(",").append(enchant.getLevel()).append(";");
+        }
+        ItemMeta itemMeta = item.getItemMeta();
+        itemMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, enchants.toString());
+        item.setItemMeta(itemMeta);
     }
 
-    public Boolean getPlayerClimbs(Player player) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
-        return config.getBoolean(player.getUniqueId() + ".playerClimbs");
-    }
+    private ItemStack getEnchantedItem(Player player, ItemStack item, Material assignedMaterial, List<Enchant> assignedEnchants) {
 
-    public void setPlayerClimbVines(Player player, String climbed) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
-        config.set(player.getUniqueId() + ".playerClimbVines", climbed);
-        oneLifePlugin.savePlayerConfig(config);
-    }
+        List<Enchant> raceAssignedEnchants = new ArrayList<>();
+        List<Enchant> overriddenEnchants = new ArrayList<>();
+        //Need to see if the player has an existing item otherwise create one with race assigned default
+        if (item == null) item = new ItemStack(assignedMaterial);
+        //We need to keep track of any enchants we overwrite so we can restore the item to original state when not with player
 
-    public String getPlayerClimbVines(Player player) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
-        String vines = config.getString(player.getUniqueId() + ".playerClimbVines");
-        if (vines == null) return "";
-        return vines;
-    }
-
-    public void giveRaceEquipment(Player player, ItemStack item, ConfigurationSection Equipment) {
-        for (String key : Equipment.getKeys(false)) {
-            boolean createdItem = false;
-            if (item == null || !item.getType().toString().endsWith(key.toUpperCase()) && !key.contains(item.getType().getEquipmentSlot().toString().toUpperCase()) || item.getType().toString().equalsIgnoreCase("CrossBow") && key.equalsIgnoreCase("Bow")) {
-                switch (key) {
-                    case "HELMET":
-                        if (player.getInventory().getHelmet() != null) {
-                            item = player.getInventory().getHelmet();
-                        }
-                        break;
-                    case "CHESTPLATE":
-                        if (player.getInventory().getChestplate() != null) {
-                            item = player.getInventory().getChestplate();
-                        }
-                        break;
-                    case "LEGGINGS":
-                        if (player.getInventory().getLeggings() != null) {
-                            item = player.getInventory().getLeggings();
-                        }
-                        break;
-                    case "BOOTS":
-                        if (player.getInventory().getBoots() != null) {
-                            item = player.getInventory().getBoots();
-                        }
-                        break;
-                    default:
-                        for (ItemStack i : player.getInventory().getContents()) {
-                            if (i != null && i.getType().toString().endsWith(key.toUpperCase()) && (!i.getType().toString().equalsIgnoreCase("CrossBow") || !key.equalsIgnoreCase("Bow"))) {
-                                item = i;
-                            }
-                        }
+        for (Enchant enchant : assignedEnchants) {
+            if (item.getEnchantments().containsKey(enchant.getEnchantment())) {
+                if (item.getEnchantmentLevel(enchant.getEnchantment()) <= enchant.getLevel()) {
+                    overriddenEnchants.add(new Enchant(enchant.getEnchantment(), item.getEnchantmentLevel(enchant.getEnchantment())));
+                    raceAssignedEnchants.add(new Enchant(enchant.getEnchantment(), enchant.getLevel()));
+                    item.getEnchantments().remove(enchant.getEnchantment());
                 }
-
-                if (item == null || !item.getType().toString().endsWith(key.toUpperCase()) && !key.contains(item.getType().getEquipmentSlot().toString().toUpperCase()) || item.getType().toString().equalsIgnoreCase("CrossBow") && key.equalsIgnoreCase("Bow")) {
-                    item = new ItemStack(Material.valueOf(Equipment.getString(key + ".Default")));
-                    this.setIsRaceItem(item, true);
-                    createdItem = true;
-                }
-            }
-
-            StringBuilder upgrades = new StringBuilder();
-
-            for (String upgrade : Objects.requireNonNull(Equipment.getConfigurationSection(key + ".Enchants")).getKeys(false)) {
-                int level = Equipment.getInt(key + ".Enchants." + upgrade);
-                Enchantment enchantment = RegistryAccess.registryAccess().getRegistry(RegistryKey.ENCHANTMENT).get(NamespacedKey.minecraft(upgrade.toLowerCase()));
-
-                assert enchantment != null;
-
-                if ((getRaceEnchants(item) == null || Objects.requireNonNull(getRaceEnchants(item)).isEmpty()) && !item.containsEnchantment(enchantment)) {
-                    upgrades.append(upgrade).append(",");
-                    item.addEnchantment(enchantment, level);
-                }
-            }
-
-            this.setRaceEnchants(item, upgrades.toString());
-            if (createdItem) {
-                switch (key) {
-                    case "HELMET":
-                        player.getInventory().setHelmet(item);
-                        break;
-                    case "CHESTPLATE":
-                        player.getInventory().setChestplate(item);
-                        break;
-                    case "LEGGINGS":
-                        player.getInventory().setLeggings(item);
-                        break;
-                    case "BOOTS":
-                        player.getInventory().setBoots(item);
-                        break;
-                    default:
-                        player.getInventory().addItem(item);
-                }
+            } else {
+                raceAssignedEnchants.add(new Enchant(enchant.getEnchantment(), enchant.getLevel()));
             }
         }
+        if (!overriddenEnchants.isEmpty()) {
+            recordItemEnchants(overriddenEnchants, item, new NamespacedKey(OLP, "oneLifeRaces-overriddenEnchants"));
+        }
+        if (!raceAssignedEnchants.isEmpty()) {
+            recordItemEnchants(raceAssignedEnchants, item, new NamespacedKey(OLP, "oneLifeRaces-assignedEnchants"));
+        }
 
+        //Apply race enchantments required to Item
+        for (Enchant enchant: raceAssignedEnchants) {
+            item.addEnchantment(enchant.getEnchantment(), enchant.getLevel());
+        }
+
+        return item;
+    }
+
+    public void giveRaceArmor(Player player, ItemStack item, AssignedArmor assignedArmor) {
+
+        if (assignedArmor.getHelmetMaterial() != null)
+        {
+            if (player.getInventory().getHelmet() != null) item = player.getInventory().getHelmet();
+            item = getEnchantedItem(player, item, assignedArmor.getHelmetMaterial(), assignedArmor.getHelmetEnchants());
+            player.getInventory().setHelmet(item);
+        }
+        if (assignedArmor.getChestplateMaterial() != null) {
+            if(player.getInventory().getChestplate() != null) item = player.getInventory().getChestplate();
+            item = getEnchantedItem(player, item, assignedArmor.getChestplateMaterial(), assignedArmor.getChestplateEnchants());
+            player.getInventory().setChestplate(item);
+        }
+        if (assignedArmor.getLeggingsMaterial() != null) {
+            if(player.getInventory().getLeggings() != null) item = player.getInventory().getLeggings();
+            item = getEnchantedItem(player, item, assignedArmor.getLeggingsMaterial(), assignedArmor.getLeggingsEnchants());
+            player.getInventory().setLeggings(item);
+        }
+        if (assignedArmor.getBootsMaterial() != null) {
+            if (player.getInventory().getBoots() != null) item = player.getInventory().getBoots();
+            item = getEnchantedItem(player, item, assignedArmor.getBootsMaterial(), assignedArmor.getBootsEnchants());
+            player.getInventory().setBoots(item);
+        }
     }
 
     public void giveRaceEffects(Player player, List<String> Effects) {
@@ -543,7 +497,7 @@ public class RaceManager {
     }
 
     public void giveStartItems(Player player, ConfigurationSection startItems) {
-        FileConfiguration config = oneLifePlugin.getPlayerConfig();
+        FileConfiguration config = OLP.getPlayerConfig();
         if (startItems != null && !config.getBoolean(player.getUniqueId() + ".playerStartItem")) {
             for (String key : startItems.getKeys(false)) {
                 ItemStack startItem = new ItemStack(Objects.requireNonNull(Material.getMaterial(key)));
@@ -564,11 +518,11 @@ public class RaceManager {
                 final int Max = repeatItems.getInt(key + ".Max");
                 final int QtyPer = repeatItems.getInt(key + ".QtyPer");
                 int TimeSec = repeatItems.getInt(key + ".TimeSec") * 20;
-                if (oneLifePlugin.getPlayerTasks(player) <= 0) {
-                    oneLifePlugin.setPlayerTasks(player, 1);
+                if (OLP.getPlayerTasks(player) <= 0) {
+                    OLP.setPlayerTasks(player, 1);
                     BukkitRunnable runnable = new BukkitRunnable() {
                         public void run() {
-                            if (oneLifePlugin.getPlayerTasks(player) <= 0) {
+                            if (OLP.getPlayerTasks(player) <= 0) {
                                 this.cancel();
                             }
 
@@ -595,7 +549,7 @@ public class RaceManager {
 
                         }
                     };
-                    runnable.runTaskTimerAsynchronously(oneLifePlugin, 0L, TimeSec);
+                    runnable.runTaskTimerAsynchronously(OLP, 0L, TimeSec);
                 }
             }
         }
@@ -604,35 +558,33 @@ public class RaceManager {
 
     public void applyRace(Player player, ItemStack item) {
         player.clearActivePotionEffects();
-        String race = this.getPlayerRace(player);
+        Race race = OLP.settings.getRace(OLP.settings.getPlayerConfigs().get(player.getUniqueId()).getRaceUUID());
         if (race != null) {
-            ConfigurationSection raceConfig = oneLifePlugin.getConfig().getConfigurationSection("races." + race);
+            if (race.isEnabled()) {
+                Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(race.getScale());
+                Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).setBaseValue(race.getReach());
 
-            assert raceConfig != null;
-            if (raceConfig.getBoolean("enabled")) {
-                Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(raceConfig.getDouble("scale"));
-                Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).setBaseValue(raceConfig.getDouble("reach"));
-                if (raceConfig.getBoolean("lockFreezeTicks")) {
+                if (race.getHasFreezeTicks()) {
                     player.setFreezeTicks(0);
+                    player.lockFreezeTicks(true);
+                } else {
+                    player.lockFreezeTicks(false);
                 }
 
-                player.lockFreezeTicks(raceConfig.getBoolean("lockFreezeTicks"));
-                this.giveRaceEffects(player, raceConfig.getStringList("effects"));
-                ConfigurationSection raceEquipment = raceConfig.getConfigurationSection("equipment");
-                if (raceEquipment != null) {
-                    this.giveRaceEquipment(player, item, raceEquipment);
-                }
+                giveRaceEffects(player, race.getEffects());
+                giveRaceArmor(player, item, race.getArmor());
 
-                this.giveStartItems(player, raceConfig.getConfigurationSection("startItems"));
-                this.setRepeatItems(player, raceConfig.getConfigurationSection("repeatItems"));
+                giveStartItems(player, race.getStartItems());
+                setRepeatItems(player, race.getRepeatItems());
             } else {
-                player.clearActivePotionEffects();
+                for (PotionEffect effect: race.getEffects()) {
+                    player.removePotionEffect(effect.getType());
+                }
                 for (ItemStack items : player.getInventory().getContents())
                     clearRaceItemEnchants(items);
                 Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).getDefaultValue());
                 Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).getDefaultValue());
             }
-
         }
 
     }
