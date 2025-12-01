@@ -27,7 +27,7 @@ dependencies {
     // https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind
     implementation 'tools.jackson.core:jackson-databind:3.0.0'
     // https://mvnrepository.com/artifact/tools.jackson.dataformat/jackson-dataformat-yaml
-    implementation 'tools.jackson.dataformat:jackson-dataformat-yaml:3.0.0'
+    implementation 'tools.jackson.dataformat:jackson-dataformat-yaml:3.0.3'
 }
 
 tasks {
