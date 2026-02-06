@@ -91,12 +91,14 @@ public class OneLifePlugin extends JavaPlugin {
         OLP = this;
         try {
             settings = loadSettings();
+            settings.setPlugin(this);
             if (Objects.equals(settings, new Settings())) {
                 saveSettings();
             }
         } catch (Exception e) {
             getLogger().log(Level.SEVERE, "Failed to load settings, using defaults", e);
             settings = new Settings(); // safe fallback
+            settings.setPlugin(this);
         }
 
         getServer().getPluginManager().registerEvents(em, this);
@@ -187,6 +189,7 @@ public class OneLifePlugin extends JavaPlugin {
     public void reload() {
         savePlayerScores();
         loadSettings();
+        settings.setPlugin(this);
         loadScoring();
         loadFeatures();
     }
@@ -408,6 +411,7 @@ public class OneLifePlugin extends JavaPlugin {
                         getLogger().log(Level.SEVERE, "Failed to load PlayerScore", e.getCause());
                     }
                     data = Objects.requireNonNullElseGet(data, PlayerScore::new);
+                    data.setPlugin(this);
                     if (loadData.containsKey(data.getUUID()))
                         loadData.replace(data.getUUID(), data);
                     else

@@ -41,7 +41,11 @@ public class LocationTypeAdapter implements JsonSerializer<Location>, JsonDeseri
         String worldName = obj.has("world") ? obj.get("world").getAsString() : null;
         World world = null;
         if (worldName != null && !worldName.isEmpty()) {
-            world = Bukkit.getWorld(worldName);
+            try {
+                world = Bukkit.getWorld(worldName);
+            } catch (IllegalStateException ignored) {
+                // Bukkit not initialized; keep world as null.
+            }
         }
         double x = obj.has("x") ? obj.get("x").getAsDouble() : 0.0;
         double y = obj.has("y") ? obj.get("y").getAsDouble() : 0.0;
@@ -51,4 +55,3 @@ public class LocationTypeAdapter implements JsonSerializer<Location>, JsonDeseri
         return new Location(world, x, y, z, yaw, pitch);
     }
 }
-

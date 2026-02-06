@@ -24,9 +24,15 @@ dependencies {
 
     // Gson for JSON (replaces Jackson usage)
     implementation 'com.google.code.gson:gson:2.10.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
     runServer {
         //Download required plugins automatically
         downloadPlugins {

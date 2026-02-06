@@ -4,7 +4,6 @@ import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.EntityType;
-import org.bukkit.plugin.java.JavaPlugin;
 import xyz.acyber.oneLife.DataObjects.SubScoreData.MaterialInteractions;
 import xyz.acyber.oneLife.DataObjects.SubScoreData.MobsKilled;
 import xyz.acyber.oneLife.DataObjects.SubSettings.Team;
@@ -18,7 +17,7 @@ import java.util.UUID;
 
 public class PlayerScore {
 
-    private transient OneLifePlugin OLP = JavaPlugin.getPlugin(OneLifePlugin.class);
+    private transient OneLifePlugin OLP;
 
     private UUID uuid = null;
     private String playerName = null;
@@ -49,6 +48,9 @@ public class PlayerScore {
         this.uuid = player.getUniqueId();
         this.playerName = player.getName();
     }
+
+    public void setPlugin(OneLifePlugin plugin) { this.OLP = plugin; }
+
     private void markDirty() {
         if (OLP != null) OLP.markScoresDirty();
     }
@@ -215,6 +217,16 @@ public class PlayerScore {
             typeBlocksPlaced.put(material, new MaterialInteractions(material, count));
         }
     }
+    public double getIndividualBlocksPlacedPoints(Material material) {
+        double individualBlocksPlacedPoints = 0;
+        if (typeBlocksPlaced.containsKey(material)) {
+            for (String gameMode: typeBlocksPlaced.get(material).getCount().keySet()) {
+                double multiplier = Objects.requireNonNullElse(OLP.settings.getScoring().getGamemodeMultipliers().get(gameMode).getBlockPlaceMultipliers().get(material), OLP.settings.getScoring().getDefaultBlocksPlacedMultiplier());
+                individualBlocksPlacedPoints += typeBlocksPlaced.get(material).getCount().get(gameMode) * multiplier;
+            }
+        }
+        return individualBlocksPlacedPoints;
+    }
 
     public HashMap<Material, MaterialInteractions> getTypeItemsHarvested() { return typeItemsHarvested; }
     public void setTypeItemsHarvested(HashMap<Material, MaterialInteractions> typeItemsHarvested) { markDirty(); this.typeItemsHarvested = typeItemsHarvested; }
@@ -227,6 +239,16 @@ public class PlayerScore {
             count.put(gameMode, 1);
             typeItemsHarvested.put(material, new MaterialInteractions(material, count));
         }
+    }
+    public double getIndividualItemsHarvestedPoints(Material material) {
+        double individualItemsHarvestedPoints = 0;
+        if (typeItemsHarvested.containsKey(material)) {
+            for (String gameMode: typeItemsHarvested.get(material).getCount().keySet()) {
+                double multiplier = Objects.requireNonNullElse(OLP.settings.getScoring().getGamemodeMultipliers().get(gameMode).getHarvestMultipliers().get(material), OLP.settings.getScoring().getDefaultHarvestedMultiplier());
+                individualItemsHarvestedPoints += typeItemsHarvested.get(material).getCount().get(gameMode) * multiplier;
+            }
+        }
+        return individualItemsHarvestedPoints;
     }
 
     public double getDeathPoints() {

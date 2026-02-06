@@ -3,10 +3,13 @@ package xyz.acyber.oneLife.DataObjects;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import xyz.acyber.oneLife.DataObjects.SubSettings.*;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.*;
 
 public class Settings {
+
+    private transient OneLifePlugin OLP;
 
     private int backupsToKeep = 10;
     private int autoSaveIntervalSeconds = 300;
@@ -25,46 +28,52 @@ public class Settings {
         super();
     }
 
+    public void setPlugin(OneLifePlugin plugin) { this.OLP = plugin; }
+    private void markDirty() { if (OLP != null) OLP.markSettingsDirty(); }
+
     public int getBackupsToKeep() { return backupsToKeep; }
-    public void setBackupsToKeep(int backupsToKeep) { this.backupsToKeep = backupsToKeep; }
+    public void setBackupsToKeep(int backupsToKeep) { markDirty(); this.backupsToKeep = backupsToKeep; }
 
     public int getAutoSaveIntervalSeconds() { return autoSaveIntervalSeconds; }
-    public void setAutoSaveIntervalSeconds(int autoSaveIntervalSeconds) { this.autoSaveIntervalSeconds = autoSaveIntervalSeconds; }
+    public void setAutoSaveIntervalSeconds(int autoSaveIntervalSeconds) { markDirty(); this.autoSaveIntervalSeconds = autoSaveIntervalSeconds; }
 
     public boolean isLuckPermsEnabled() { return luckPermsEnabled; }
-    public void setLuckPermsEnabled(boolean luckPermsEnabled) { this.luckPermsEnabled = luckPermsEnabled; }
+    public void setLuckPermsEnabled(boolean luckPermsEnabled) { markDirty(); this.luckPermsEnabled = luckPermsEnabled; }
 
     public AFKCheckerConfig getAfkCheckerConfig() { return afkCheckerConfig; }
-    public void setAfkCheckerConfig(AFKCheckerConfig afkChecker) { this.afkCheckerConfig = afkChecker; }
+    public void setAfkCheckerConfig(AFKCheckerConfig afkChecker) { markDirty(); this.afkCheckerConfig = afkChecker; }
 
     public Lives getLives() { return lives; }
-    public void setLives(Lives lives) { this.lives = lives; }
+    public void setLives(Lives lives) { markDirty(); this.lives = lives; }
 
     public Scoring getScoring() { return scoring; }
-    public void setScoring(Scoring scoring) { this.scoring = scoring; }
+    public void setScoring(Scoring scoring) { markDirty(); this.scoring = scoring; }
 
     public HashMap<String, MobConfig> getMobs() { if (mobs == null) mobs = new HashMap<>(); return mobs; }
-    public void setMobs(HashMap<String, MobConfig> mobs) { if (mobs == null) mobs = new HashMap<>(); this.mobs = mobs; }
+    public void setMobs(HashMap<String, MobConfig> mobs) { markDirty(); if (mobs == null) mobs = new HashMap<>(); this.mobs = mobs; }
     public boolean addMob(MobConfig mobConfig) {
         if (mobs.containsKey(mobConfig.getMobType()))
             return false;
         mobs.put(mobConfig.getMobType(), mobConfig);
+        markDirty();
         return true;
     }
     public boolean replaceMob(MobConfig mobConfig) {
         if (mobs.containsKey(mobConfig.getMobType())) {
             mobs.replace(mobConfig.getMobType(), mobConfig);
+            markDirty();
             return true;
         }
          return false;
     }
-    public void removeMob(MobConfig mobConfig) { mobs.remove(mobConfig.getMobType()); }
+    public void removeMob(MobConfig mobConfig) { mobs.remove(mobConfig.getMobType()); markDirty(); }
 
     public EnabledFeatures getEnabledFeatures() { return enabledFeatures; }
-    public void setEnabledFeatures(EnabledFeatures enabledFeatures) { this.enabledFeatures = enabledFeatures; }
+    public void setEnabledFeatures(EnabledFeatures enabledFeatures) { markDirty(); this.enabledFeatures = enabledFeatures; }
 
     public HashMap<UUID,PlayerConfig> getPlayerConfigs() { if (playerConfigs == null) playerConfigs = new HashMap<>(); return playerConfigs; }
     public void setPlayerConfigs(HashMap<UUID,PlayerConfig> playerConfigs) {
+        markDirty();
         if (playerConfigs == null)
             playerConfigs = new HashMap<>();
         this.playerConfigs = playerConfigs;
@@ -89,20 +98,24 @@ public class Settings {
 
     public void addPlayerConfigs(PlayerConfig playerConfig) {
         if (playerConfigs == null) playerConfigs = new HashMap<>();
-        if (!playerConfigs.containsKey(playerConfig.getUUID()))
+        if (!playerConfigs.containsKey(playerConfig.getUUID())) {
             playerConfigs.put(playerConfig.getUUID(), playerConfig);
+            markDirty();
+        }
     }
 
     public void replacePlayerConfigs(PlayerConfig playerConfig) {
         if (playerConfigs == null) return;
         if (playerConfigs.containsKey(playerConfig.getUUID())) {
             playerConfigs.replace(playerConfig.getUUID(), playerConfig);
+            markDirty();
         }
     }
 
     public void removePlayerConfigs(PlayerConfig playerConfig) {
         if (playerConfigs == null) return;
         playerConfigs.remove(playerConfig.getUUID());
+        markDirty();
     }
 
     public Race getPlayerRace(Player player) {
@@ -123,7 +136,7 @@ public class Settings {
     }
 
     public HashMap<UUID, Race> getRaces() { if (races == null) races = new HashMap<>(); return races; }
-    public void setRaces(HashMap<UUID, Race> races) { if (races == null) races = new HashMap<>(); this.races = races; }
+    public void setRaces(HashMap<UUID, Race> races) { markDirty(); if (races == null) races = new HashMap<>(); this.races = races; }
     public Race getRace(UUID raceUUID) { return races.get(raceUUID); }
     public List<String> getRaceNames() {
         List<String> raceNames = new ArrayList<>();
@@ -144,12 +157,14 @@ public class Settings {
         if (races.containsKey(race.getRaceUUID()))
             return false;
         races.put(race.getRaceUUID(), race);
+        markDirty();
         return true;
     }
     public boolean replaceRace(Race race) {
         if (races == null) return false;
         if (races.containsKey(race.getRaceUUID())) {
             races.replace(race.getRaceUUID(), race);
+            markDirty();
             return true;
         }
         return false;
@@ -157,24 +172,25 @@ public class Settings {
     public void removeRace(Race race) {
         if (races == null) return;
         races.remove(race.getRaceUUID());
+        markDirty();
     }
 
     public HashMap<UUID,Team> getTeams() { if (teams == null) teams = new HashMap<>(); return teams; }
-    public void setTeams(HashMap<UUID, Team> teams) { if (teams == null) teams = new HashMap<>(); this.teams = teams; }
-
-    public Team getTeam(UUID teamUUID) { return teams.get(teamUUID); }
+    public void setTeams(HashMap<UUID, Team> teams) { markDirty(); if (teams == null) teams = new HashMap<>(); this.teams = teams; }
 
     public boolean addTeam(Team team) {
         if (teams != null && teams.containsKey(team.getUUID()))
             return false;
         if (teams == null) teams = new HashMap<>();
         teams.put(team.getUUID(), team);
+        markDirty();
         return true;
     }
 
     public boolean replaceTeam(Team team) {
         if (teams != null && teams.containsKey(team.getUUID())) {
             teams.put(team.getUUID(), team);
+            markDirty();
             return true;
         }
         return false;
@@ -183,5 +199,6 @@ public class Settings {
     public void removeTeam(Team team) {
         if (teams == null) return;
         teams.remove(team.getUUID());
+        markDirty();
     }
 }
