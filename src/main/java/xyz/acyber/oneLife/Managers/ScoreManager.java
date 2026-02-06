@@ -110,6 +110,7 @@ public class ScoreManager {
         for (PlayerScore score : OLP.scoreData.values()) {
             scores.add(score);
             if (score.getTeam() != null) {
+                // Adds team score if needed; updates existing score
                 if (!teamScore.containsKey(score.getTeam().getTeamName()))
                     teamScore.put(score.getTeam().getTeamName(), score.totalPoints());
                 else

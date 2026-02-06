@@ -1,9 +1,5 @@
 package xyz.acyber.oneLife.DataObjects;
 
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.annotation.JsonSetter;
 import org.bukkit.GameMode;
 import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
@@ -22,40 +18,23 @@ import java.util.UUID;
 
 public class PlayerScore {
 
-    @JsonIgnore
-    private OneLifePlugin OLP = JavaPlugin.getPlugin(OneLifePlugin.class);
+    private transient OneLifePlugin OLP = JavaPlugin.getPlugin(OneLifePlugin.class);
 
-    @JsonProperty("uuid")
     private UUID uuid = null;
-    @JsonProperty("playerName")
     private String playerName = null;
-    @JsonProperty("team")
     private Team team = null;
-    @JsonProperty("livesBoughtBack")
     private int livesBoughtBack = 0;
-    @JsonProperty("deaths")
     private HashMap<String, Double> deaths = new HashMap<>(); // key is gamemode, value is the number of deaths in that gamemode
-    @JsonProperty("xp")
     private HashMap<String, Double> xp = new HashMap<>(); // key is gamemode, value is the xp in that gamemode
-    @JsonProperty("onlineHr")
     private HashMap<String, Double> onlineHr = new HashMap<>(); // key is gamemode, value is the online hours in that gamemode
-    @JsonProperty("blocksPlaced")
     private HashMap<String, Integer> blocksPlaced = new HashMap<>(); // key is gamemode, value is the number of blocks placed in that gamemode
-    @JsonProperty("blocksMined")
     private HashMap<String, Integer> blocksMined = new HashMap<>(); // key is gamemode, value is the number of blocks mined in that gamemode
-    @JsonProperty("harvested")
     private HashMap<String, Integer> harvested = new HashMap<>(); // key is gamemode, value is the number of items harvested in that gamemode
-    @JsonProperty("caught")
     private HashMap<String, Integer> caught = new HashMap<>(); // key is gamemode, value is the number of items caught in that gamemode
-    @JsonProperty("achievements")
     private HashMap<String, Integer> achievements = new HashMap<>(); // key is gamemode, value is the number of achievements unlocked in that gamemode
-    @JsonProperty("typeMobsKilled")
     private HashMap<EntityType, MobsKilled> typeMobsKilled = new HashMap<>(); // key is entity type, value is MobsKilled object
-    @JsonProperty("typeBlocksMined")
     private HashMap<Material, MaterialInteractions> typeBlocksMined = new HashMap<>();
-    @JsonProperty("typeBlocksPlaced")
     private HashMap<Material, MaterialInteractions> typeBlocksPlaced = new HashMap<>();
-    @JsonProperty("typeBlocksHarvested")
     private HashMap<Material, MaterialInteractions> typeItemsHarvested = new HashMap<>();
 
     private double afkPointsOffset = 0;
@@ -65,66 +44,54 @@ public class PlayerScore {
         super();
     }
 
-    @JsonIgnore
     public PlayerScore(OneLifePlugin OLP, OfflinePlayer player) {
         this.OLP = OLP;
         this.uuid = player.getUniqueId();
         this.playerName = player.getName();
     }
-    @JsonIgnore
+    private void markDirty() {
+        if (OLP != null) OLP.markScoresDirty();
+    }
     public void setPlayer(OfflinePlayer offlinePlayer) {
+        markDirty();
         this.uuid = offlinePlayer.getUniqueId();
         this.playerName = offlinePlayer.getName();
     }
 
-    @JsonGetter
     public UUID getUUID() { return uuid; }
-    @JsonSetter
-    public void setUUID(UUID uuid) { this.uuid = uuid; }
+    public void setUUID(UUID uuid) { markDirty(); this.uuid = uuid; }
 
-    @JsonGetter
     public String getPlayerName() { return playerName; }
-    @JsonSetter
-    public void setPlayerName(String playerName) { this.playerName = playerName; }
+    public void setPlayerName(String playerName) { markDirty(); this.playerName = playerName; }
 
-    @JsonGetter
     public Team getTeam() { return team; }
-    @JsonSetter
-    public void setTeam(Team team) { this.team = team; }
+    public void setTeam(Team team) { markDirty(); this.team = team; }
 
-    @JsonGetter
     public int getLivesBoughtBack() { return livesBoughtBack; }
-    @JsonSetter
-    public void setLivesBoughtBack(int livesBoughtBack) { this.livesBoughtBack = livesBoughtBack; }
+    public void setLivesBoughtBack(int livesBoughtBack) { markDirty(); this.livesBoughtBack = livesBoughtBack; }
 
-    @JsonGetter
     public HashMap<String, Double> getDeaths() { return deaths; }
-    @JsonSetter
-    public void setDeaths(HashMap<String, Double> deaths) {  this.deaths = deaths; }
-    @JsonIgnore
+    public void setDeaths(HashMap<String, Double> deaths) { markDirty(); this.deaths = deaths; }
     public void incrementDeaths(String gameMode) {
+        markDirty();
         if (deaths.containsKey(gameMode))
             deaths.replace(gameMode, deaths.get(gameMode) + 1);
         else
             deaths.put(gameMode, 1.0);
     }
 
-    @JsonGetter
     public HashMap<String, Double> getXp() { return xp; }
-    @JsonSetter
-    public void setXp(HashMap<String, Double> xp) { this.xp = xp; }
+    public void setXp(HashMap<String, Double> xp) { markDirty(); this.xp = xp; }
 
-    @JsonGetter
     public HashMap<String, Double> getOnlineHr() { return onlineHr; }
-    @JsonSetter
-    public void setOnlineHr(HashMap<String, Double> onlineHr) { this.onlineHr = onlineHr; }
+    public void setOnlineHr(HashMap<String, Double> onlineHr) { markDirty(); this.onlineHr = onlineHr; }
     /**
      * Increments the online hours for the given gamemode by 1 of the given unit.
      * Unit accepts any of, [Hr, Min, Sec]
      * Defaults to Sec
      */
-    @JsonIgnore
     public void incrementOnlineHr(String gameMode, String unit) {
+        markDirty();
         double additionalTime;
 
         if (unit.equals("Hr"))
@@ -140,70 +107,60 @@ public class PlayerScore {
             onlineHr.put(gameMode, additionalTime);
     }
 
-    @JsonGetter
     public HashMap<String, Integer> getBlocksPlaced() { return blocksPlaced; }
-    @JsonSetter
-    public void setBlocksPlaced(HashMap<String, Integer> blocksPlaced) {  this.blocksPlaced = blocksPlaced; }
-    @JsonIgnore
+    public void setBlocksPlaced(HashMap<String, Integer> blocksPlaced) { markDirty(); this.blocksPlaced = blocksPlaced; }
     public void incrementBlocksPlaced(String gameMode) {
+        markDirty();
         if (blocksPlaced.containsKey(gameMode))
             blocksPlaced.replace(gameMode, blocksPlaced.get(gameMode) + 1);
         else
             blocksPlaced.put(gameMode, 1);
     }
 
-    @JsonGetter
     public HashMap<String, Integer> getBlocksMined() { return blocksMined; }
-    @JsonSetter
-    public void setBlocksMined(HashMap<String, Integer> blocksMined) {  this.blocksMined = blocksMined; }
-    @JsonIgnore
+    public void setBlocksMined(HashMap<String, Integer> blocksMined) { markDirty(); this.blocksMined = blocksMined; }
     public void incrementBlocksMined(String gameMode) {
+        markDirty();
         if (blocksMined.containsKey(gameMode))
             blocksMined.replace(gameMode, blocksMined.get(gameMode) + 1);
         else
             blocksMined.put(gameMode, 1);
     }
 
-    @JsonGetter
     public HashMap<String, Integer> getHarvested() { return harvested; }
-    @JsonSetter
-    public void setHarvested(HashMap<String, Integer> harvested) {  this.harvested = harvested; }
-    @JsonSetter public void incrementHarvestedItems(String gameMode) {
+    public void setHarvested(HashMap<String, Integer> harvested) { markDirty(); this.harvested = harvested; }
+    public void incrementHarvestedItems(String gameMode) {
+        markDirty();
         if (harvested.containsKey(gameMode))
             harvested.replace(gameMode, harvested.get(gameMode) + 1);
         else
             harvested.put(gameMode, 1);
     }
 
-    @JsonGetter
     public HashMap<String, Integer> getCaught() { return caught; }
-    @JsonSetter
-    public void setCaught(HashMap<String, Integer> caught) {  this.caught = caught; }
-    @JsonIgnore
+    public void setCaught(HashMap<String, Integer> caught) { markDirty(); this.caught = caught; }
     public void incrementCaughtItems(String gameMode) {
+        markDirty();
         if (caught.containsKey(gameMode))
             caught.replace(gameMode, caught.get(gameMode) + 1);
         else
             caught.put(gameMode, 1);
     }
 
-    @JsonGetter
     public HashMap<String, Integer> getAchievements() { return achievements; }
-    @JsonSetter
-    public void setAchievements(HashMap<String, Integer> achievements) { this.achievements = achievements; }
+    public void setAchievements(HashMap<String, Integer> achievements) { markDirty(); this.achievements = achievements; }
     public void incrementAchievements(String gameMode) {
+        markDirty();
         if (achievements.containsKey(gameMode))
             achievements.replace(gameMode, achievements.get(gameMode) + 1);
         else
             achievements.put(gameMode, 1);
     }
 
-    @JsonGetter
     public HashMap<EntityType, MobsKilled> getTypeMobsKilled() { return typeMobsKilled; }
-    @JsonSetter
-    public void setTypeMobsKilled(HashMap<EntityType, MobsKilled> typeMobs) { this.typeMobsKilled = typeMobs; }
-    @JsonIgnore
+    public void setTypeMobsKilled(HashMap<EntityType, MobsKilled> typeMobs) { markDirty(); this.typeMobsKilled = typeMobs; }
     public void incrementTypeMobsKilled(EntityType mobType, String gameMode) {
+        markDirty();
         if (typeMobsKilled.containsKey(mobType))
             typeMobsKilled.get(mobType).incrementCount(gameMode);
         else {
@@ -212,7 +169,6 @@ public class PlayerScore {
             typeMobsKilled.put(mobType, new MobsKilled(mobType, count));
         }
     }
-    @JsonGetter
     public double getIndividualMobKilledPoints(EntityType mobType) {
         double individualMobKilledPoints = 0;
         if (typeMobsKilled.containsKey(mobType)) {
@@ -224,12 +180,10 @@ public class PlayerScore {
         return individualMobKilledPoints;
     }
 
-    @JsonGetter
     public HashMap<Material, MaterialInteractions> getTypeBlocksMined() { return typeBlocksMined; }
-    @JsonSetter
-    public void setTypeBlocksMined(HashMap<Material, MaterialInteractions> typeBlocksMined) { this.typeBlocksMined = typeBlocksMined; }
-    @JsonIgnore
+    public void setTypeBlocksMined(HashMap<Material, MaterialInteractions> typeBlocksMined) { markDirty(); this.typeBlocksMined = typeBlocksMined; }
     public void incrementTypeBlocksMined(Material material, String gameMode) {
+        markDirty();
         if (typeBlocksMined.containsKey(material))
             typeBlocksMined.get(material).incrementCount(gameMode);
         else {
@@ -238,7 +192,6 @@ public class PlayerScore {
             typeBlocksMined.put(material, new MaterialInteractions(material, count));
         }
     }
-    @JsonIgnore
     public double getIndividualBlocksMinedPoints(Material material) {
         double individualBlocksMinedPoints = 0;
         if (typeBlocksMined.containsKey(material)) {
@@ -250,12 +203,10 @@ public class PlayerScore {
         return individualBlocksMinedPoints;
     }
 
-    @JsonGetter
     public HashMap<Material, MaterialInteractions> getTypeBlocksPlaced() { return typeBlocksPlaced; }
-    @JsonSetter
-    public void setTypeBlocksPlaced(HashMap<Material, MaterialInteractions> typeBlocksPlaced) { this.typeBlocksPlaced = typeBlocksPlaced; }
-    @JsonIgnore
+    public void setTypeBlocksPlaced(HashMap<Material, MaterialInteractions> typeBlocksPlaced) { markDirty(); this.typeBlocksPlaced = typeBlocksPlaced; }
     public void incrementTypeBlocksPlaced(Material material, String gameMode) {
+        markDirty();
         if (typeBlocksPlaced.containsKey(material))
             typeBlocksPlaced.get(material).incrementCount(gameMode);
         else {
@@ -264,25 +215,11 @@ public class PlayerScore {
             typeBlocksPlaced.put(material, new MaterialInteractions(material, count));
         }
     }
-    @JsonIgnore
-    public double getIndividualBlocksPlacedPoints(Material material) {
-        double individualBlocksPlacedPoints = 0;
-        if (typeBlocksPlaced.containsKey(material)) {
-            for (String gameMode: typeBlocksPlaced.get(material).getCount().keySet()) {
-                double multiplier = Objects.requireNonNullElse(OLP.settings.getScoring().getGamemodeMultipliers().get(gameMode).getBlockPlaceMultipliers().get(material), OLP.settings.getScoring().getDefaultBlocksPlacedMultiplier());
-                individualBlocksPlacedPoints += typeBlocksPlaced.get(material).getCount().get(gameMode) * multiplier;
-            }
-        }
-        return individualBlocksPlacedPoints;
-    }
 
-
-    @JsonGetter
     public HashMap<Material, MaterialInteractions> getTypeItemsHarvested() { return typeItemsHarvested; }
-    @JsonSetter
-    public void setTypeItemsHarvested(HashMap<Material, MaterialInteractions> typeItemsHarvested) { this.typeItemsHarvested = typeItemsHarvested; }
-    @JsonIgnore
+    public void setTypeItemsHarvested(HashMap<Material, MaterialInteractions> typeItemsHarvested) { markDirty(); this.typeItemsHarvested = typeItemsHarvested; }
     public void incrementTypeItemsHarvested(Material material, String gameMode) {
+        markDirty();
         if (typeItemsHarvested.containsKey(material))
             typeItemsHarvested.get(material).incrementCount(gameMode);
         else {
@@ -291,19 +228,7 @@ public class PlayerScore {
             typeItemsHarvested.put(material, new MaterialInteractions(material, count));
         }
     }
-    @JsonIgnore
-    public double getIndividualItemsHarvestedPoints(Material material) {
-        double individualItemsHarvestedPoints = 0;
-        if (typeItemsHarvested.containsKey(material)) {
-            for (String gameMode: typeItemsHarvested.get(material).getCount().keySet()) {
-                double multiplier = Objects.requireNonNullElse(OLP.settings.getScoring().getGamemodeMultipliers().get(gameMode).getHarvestMultipliers().get(material), OLP.settings.getScoring().getDefaultHarvestedMultiplier());
-                individualItemsHarvestedPoints += typeItemsHarvested.get(material).getCount().get(gameMode) * multiplier;
-            }
-        }
-        return individualItemsHarvestedPoints;
-    }
 
-    @JsonIgnore
     public double getDeathPoints() {
         double deathPoints = 0;
         for (String key : deaths.keySet()) {
@@ -312,7 +237,7 @@ public class PlayerScore {
         }
         return deathPoints;
     }
-    @JsonIgnore
+
     public double getXpPoints() {
         double xpPoints = 0;
         for (String key : xp.keySet()) {
@@ -326,7 +251,7 @@ public class PlayerScore {
         }
         return  xpPoints;
     }
-    @JsonIgnore
+
     public double getOnlineHrPoints() {
         double onlineHrPoints = 0;
         for (String key : onlineHr.keySet()) {
@@ -340,11 +265,11 @@ public class PlayerScore {
         }
         return  onlineHrPoints;
     }
-    @JsonIgnore
+
     public double getLivesBoughtBackPoints() {
         return livesBoughtBack * OLP.settings.getScoring().getLivesBuyBackMultiplier();
     }
-    @JsonIgnore
+
     public double getDefaultBlocksPlacedPoints() {
         double defaultBlocksPlacedPoints = 0;
         for (String key : blocksPlaced.keySet()) {
@@ -358,7 +283,7 @@ public class PlayerScore {
         }
         return defaultBlocksPlacedPoints;
     }
-    @JsonIgnore
+
     public double getDefaultBlocksMinedPoints() {
         double defaultBlocksMinedPoints = 0;
         for (String key : blocksMined.keySet()) {
@@ -372,7 +297,7 @@ public class PlayerScore {
         }
         return defaultBlocksMinedPoints;
     }
-    @JsonIgnore
+
     public double getDefaultHarvestedPoints() {
         double defaultHarvestedPoints = 0;
         for (String key : harvested.keySet()) {
@@ -386,7 +311,7 @@ public class PlayerScore {
         }
         return defaultHarvestedPoints;
     }
-    @JsonIgnore
+
     public double getDefaultCaughtPoints() {
         double defaultCaughtPoints = 0;
         for (String key : caught.keySet()) {
@@ -400,7 +325,7 @@ public class PlayerScore {
         }
         return defaultCaughtPoints;
     }
-    @JsonIgnore
+
     public double getDefaultAchievementPoints() {
         double defaultAchievementPoints = 0;
         for (String key : achievements.keySet()) {
@@ -414,7 +339,7 @@ public class PlayerScore {
         }
         return defaultAchievementPoints;
     }
-    @JsonIgnore
+
     public double getTypeMobTotalPoints() {
         double typeMobTotalPoints = 0;
         for (EntityType mobEntityType : typeMobsKilled.keySet()) {
@@ -430,7 +355,7 @@ public class PlayerScore {
         }
         return typeMobTotalPoints;
     }
-    @JsonIgnore
+
     public double getTypeBlocksMinedTotalPoints() {
         double typeBlocksMinedTotalPoints = 0;
         for (Material material : typeBlocksMined.keySet()) {
@@ -446,7 +371,7 @@ public class PlayerScore {
         }
         return typeBlocksMinedTotalPoints;
     }
-    @JsonIgnore
+
     public double getTypeBlocksPlacedTotalPoints() {
         double typeBlocksPlacedTotalPoints = 0;
         for (Material material : typeBlocksPlaced.keySet()) {
@@ -462,7 +387,7 @@ public class PlayerScore {
         }
         return typeBlocksPlacedTotalPoints;
     }
-    @JsonIgnore
+
     public double getTypeItemsHarvestedTotalPoints() {
         double typeItemsHarvestedTotalPoints = 0;
         for (Material material : typeItemsHarvested.keySet()) {
@@ -480,17 +405,14 @@ public class PlayerScore {
 
     }
 
-    @JsonIgnore
     public double getAFKPointsOffset() { return afkPointsOffset; }
 
-    @JsonIgnore
     public double totalPoints() {
         return round(getDeathPoints() + getAFKPointsOffset() + getLivesBoughtBackPoints() + getXpPoints() + getOnlineHrPoints() + getDefaultBlocksPlacedPoints() +
                 getDefaultBlocksMinedPoints() + getDefaultHarvestedPoints() + getDefaultCaughtPoints() + getDefaultAchievementPoints() +
                 getTypeMobTotalPoints() + getTypeBlocksMinedTotalPoints() + getTypeBlocksPlacedTotalPoints() + getTypeItemsHarvestedTotalPoints(), 4);
     }
 
-    @JsonIgnore
     public double onlineHr() {
         double hours = 0;
         for (String key : onlineHr.keySet()) {
@@ -499,7 +421,6 @@ public class PlayerScore {
         return round(hours,2);
     }
 
-    @JsonIgnore
     private static double round(double value, int places) {
         if (places < 0) throw new IllegalArgumentException();
 
@@ -508,4 +429,3 @@ public class PlayerScore {
         return bd.doubleValue();
     }
 }
-

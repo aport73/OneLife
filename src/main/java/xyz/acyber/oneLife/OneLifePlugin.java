@@ -1,6 +1,7 @@
 package xyz.acyber.oneLife;
 
-import com.fasterxml.jackson.databind.*;
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
 import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
 import net.luckperms.api.LuckPerms;
@@ -29,23 +30,34 @@ import xyz.acyber.oneLife.Runables.AutoSaver;
 import xyz.acyber.oneLife.Runables.DayNightChecker;
 import xyz.acyber.oneLife.Runables.PassiveMobsModifier;
 import xyz.acyber.oneLife.Managers.*;
+import xyz.acyber.oneLife.Serialization.EntityTypeAdapter;
+import xyz.acyber.oneLife.Serialization.LocationTypeAdapter;
+import xyz.acyber.oneLife.Serialization.MaterialTypeAdapter;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
 public class OneLifePlugin extends JavaPlugin {
 
+    public static OneLifePlugin OLP;
     public LuckPerms lpAPI;
-    public Settings settings;
-    public HashMap<UUID, PlayerScore> scoreData;
+    public Settings settings = new Settings();
+    public HashMap<UUID, PlayerScore> scoreData = new HashMap<>();
+
+    // Track persistence state to reduce disk writes
+    private final AtomicBoolean settingsDirty = new AtomicBoolean(true);
+    private final AtomicBoolean scoresDirty = new AtomicBoolean(true);
 
     public final EventManager em = new EventManager(this);
     public final MobManager mm = new MobManager(this);
@@ -55,7 +67,6 @@ public class OneLifePlugin extends JavaPlugin {
     public final CommandManager cm = new CommandManager(this);
     public final DayNightChecker dnc = new DayNightChecker(this);
     public final PassiveMobsModifier pmm = new PassiveMobsModifier(this);
-
     private boolean night = false;
 
     public HashMap<UUID,Long> afkLastInput;
@@ -65,10 +76,28 @@ public class OneLifePlugin extends JavaPlugin {
     public BukkitTask autoSave;
     public long afkCheck;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+    private final Gson gson = new GsonBuilder()
+            .setPrettyPrinting()
+            .registerTypeAdapter(org.bukkit.Material.class, new MaterialTypeAdapter())
+            .registerTypeAdapter(org.bukkit.entity.EntityType.class, new EntityTypeAdapter())
+            .registerTypeAdapter(org.bukkit.Location.class, new LocationTypeAdapter())
+            .create();
 
+    /**
+     * Enables plugin; registers events, commands, settings, and features
+     */
     @Override
     public void onEnable() {
+        OLP = this;
+        try {
+            settings = loadSettings();
+            if (Objects.equals(settings, new Settings())) {
+                saveSettings();
+            }
+        } catch (Exception e) {
+            getLogger().log(Level.SEVERE, "Failed to load settings, using defaults", e);
+            settings = new Settings(); // safe fallback
+        }
 
         getServer().getPluginManager().registerEvents(em, this);
 
@@ -77,7 +106,8 @@ public class OneLifePlugin extends JavaPlugin {
         manager.registerEventHandler(LifecycleEvents.COMMANDS, commands -> commands.registrar().register(cm.loadCmds()));
 
         //Load into memory settings and scoring objects from saved files
-        settings = loadSettings();
+        // Ensure settings is initialized to avoid NPE
+
         scoreData = loadScoring();
 
         if (settings.isLuckPermsEnabled())
@@ -91,40 +121,65 @@ public class OneLifePlugin extends JavaPlugin {
     @Override
     public void onDisable() {
         // Plugin shutdown logic
-        saveSettings();
-        savePlayerScores();
+        saveSettingsSync();
+        savePlayerScoresSync();
     }
 
-    public void saveSettings() {
-        if (settings != loadSettings()) {
-            Path path = Paths.get(getDataFolder() + "/settings.json");
-            createDirectoryOrBackups(path);
+    public void markSettingsDirty() { settingsDirty.set(true); }
+    public void markScoresDirty() { scoresDirty.set(true); }
 
-            try {
-                String jsonString = objectMapper.writer().withDefaultPrettyPrinter().writeValueAsString(settings);
-                Files.write(path, jsonString.getBytes());
-            } catch (IOException e) {
-                getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
-                getLogger().log(Level.SEVERE, e.getMessage());
-                getLogger().log(Level.SEVERE, "Failed to save settings.json", e.getCause());
-            }
+    public void saveSettings() {
+        if (!settingsDirty.get()) return;
+        Runnable task = this::saveSettingsSync;
+        if (Bukkit.isPrimaryThread()) {
+            Bukkit.getScheduler().runTaskAsynchronously(this, task);
+        } else {
+            task.run();
+        }
+    }
+
+    private void saveSettingsSync() {
+        if (!settingsDirty.getAndSet(false)) return;
+        Path path = Paths.get(getDataFolder() + "/settings.json");
+        createDirectoryOrBackups(path);
+
+        try {
+            String jsonString = gson.toJson(settings);
+            Files.write(path, jsonString.getBytes(StandardCharsets.UTF_8));
+        } catch (IOException e) {
+            settingsDirty.set(true); // retry later
+            getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
+            getLogger().log(Level.SEVERE, e.getMessage());
+            getLogger().log(Level.SEVERE, "Failed to save settings.json", e.getCause());
         }
     }
 
     public void savePlayerScores() {
-        if (scoreData != null && (scoreData != loadScoring())) {
-            for (UUID uuid : scoreData.keySet()) {
-                PlayerScore playerScore = scoreData.get(uuid);
-                Path path = Path.of(getDataFolder() + settings.getScoring().getPathToScoreData() + playerScore.getPlayerName() + " - " + playerScore.getUUID() + ".json");
-                createDirectoryOrBackups(path);
-                try {
-                    String jsonString = objectMapper.writer().withDefaultPrettyPrinter().writeValueAsString(playerScore);
-                    Files.write(path, jsonString.getBytes());
-                } catch (IOException e) {
-                    getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
-                    getLogger().log(Level.SEVERE, e.getMessage());
-                    getLogger().log(Level.SEVERE, "Failed to save PlayerScore", e.getCause());
-                }
+        if (!scoresDirty.get()) return;
+        Runnable task = this::savePlayerScoresSync;
+        if (Bukkit.isPrimaryThread()) {
+            Bukkit.getScheduler().runTaskAsynchronously(this, task);
+        } else {
+            task.run();
+        }
+    }
+
+    private void savePlayerScoresSync() {
+        if (!scoresDirty.getAndSet(false)) return;
+        if (scoreData == null || scoreData.isEmpty()) return;
+        Map<UUID, PlayerScore> snapshot = new HashMap<>(scoreData);
+        for (UUID uuid : snapshot.keySet()) {
+            PlayerScore playerScore = snapshot.get(uuid);
+            Path path = Path.of(getDataFolder() + settings.getScoring().getPathToScoreData() + playerScore.getPlayerName() + " - " + playerScore.getUUID() + ".json");
+            createDirectoryOrBackups(path);
+            try {
+                String jsonString = gson.toJson(playerScore);
+                Files.write(path, jsonString.getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                scoresDirty.set(true); // retry later
+                getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
+                getLogger().log(Level.SEVERE, e.getMessage());
+                getLogger().log(Level.SEVERE, "Failed to save PlayerScore", e.getCause());
             }
         }
     }
@@ -138,14 +193,17 @@ public class OneLifePlugin extends JavaPlugin {
 
     public void createDirectoryOrBackups(@NotNull Path path) {
         try {
-            Path backupPath = Paths.get(path.toString().replace(path.getFileName().toString(),"Backup/" + path.getFileName() +  " - " + LocalDateTime.now()));
+            Path parent = path.getParent();
+            if (parent == null) return;
+            Path backupDir = parent.resolve("Backup");
+            String timestamp = DateTimeFormatter.ofPattern("yyyy-MM-dd_HH-mm-ss").format(LocalDateTime.now());
+            Path backupPath = backupDir.resolve(path.getFileName() + " - " + timestamp);
             if (Files.exists(path)) {
-                if (!Files.exists(backupPath)) {
-                    Files.createDirectories(backupPath);
-                }
-                Files.move(path, backupPath, StandardCopyOption.REPLACE_EXISTING, StandardCopyOption.REPLACE_EXISTING);
-            } else
-                Files.createDirectories(path.getParent());
+                Files.createDirectories(backupDir);
+                Files.move(path, backupPath, StandardCopyOption.REPLACE_EXISTING);
+            } else {
+                Files.createDirectories(parent);
+            }
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
             getLogger().log(Level.SEVERE, e.getMessage());
@@ -219,6 +277,7 @@ public class OneLifePlugin extends JavaPlugin {
         if (!scoreData.containsKey(player.getUniqueId())) {
             PlayerScore playerScore = new PlayerScore(this, player);
             scoreData.put(player.getUniqueId(), playerScore);
+            markScoresDirty();
         }
     }
 
@@ -311,12 +370,11 @@ public class OneLifePlugin extends JavaPlugin {
         if (!Files.exists(path)) {
             getLogger().log(Level.INFO, "settings.json does not exist. Creating new one.");
             load = new Settings();
-            saveSettings();
             return load;
         }
         try {
-            String json = Files.readString(path);
-            load = objectMapper.readValue(json, Settings.class);
+            String json = Files.readString(path, StandardCharsets.UTF_8);
+            load = gson.fromJson(json, Settings.class);
             return load;
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, e.getMessage());
@@ -328,14 +386,22 @@ public class OneLifePlugin extends JavaPlugin {
     private @NotNull HashMap<UUID, PlayerScore> loadScoring() {
         HashMap<UUID, PlayerScore> loadData = new HashMap<>();
         Path path = Paths.get(getDataFolder() + settings.getScoring().getPathToScoreData());
+        try {
+            if (!Files.exists(path)) {
+                Files.createDirectories(path);
+            }
+        } catch (IOException e) {
+            getLogger().log(Level.SEVERE, "Failed to create score data directory", e);
+            return loadData;
+        }
         File[] files = path.toFile().listFiles();
         if (files != null) {
             for (File file : files) {
                 if (file.getName().endsWith(".json")) {
                     PlayerScore data = null;
                     try {
-                        String json = Files.readString(file.toPath());
-                        data = objectMapper.readValue(json, PlayerScore.class);
+                        String json = Files.readString(file.toPath(), StandardCharsets.UTF_8);
+                        data = gson.fromJson(json, PlayerScore.class);
                     } catch (IOException e) {
                         getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
                         getLogger().log(Level.SEVERE, e.getMessage());
@@ -362,33 +428,37 @@ public class OneLifePlugin extends JavaPlugin {
     }
 
     private void loadAFKChecking() {
-        if (settings.getEnabledFeatures().getEnabledAFKChecker()) {
-            Group afk = lpAPI.getGroupManager().getGroup("AFK");
-            if (afk == null) {
-                try {
-                    afk = lpAPI.getGroupManager().createAndLoadGroup("AFK").get();
-                } catch (InterruptedException | ExecutionException e) {
-                    throw new RuntimeException(e);
-                }
-            }
-
-            afk.data().clear();
-            PrefixNode prefixNode = PrefixNode.builder("[AFK] ", 200).build();
-            SuffixNode suffixNode = SuffixNode.builder("§7", 200).build();
-            WeightNode weightNode = WeightNode.builder(200).build();
-            afk.data().add(prefixNode);
-            afk.data().add(suffixNode);
-            afk.data().add(weightNode);
-            lpAPI.getGroupManager().saveGroup(afk);
-
-            afkCheck = settings.getAfkCheckerConfig().getSecondsInterval()*20L;
-            afkLastInput = new HashMap<>();
-            afkChecker = new AFKChecker(this, afkLastInput, afk, lpAPI, sm).runTaskTimer(this,0,afkCheck);
-        } else {
+        if (!settings.getEnabledFeatures().getEnabledAFKChecker()) {
             if (afkChecker != null)
                 afkChecker.cancel();
             if (afkLastInput != null)
                 afkLastInput.clear();
+            return;
         }
+        if (lpAPI == null) {
+            getLogger().log(Level.WARNING, "LuckPerms not available; AFK checker disabled.");
+            return;
+        }
+        Group afk = lpAPI.getGroupManager().getGroup("AFK");
+        if (afk == null) {
+            try {
+                afk = lpAPI.getGroupManager().createAndLoadGroup("AFK").get();
+            } catch (InterruptedException | ExecutionException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
+        afk.data().clear();
+        PrefixNode prefixNode = PrefixNode.builder("[AFK] ", 200).build();
+        SuffixNode suffixNode = SuffixNode.builder("§7", 200).build();
+        WeightNode weightNode = WeightNode.builder(200).build();
+        afk.data().add(prefixNode);
+        afk.data().add(suffixNode);
+        afk.data().add(weightNode);
+        lpAPI.getGroupManager().saveGroup(afk);
+
+        afkCheck = settings.getAfkCheckerConfig().getSecondsInterval()*20L;
+        afkLastInput = new HashMap<>();
+        afkChecker = new AFKChecker(this, afkLastInput, afk, lpAPI, sm).runTaskTimer(this,0,afkCheck);
     }
 }

@@ -27,6 +27,7 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
+import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -37,12 +38,12 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.DataObjects.SubSettings.AssignedArmor;
-import xyz.acyber.oneLife.DataObjects.SubSettings.Enchant;
-import xyz.acyber.oneLife.DataObjects.SubSettings.Race;
+import xyz.acyber.oneLife.DataObjects.Settings;
+import xyz.acyber.oneLife.DataObjects.SubSettings.*;
 import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,22 +58,23 @@ public class RaceManager {
 
     public void onPlayerJoin(@NotNull PlayerJoinEvent event) {
         Player player = event.getPlayer();
-        String race = getPlayerRace(player);
+        Race race = OLP.settings.getPlayerRace(player);
         if (race != null) {
-            player.sendMessage(Component.text("Race: " + race));
+            player.sendMessage(Component.text("Race: " + race.getRaceName()));
         } else {
-            setPlayerRace(player, "Human");
+            OLP.settings.setPlayerRace(player, OLP.settings.getRaceByName("Human"));
             player.sendMessage(Component.text("Race: " + "Human"));
         }
         applyRace(player, null);
     }
 
     public void onPlayerMove(PlayerMoveEvent ev) {
-        //Code for Wall Climbing
-        Boolean climbingEnabled = OLP.getConfig().getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".climbingEnabled");
-        FileConfiguration config = OLP.getConfig();
+        Player player = ev.getPlayer();
+        PlayerConfig playerConfig = OLP.settings.getPlayerConfig(player);
+        Race race = OLP.settings.getPlayerRace(player);
 
-        if (climbingEnabled && getPlayerClimbs(ev.getPlayer())) {
+        // Manages climbable vine blocks for climbing‑enabled races
+        if (race.getCanClimbWalls() && playerConfig.isClimbingEnabled()) {
             Block b1 = ev.getPlayer().getLocation().getBlock();
 
             if (b1.getType() != Material.AIR) {
@@ -100,23 +102,27 @@ public class RaceManager {
                 double y = l.getY();
                 BlockData vine = Material.VINE.createBlockData("[up=true]");
                 ev.getPlayer().sendBlockChange(b1.getLocation(), vine);
-                setPlayerClimbVines(ev.getPlayer(), getPlayerClimbVines(ev.getPlayer()) + b1.getLocation().blockX() + "," + b1.getLocation().blockY() + "," + b1.getLocation().blockZ() + "/");
+                // Persists vine location to player‑specific climb data
+                playerConfig.appendClimbingData(b1.getLocation());
+                // Conditionally places vine and persists its location
                 if (y % 1 > .40 && b2.getType() == Material.AIR) {
+                    // Persists vine location to player climb data
                     ev.getPlayer().sendBlockChange(b2.getLocation(), vine);
-                    setPlayerClimbVines(ev.getPlayer(), getPlayerClimbVines(ev.getPlayer()) + b2.getLocation().blockX() + "," + b2.getLocation().blockY() + "," + b2.getLocation().blockZ() + "/");
+                // Reconciles vine state when a player moves between blocks
+                    playerConfig.appendClimbingData(b2.getLocation()); ;
                 }
+                // Reconciles vine state when player moves between blocks
                 if (ev.getFrom().getBlockX() != ev.getTo().getBlockX()
                         || ev.getFrom().getBlockZ() != ev.getTo().getBlockZ()
                         || ev.getFrom().getBlockY() != ev.getTo().getBlockY()) {
-                    for (String xyz : getPlayerClimbVines(ev.getPlayer()).split("/")) {
-                        if (!xyz.isEmpty()) {
-                            int xVine = Integer.parseInt(xyz.split(",")[0]);
-                            int yVine = Integer.parseInt(xyz.split(",")[1]);
-                            int zVine = Integer.parseInt(xyz.split(",")[2]);
-                            Location loc = new Location(ev.getFrom().getWorld(), xVine, yVine, zVine);
+                    for (Location xyz : playerConfig.getClimbingData()) {
+                        // Iterates persisted climb data; skips null locations
+                        if (xyz != null) {
+                            Location loc = new Location(ev.getFrom().getWorld(), xyz.getBlockX(), xyz.getBlockY(), xyz.getBlockZ());
+                            // Resets vine block and removes persisted climb data
                             if (!loc.equals(b1.getLocation()) && loc != b2.getLocation()) {
                                 ev.getPlayer().sendBlockChange(loc, loc.getBlock().getBlockData());
-                                setPlayerClimbVines(ev.getPlayer(), getPlayerClimbVines(ev.getPlayer()).replaceAll(xyz + "/", ""));
+                                playerConfig.removeClimbingData(xyz) ;
                             }
                         }
                     }
@@ -126,7 +132,8 @@ public class RaceManager {
         }
 
         //Zora Slowness on Land
-        if (config.getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".slowOnLand")) {
+        if (race.getIsSlowOnLand()) {
+            // Applies slowness to player when not in liquid
             if (ev.getTo().getBlock().isLiquid()) {
                 ev.getPlayer().removePotionEffect(PotionEffectType.SLOWNESS);
             } else {
@@ -135,25 +142,25 @@ public class RaceManager {
         }
 
         //Zora Dont Sink in Water
-        if (config.getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".stopSinkInWater")) {
+        if (!race.getSinksInWater()) {
             ev.getPlayer().setGravity(!ev.getPlayer().isInWater());
         } else {
             ev.getPlayer().setGravity(true);
         }
 
         //Katari swiftsneak
-        if (config.getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".fastSneak")) {
-            if (ev.getPlayer().isSneaking()) {
-                ev.getPlayer().setWalkSpeed(0.4f);
+        if (race.getFastSneak()) {
+            if (player.isSneaking()) {
+                player.setWalkSpeed(0.4f);
             } else {
-                ev.getPlayer().setWalkSpeed(0.2f);
+                player.setWalkSpeed(0.2f);
             }
         }
 
         //Aven Weakness & Slowness underground
-        if (config.getBoolean("races." + getPlayerRace(ev.getPlayer()) + ".weakUnderGround")) {
-            Player player = ev.getPlayer();
+        if (race.getIsWeakUnderGround()) {
             if (ev.getTo().getBlock().getLightFromSky() < 8) {
+            // Applies/removes weakness and slowness underground based on config
                 player.addPotionEffect(PotionEffectType.WEAKNESS.createEffect(-1, 1));
                 player.addPotionEffect(PotionEffectType.SLOWNESS.createEffect(-1, 1));
             } else {
@@ -163,6 +170,8 @@ public class RaceManager {
                     player.removePotionEffect(PotionEffectType.SLOWNESS);
             }
         }
+
+        OLP.settings.replacePlayerConfigs(playerConfig);
     }
 
     public void onDeath(PlayerDeathEvent event) {
@@ -175,34 +184,38 @@ public class RaceManager {
         }
     }
 
+    /**
+     * Adjusts damage based on race and circumstances
+     */
     public void onDamage(EntityDamageEvent event) {
-        FileConfiguration config = OLP.getConfig();
-
         if (event.getEntity() instanceof Player player) {
+            Race race = OLP.settings.getPlayerRace(player);
             double damage = event.getDamage();
-            String race = getPlayerRace(player);
 
             //Adjust Fall Damage Aven
-            if (event.getCause().equals(EntityDamageEvent.DamageCause.FALL) && race.equals("Aven")) {
-                event.setDamage(damage * config.getDouble("races." + race + ".fallDamage"));
+            if (event.getCause().equals(EntityDamageEvent.DamageCause.FALL)) {
+                event.setDamage(damage * race.getFallDamageMultiplier());
             }
 
-            //Slow Burn Damage Dwarven
+            //Per Tick fire damage Cap
             if (event.getCause().equals(EntityDamageEvent.DamageCause.FIRE) || event.getCause().equals(EntityDamageEvent.DamageCause.LAVA)) {
-                double multiple = config.getDouble("races." + getPlayerRace(player) + ".firedamage");
+                double multiple = race.getFireDamageCap();
                 if (multiple != 0.0) {
                     if (damage > multiple)
-                        event.setDamage(config.getDouble("races." + getPlayerRace(player) + ".firedamage"));
+                        event.setDamage(race.getFireDamageCap());
                 }
             }
         }
 
+        // Modifies damage based on race and gliding status
         if (event.getDamageSource().getCausingEntity() instanceof Player player) {
+            Race race = OLP.settings.getPlayerRace(player);
             Entity item = event.getDamageSource().getDirectEntity();
             if (player.isGliding()) {
                 assert item != null;
+                // Multiplies damage when gliding and attacking with non‑arrow
                 if (!item.getType().name().contains("ARROW")) {
-                    double multiplier = config.getDouble("races." + getPlayerRace(player) + ".flyingAttackDamage");
+                    double multiplier = race.getFlyingAttackDamageMultiplier();
                     event.setDamage(event.getDamage() * multiplier);
                 }
             }
@@ -210,18 +223,20 @@ public class RaceManager {
     }
 
     public void playerItemConsume(PlayerItemConsumeEvent event) {
-        FileConfiguration config = OLP.getConfig();
+        Player player = event.getPlayer();
+        Race race = OLP.settings.getPlayerRace(player);
 
-        List<String> allowedFoods = config.getStringList("races." + getPlayerRace(event.getPlayer()) + ".allowedFoods");
-        ConfigurationSection buffedFoods = config.getConfigurationSection("races." + getPlayerRace(event.getPlayer()) + ".buffedFoods");
-        boolean rawFoodSafe = config.getBoolean("races." + getPlayerRace(event.getPlayer()) + ".rawFoodSafe");
+        List<Material> allowedFoods = race.getAllowedFoods();
+        List<BuffedFood> buffedFoods = race.getBuffedFoods();
 
+        // Cancels consumption of disallowed food items
         if (!allowedFoods.isEmpty()) {
             Material item = event.getItem().getType();
             boolean inList = false;
-            for (String str : allowedFoods) {
-                if (item == Material.getMaterial(str.toUpperCase())) {
+            for (Material mat: allowedFoods) {
+                if (item == mat) {
                     inList = true;
+                    break;
                 }
             }
             if (!inList) {
@@ -230,7 +245,8 @@ public class RaceManager {
             }
         }
 
-        if (rawFoodSafe) {
+        // Removes poison/hunger effects if raw food is safe
+        if (race.getIsRawFoodSafe()) {
             if (event.getPlayer().hasPotionEffect(PotionEffectType.POISON))
                 event.getPlayer().removePotionEffect(PotionEffectType.POISON);
             if (event.getPlayer().hasPotionEffect(PotionEffectType.HUNGER))
@@ -239,12 +255,12 @@ public class RaceManager {
 
         if (buffedFoods != null) {
             Material item = event.getItem().getType();
-            for (String str : buffedFoods.getKeys(false)) {
-                if (item == Material.getMaterial(str.toUpperCase())) {
+            for (BuffedFood buffedFood: buffedFoods) {
+                // Cancels consumption; applies saturation and food level
+                if (item == buffedFood.getMaterial()) {
                     event.setCancelled(true);
-                    Player player = event.getPlayer();
-                    float sat = (float) buffedFoods.getDouble(str + ".SATURATION");
-                    int food = buffedFoods.getInt(str + ".FOOD");
+                    float sat = (float) buffedFood.getSaturationBuff();
+                    int food = (int) buffedFood.getHungerBuff();
                     player.setSaturation(player.getSaturation() + sat);
                     player.setFoodLevel(player.getFoodLevel() + food);
                     player.getInventory().removeItemAnySlot(event.getItem().asQuantity(1));
@@ -252,6 +268,7 @@ public class RaceManager {
             }
         }
 
+        // Schedules delayed race application after milk consumption
         if (event.getItem().getType() == Material.MILK_BUCKET) {
             BukkitRunnable runnable = new BukkitRunnable() {
                 @Override
@@ -264,7 +281,10 @@ public class RaceManager {
     }
 
     public void playerTamePet(EntityTameEvent event) {
-        if (getPlayerRace(Objects.requireNonNull(Bukkit.getPlayer(event.getOwner().getUniqueId()))).equalsIgnoreCase("Katari")) {
+        Player player = (Player) event.getOwner();
+        Race race = OLP.settings.getPlayerRace(player);
+        if (race.getRaceName().equalsIgnoreCase("Katari")) {
+            // Cancels Katari player taming wolfs; informs player
             if (event.getEntity() instanceof Wolf) {
                 Objects.requireNonNull(Bukkit.getPlayer(event.getOwner().getUniqueId())).sendMessage("Your Race Cannot Tame Wolfs");
                 event.setCancelled(true);
@@ -275,9 +295,10 @@ public class RaceManager {
     public void playerArmorChange(PlayerArmorChangeEvent event) {
         //Run code to check for armor enchants for race.
         ItemStack item = event.getNewItem();
-        String race = getPlayerRace(event.getPlayer());
-        ConfigurationSection equipConfig = OLP.getConfig().getConfigurationSection("races." + race + ".equipment");
-        if (equipConfig != null && !item.isEmpty()) {
+        Player player = event.getPlayer();
+        Race race = OLP.settings.getPlayerRace(player);
+        AssignedArmor assignedArmor = race.getArmor();
+        if (assignedArmor != null && !item.isEmpty()) {
             applyRace(event.getPlayer(), null);
         }
     }
@@ -292,6 +313,7 @@ public class RaceManager {
 
     public void inventoryClickEvent(InventoryClickEvent event) {
         Player player = (Player) event.getWhoClicked();
+        // Cancels or applies race based on inventory action
         if ((event.getAction() == InventoryAction.PLACE_ALL ||
                 event.getAction() == InventoryAction.MOVE_TO_OTHER_INVENTORY ||
                 event.getAction() == InventoryAction.PLACE_ONE ||
@@ -327,6 +349,7 @@ public class RaceManager {
     public void playerDropItem(PlayerDropItemEvent event) {
         ItemStack item = event.getItemDrop().getItemStack();
         Player player = event.getPlayer();
+        // Cancels drop; removes race item; clears enchants; applies race
         if (stopItemDrop(item, player)) {
             event.setCancelled(true);
         } else if (isRaceItem(item)) {
@@ -432,7 +455,7 @@ public class RaceManager {
         List<Enchant> overriddenEnchants = new ArrayList<>();
         //Need to see if the player has an existing item otherwise create one with race assigned default
         if (item == null) item = new ItemStack(assignedMaterial);
-        //We need to keep track of any enchants we overwrite so we can restore the item to original state when not with player
+        //We need to keep track of any enchanting we overwrite so we can restore the item to original state when not with player
 
         for (Enchant enchant : assignedEnchants) {
             if (item.getEnchantments().containsKey(enchant.getEnchantment())) {
@@ -485,80 +508,86 @@ public class RaceManager {
         }
     }
 
-    public void giveRaceEffects(Player player, List<String> Effects) {
-        for (String effect : Effects) {
-            PotionEffectType potion = Registry.EFFECT.get(NamespacedKey.minecraft(effect.toLowerCase()));
-
-            assert potion != null;
+    public void giveRaceEffects(Player player, List<PotionEffect> Effects) {
+        for (PotionEffect effect : Effects) {
+            PotionEffectType potion = effect.getType();
 
             player.addPotionEffect(Objects.requireNonNull(potion.createEffect(-1, 0)));
         }
 
     }
 
-    public void giveStartItems(Player player, ConfigurationSection startItems) {
-        FileConfiguration config = OLP.getPlayerConfig();
-        if (startItems != null && !config.getBoolean(player.getUniqueId() + ".playerStartItem")) {
-            for (String key : startItems.getKeys(false)) {
+    public void giveStartItems(Player player, HashMap<String, Integer> startItems) {
+        PlayerConfig playerConfig = OLP.settings.getPlayerConfig(player);
+        if (startItems != null && !playerConfig.getGivenStartItems()) {
+            // Adds configured start items to player inventory
+            for (String key : startItems.keySet()) {
                 ItemStack startItem = new ItemStack(Objects.requireNonNull(Material.getMaterial(key)));
-                startItem.setAmount(startItems.getInt(key));
+                startItem.setAmount(startItems.get(key));
                 player.getInventory().addItem(startItem);
             }
-
-            this.setPlayerStartItem(player, true);
+            playerConfig.setGivenStartItems(true);
+            OLP.settings.replacePlayerConfigs(playerConfig);
         }
 
     }
 
-    public void setRepeatItems(final Player player, ConfigurationSection repeatItems) {
+    public void setRepeatItems(final Player player, List<RepeatItem> repeatItems) {
         if (repeatItems != null) {
-            for (String key : repeatItems.getKeys(false)) {
-                final ItemStack repeatItem = new ItemStack(Objects.requireNonNull(Material.getMaterial(key)));
-                this.setIsRaceItem(repeatItem, true);
-                final int Max = repeatItems.getInt(key + ".Max");
-                final int QtyPer = repeatItems.getInt(key + ".QtyPer");
-                int TimeSec = repeatItems.getInt(key + ".TimeSec") * 20;
-                if (OLP.getPlayerTasks(player) <= 0) {
-                    OLP.setPlayerTasks(player, 1);
-                    BukkitRunnable runnable = new BukkitRunnable() {
-                        public void run() {
-                            if (OLP.getPlayerTasks(player) <= 0) {
-                                this.cancel();
-                            }
+            PlayerConfig playerConfig = OLP.settings.getPlayerConfig(player);
+            for (RepeatItem repeatItem : repeatItems) {
+                final ItemStack itemStack = new ItemStack(repeatItem.getMaterial(), repeatItem.getQtyPerRepeat());
+                this.setIsRaceItem(itemStack, true);
+                final int Max = repeatItem.getMax();
+                final int QtyPer = repeatItem.getQtyPerRepeat();
+                int TimeSec = repeatItem.getSecondsTillRepeat() * 20;
+                BukkitRunnable runnable = new BukkitRunnable() {
+                    public void run() {
+                        Race race = OLP.settings.getPlayerRace(player);
 
-                            int inventoryCount = 0;
-                            ItemStack inv = null;
-
-                            for (ItemStack i : player.getInventory().getContents()) {
-                                if (i != null && i.getType() == repeatItem.getType()) {
-                                    inventoryCount += i.getAmount();
-                                    setIsRaceItem(i, true);
-                                    inv = i;
-                                    break;
-                                }
-                            }
-
-                            if (inv != null && !inv.isEmpty()) {
-                                if (inventoryCount < Max) {
-                                    inv.setAmount(Math.min(inv.getAmount() + QtyPer, Max));
-                                }
-                            } else {
-                                repeatItem.setAmount(QtyPer);
-                                player.getInventory().addItem(repeatItem);
-                            }
-
+                        if (!race.getRepeatItems().contains(repeatItem)) {
+                            this.cancel();
+                            playerConfig.removeRunningTask(this.getTaskId());
+                            OLP.settings.replacePlayerConfigs(playerConfig);
                         }
-                    };
-                    runnable.runTaskTimerAsynchronously(OLP, 0L, TimeSec);
-                }
-            }
-        }
 
+                        if (!playerConfig.getRunningTasks().containsKey(this.getTaskId()) && playerConfig.getRunningTasks().containsValue(repeatItem.getUUID()))
+                            this.cancel();
+                        else if (!playerConfig.getRunningTasks().containsKey(this.getTaskId()))
+                            playerConfig.addRunningTask(this.getTaskId(), repeatItem.getUUID());
+
+                        int inventoryCount = 0;
+                        ItemStack inv = null;
+
+                        for (ItemStack i : player.getInventory().getContents()) {
+                            if (i != null && i.getType() == itemStack.getType()) {
+                                inventoryCount += i.getAmount();
+                                setIsRaceItem(i, true);
+                                inv = i;
+                                break;
+                            }
+                        }
+
+                        if (inv != null && !inv.isEmpty()) {
+                            if (inventoryCount < Max) {
+                                inv.setAmount(Math.min(inv.getAmount() + QtyPer, Max));
+                            }
+                        } else {
+                            itemStack.setAmount(QtyPer);
+                            player.getInventory().addItem(itemStack);
+                        }
+
+                    }
+                };
+                runnable.runTaskTimerAsynchronously(OLP, 0L, TimeSec);
+            }
+            OLP.settings.replacePlayerConfigs(playerConfig);
+        }
     }
 
     public void applyRace(Player player, ItemStack item) {
         player.clearActivePotionEffects();
-        Race race = OLP.settings.getRace(OLP.settings.getPlayerConfigs().get(player.getUniqueId()).getRaceUUID());
+        Race race = OLP.settings.getPlayerRace(player);
         if (race != null) {
             if (race.isEnabled()) {
                 Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(race.getScale());
