@@ -1,13 +1,12 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
-import org.bukkit.Effect;
-import org.bukkit.Material;
-import org.bukkit.potion.PotionEffect;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
+
+import org.bukkit.Material;
+import org.bukkit.potion.PotionEffect;
 
 public class Race {
 

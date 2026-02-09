@@ -1,11 +1,22 @@
 package xyz.acyber.oneLife.DataObjects;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
 import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
-import xyz.acyber.oneLife.DataObjects.SubSettings.*;
-import xyz.acyber.oneLife.OneLifePlugin;
 
-import java.util.*;
+import xyz.acyber.oneLife.DataObjects.SubSettings.AFKCheckerConfig;
+import xyz.acyber.oneLife.DataObjects.SubSettings.EnabledFeatures;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Lives;
+import xyz.acyber.oneLife.DataObjects.SubSettings.MobConfig;
+import xyz.acyber.oneLife.DataObjects.SubSettings.PlayerConfig;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Race;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Scoring;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Team;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 public class Settings {
 
@@ -129,10 +140,12 @@ public class Settings {
     public void setPlayerRace(Player player, Race race) {
         PlayerConfig config = playerConfigs.get(player.getUniqueId());
         config.setRaceUUID(race.getRaceUUID());
+        markDirty();
     }
     public void setPlayerRace(OfflinePlayer player, Race race) {
         PlayerConfig config = playerConfigs.get(player.getUniqueId());
         config.setRaceUUID(race.getRaceUUID());
+        markDirty();
     }
 
     public HashMap<UUID, Race> getRaces() { if (races == null) races = new HashMap<>(); return races; }

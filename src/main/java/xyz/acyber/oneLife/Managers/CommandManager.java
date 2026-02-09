@@ -1,5 +1,15 @@
 package xyz.acyber.oneLife.Managers;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.NotNull;
+
 import com.mojang.brigadier.Command;
 import com.mojang.brigadier.arguments.BoolArgumentType;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
@@ -8,23 +18,15 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
 import com.mojang.brigadier.tree.LiteralCommandNode;
+
 import io.papermc.paper.command.brigadier.CommandSourceStack;
 import io.papermc.paper.command.brigadier.Commands;
 import io.papermc.paper.command.brigadier.argument.ArgumentTypes;
 import io.papermc.paper.command.brigadier.argument.resolvers.selector.PlayerSelectorArgumentResolver;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.ItemStack;
-import org.jetbrains.annotations.NotNull;
 import xyz.acyber.oneLife.DataObjects.Settings;
 import xyz.acyber.oneLife.DataObjects.SubSettings.PlayerConfig;
 import xyz.acyber.oneLife.DataObjects.SubSettings.Race;
 import xyz.acyber.oneLife.OneLifePlugin;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 @SuppressWarnings("SameReturnValue")
 public class CommandManager {
@@ -188,7 +190,12 @@ public class CommandManager {
                                 .requires(sender -> sender.getSender().hasPermission("OneLife.Races.ResetStartItems"))
                                 .executes(CommandManager::runResetStartItemsLogic))
                         .then(Commands.literal("SetRace")
-                                .requires(sender -> sender.getSender().hasPermission("OneLife.Races.SetRace") || settings.getPlayerRace((Player) sender.getSender()).getRaceName().equalsIgnoreCase("Human"))
+                            .requires(sender -> {
+                                if (sender.getSender().hasPermission("OneLife.Races.SetRace")) return true;
+                                if (!(sender.getSender() instanceof Player player)) return false;
+                                Race race = settings.getPlayerRace(player);
+                                return race != null && "Human".equalsIgnoreCase(race.getRaceName());
+                            })
                                 .then(Commands.argument("Race", StringArgumentType.word())
                                         .suggests((ctx, builder) -> {
                                             List<String> races = new ArrayList<>();
@@ -217,7 +224,11 @@ public class CommandManager {
                 .then(cmdScores)
                 .then(cmdRaces)
                 .then(Commands.literal("Climb")
-                        .requires(sender -> sender.getExecutor() instanceof Player player && settings.getPlayerRace(player).getCanClimbWalls() && oneLifePlugin.settings.getEnabledFeatures().getEnabledRaceManager())
+                        .requires(sender -> {
+                            if (!(sender.getExecutor() instanceof Player player)) return false;
+                            Race race = settings.getPlayerRace(player);
+                            return race != null && race.getCanClimbWalls() && oneLifePlugin.settings.getEnabledFeatures().getEnabledRaceManager();
+                        })
                         .executes(CommandManager::runClimbLogic))
                 .then(Commands.literal("GiveLife")
                         .requires(sender -> settings.getEnabledFeatures().getEnabledLifeGifting())
@@ -374,8 +385,10 @@ public class CommandManager {
         CommandSourceStack stack = ctx.getSource();
         final String race = ctx.getArgument("Race", String.class);
         if (stack.getSender().isOp()) {
-            assert player != null;
-            for (ItemStack i : player.getInventory().getContents()) {
+            if (player == null) return Command.SINGLE_SUCCESS;
+            ItemStack[] contents = player.getInventory().getContents();
+            if (contents == null) return Command.SINGLE_SUCCESS;
+            for (ItemStack i : contents) {
                 rm.clearRaceItemEnchants(i);
                 if (rm.isRaceItem(i)) {
                     player.getInventory().removeItemAnySlot(Objects.requireNonNull(i));

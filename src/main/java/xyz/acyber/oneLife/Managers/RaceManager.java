@@ -1,17 +1,26 @@
 package xyz.acyber.oneLife.Managers;
 
-import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
-import io.papermc.paper.registry.RegistryAccess;
-import io.papermc.paper.registry.RegistryKey;
-import net.kyori.adventure.text.Component;
-import org.bukkit.*;
+import java.io.IOException;
+import java.lang.reflect.Type;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+import java.util.logging.Level;
+
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.data.BlockData;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.enchantments.Enchantment;
 import org.bukkit.entity.Entity;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Player;
@@ -27,7 +36,6 @@ import org.bukkit.event.player.PlayerDropItemEvent;
 import org.bukkit.event.player.PlayerItemConsumeEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.event.player.PlayerMoveEvent;
-import org.bukkit.inventory.CreativeCategory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.inventory.meta.ItemMeta;
@@ -38,14 +46,22 @@ import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.DataObjects.Settings;
-import xyz.acyber.oneLife.DataObjects.SubSettings.*;
-import xyz.acyber.oneLife.OneLifePlugin;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
+import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.reflect.TypeToken;
+
+import io.papermc.paper.registry.RegistryAccess;
+import io.papermc.paper.registry.RegistryKey;
+import net.kyori.adventure.text.Component;
+import xyz.acyber.oneLife.DataObjects.SubSettings.AssignedArmor;
+import xyz.acyber.oneLife.DataObjects.SubSettings.AssignedItem;
+import xyz.acyber.oneLife.DataObjects.SubSettings.BuffedFood;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Enchant;
+import xyz.acyber.oneLife.DataObjects.SubSettings.PlayerConfig;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Race;
+import xyz.acyber.oneLife.DataObjects.SubSettings.RepeatItem;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 
 public class RaceManager {
@@ -109,7 +125,7 @@ public class RaceManager {
                     // Persists vine location to player climb data
                     ev.getPlayer().sendBlockChange(b2.getLocation(), vine);
                 // Reconciles vine state when a player moves between blocks
-                    playerConfig.appendClimbingData(b2.getLocation()); ;
+                    playerConfig.appendClimbingData(b2.getLocation());
                 }
                 // Reconciles vine state when player moves between blocks
                 if (ev.getFrom().getBlockX() != ev.getTo().getBlockX()
@@ -320,7 +336,7 @@ public class RaceManager {
                 event.getAction() == InventoryAction.PLACE_SOME ||
                 event.getAction() == InventoryAction.SWAP_WITH_CURSOR) &&
                 event.getClickedInventory() != null) {
-            ItemStack item = event.getClickedInventory().getItem(event.getSlot());
+            ItemStack item = Objects.requireNonNull(event.getClickedInventory()).getItem(event.getSlot());
             if (event.getAction() == InventoryAction.SWAP_WITH_CURSOR || item == null) {
                 item = event.getCursor();
             }
@@ -442,6 +458,7 @@ public class RaceManager {
     private void recordItemEnchants(List<Enchant> enchantsList, ItemStack item, NamespacedKey key) {
         StringBuilder enchants = new StringBuilder();
         for (Enchant enchant: enchantsList) {
+            if (enchant == null || enchant.getEnchantment() == null) continue;
             enchants.append(enchant.getEnchantment().getKey().getKey()).append(",").append(enchant.getLevel()).append(";");
         }
         ItemMeta itemMeta = item.getItemMeta();
@@ -458,6 +475,7 @@ public class RaceManager {
         //We need to keep track of any enchanting we overwrite so we can restore the item to original state when not with player
 
         for (Enchant enchant : assignedEnchants) {
+            if (enchant == null || enchant.getEnchantment() == null) continue;
             if (item.getEnchantments().containsKey(enchant.getEnchantment())) {
                 if (item.getEnchantmentLevel(enchant.getEnchantment()) <= enchant.getLevel()) {
                     overriddenEnchants.add(new Enchant(enchant.getEnchantment(), item.getEnchantmentLevel(enchant.getEnchantment())));
@@ -477,6 +495,7 @@ public class RaceManager {
 
         //Apply race enchantments required to Item
         for (Enchant enchant: raceAssignedEnchants) {
+            if (enchant == null || enchant.getEnchantment() == null) continue;
             item.addEnchantment(enchant.getEnchantment(), enchant.getLevel());
         }
 
@@ -509,12 +528,57 @@ public class RaceManager {
     }
 
     public void giveRaceEffects(Player player, List<PotionEffect> Effects) {
+        if (Effects == null || Effects.isEmpty()) return;
         for (PotionEffect effect : Effects) {
+            if (effect == null) continue;
             PotionEffectType potion = effect.getType();
-
-            player.addPotionEffect(Objects.requireNonNull(potion.createEffect(-1, 0)));
+            int duration = effect.getDuration() > 0 ? effect.getDuration() : Integer.MAX_VALUE;
+            int amplifier = effect.getAmplifier();
+            PotionEffect applied = new PotionEffect(
+                    potion,
+                    duration,
+                    amplifier,
+                    effect.isAmbient(),
+                    effect.hasParticles(),
+                    effect.hasIcon()
+            );
+            player.addPotionEffect(applied);
         }
 
+    }
+
+    public void giveAssignedItems(Player player, List<AssignedItem> assignedItems) {
+        if (assignedItems == null || assignedItems.isEmpty()) return;
+
+        for (AssignedItem assignedItem : assignedItems) {
+            if (assignedItem == null || assignedItem.getItemMaterial() == null) continue;
+            Material material = assignedItem.getItemMaterial();
+            int amount = Math.max(1, assignedItem.getItemAmount());
+
+            ItemStack existing = null;
+            for (ItemStack invItem : player.getInventory().getContents()) {
+                if (invItem != null && invItem.getType() == material) {
+                    existing = invItem;
+                    break;
+                }
+            }
+
+            ItemStack item = existing;
+            List<Enchant> enchants = assignedItem.getItemEnchantments();
+            if (enchants != null && !enchants.isEmpty()) {
+                item = getEnchantedItem(player, item, material, enchants);
+            } else if (item == null) {
+                item = new ItemStack(material);
+            }
+
+            if (item != null) {
+                item.setAmount(Math.max(item.getAmount(), amount));
+                setIsRaceItem(item, true);
+                if (existing == null) {
+                    player.getInventory().addItem(item);
+                }
+            }
+        }
     }
 
     public void giveStartItems(Player player, HashMap<String, Integer> startItems) {
@@ -585,6 +649,32 @@ public class RaceManager {
         }
     }
 
+    public void ensureDefaultRaces() {
+        if (OLP.settings.getRaces() != null && !OLP.settings.getRaces().isEmpty()) return;
+        Path path = Paths.get(OLP.getDataFolder() + "/races.json");
+        List<Race> races = null;
+
+        if (Files.exists(path)) {
+            try {
+                String json = Files.readString(path, StandardCharsets.UTF_8);
+                Type listType = new TypeToken<List<Race>>() {}.getType();
+                races = OLP.getGson().fromJson(json, listType);
+            } catch (IOException | JsonSyntaxException e) {
+                OLP.getLogger().log(Level.WARNING, "Failed to read races.json, falling back to defaults", e);
+            }
+        }
+        
+        HashMap<UUID, Race> map = new HashMap<>();
+        if (races == null) races = new ArrayList<>();
+        for (Race race : races) {
+            if (race == null) continue;
+            if (race.getRaceUUID() == null) race.setRaceUUID(UUID.randomUUID());
+            map.put(race.getRaceUUID(), race);
+        }
+        OLP.settings.setRaces(map);
+        OLP.saveSettings();
+    }
+
     public void applyRace(Player player, ItemStack item) {
         player.clearActivePotionEffects();
         Race race = OLP.settings.getPlayerRace(player);
@@ -602,6 +692,7 @@ public class RaceManager {
 
                 giveRaceEffects(player, race.getEffects());
                 giveRaceArmor(player, item, race.getArmor());
+                giveAssignedItems(player, race.getAssignedItems());
 
                 giveStartItems(player, race.getStartItems());
                 setRepeatItems(player, race.getRepeatItems());

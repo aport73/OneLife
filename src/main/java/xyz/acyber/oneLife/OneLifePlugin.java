@@ -1,40 +1,9 @@
 package xyz.acyber.oneLife;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
-import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
-import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
-import net.luckperms.api.LuckPerms;
-import net.luckperms.api.LuckPermsProvider;
-import net.luckperms.api.model.group.Group;
-import net.luckperms.api.node.types.PrefixNode;
-import net.luckperms.api.node.types.SuffixNode;
-import net.luckperms.api.node.types.WeightNode;
-import org.bukkit.Bukkit;
-import org.bukkit.GameMode;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.Player;
-import org.bukkit.event.entity.*;
-import org.bukkit.event.player.*;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.java.JavaPlugin;
-import org.bukkit.scheduler.BukkitTask;
-import org.bukkit.scoreboard.Objective;
-import org.bukkit.scoreboard.Scoreboard;
-import org.bukkit.scoreboard.ScoreboardManager;
-import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.DataObjects.PlayerScore;
-import xyz.acyber.oneLife.DataObjects.Settings;
-import xyz.acyber.oneLife.Runables.AFKChecker;
-import xyz.acyber.oneLife.Runables.AutoSaver;
-import xyz.acyber.oneLife.Runables.DayNightChecker;
-import xyz.acyber.oneLife.Runables.PassiveMobsModifier;
-import xyz.acyber.oneLife.Managers.*;
-import xyz.acyber.oneLife.Serialization.EntityTypeAdapter;
-import xyz.acyber.oneLife.Serialization.LocationTypeAdapter;
-import xyz.acyber.oneLife.Serialization.MaterialTypeAdapter;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -43,10 +12,57 @@ import java.nio.file.StandardCopyOption;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
+
+import org.bukkit.Bukkit;
+import org.bukkit.GameMode;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
+import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.scheduler.BukkitTask;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+import org.jetbrains.annotations.NotNull;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
+import io.papermc.paper.plugin.lifecycle.event.LifecycleEventManager;
+import io.papermc.paper.plugin.lifecycle.event.types.LifecycleEvents;
+import net.luckperms.api.LuckPerms;
+import net.luckperms.api.LuckPermsProvider;
+import net.luckperms.api.model.group.Group;
+import net.luckperms.api.node.types.PrefixNode;
+import net.luckperms.api.node.types.SuffixNode;
+import net.luckperms.api.node.types.WeightNode;
+import xyz.acyber.oneLife.DataObjects.PlayerScore;
+import xyz.acyber.oneLife.DataObjects.Settings;
+import xyz.acyber.oneLife.Managers.CommandManager;
+import xyz.acyber.oneLife.Managers.EventManager;
+import xyz.acyber.oneLife.Managers.LivesManager;
+import xyz.acyber.oneLife.Managers.MobManager;
+import xyz.acyber.oneLife.Managers.RaceManager;
+import xyz.acyber.oneLife.Managers.ScoreManager;
+import xyz.acyber.oneLife.Runables.AFKChecker;
+import xyz.acyber.oneLife.Runables.AutoSaver;
+import xyz.acyber.oneLife.Runables.DayNightChecker;
+import xyz.acyber.oneLife.Runables.PassiveMobsModifier;
+import xyz.acyber.oneLife.Serialization.EnchantmentTypeAdapter;
+import xyz.acyber.oneLife.Serialization.EntityTypeAdapter;
+import xyz.acyber.oneLife.Serialization.LocationTypeAdapter;
+import xyz.acyber.oneLife.Serialization.MaterialTypeAdapter;
+import xyz.acyber.oneLife.Serialization.PotionEffectTypeAdapter;
 
 public class OneLifePlugin extends JavaPlugin {
 
@@ -65,8 +81,8 @@ public class OneLifePlugin extends JavaPlugin {
     public final ScoreManager sm = new ScoreManager(this);
     public final LivesManager lm = new LivesManager(this);
     public final CommandManager cm = new CommandManager(this);
-    public final DayNightChecker dnc = new DayNightChecker(this);
-    public final PassiveMobsModifier pmm = new PassiveMobsModifier(this);
+    public DayNightChecker dnc;
+    public PassiveMobsModifier pmm;
     private boolean night = false;
 
     public HashMap<UUID,Long> afkLastInput;
@@ -81,7 +97,13 @@ public class OneLifePlugin extends JavaPlugin {
             .registerTypeAdapter(org.bukkit.Material.class, new MaterialTypeAdapter())
             .registerTypeAdapter(org.bukkit.entity.EntityType.class, new EntityTypeAdapter())
             .registerTypeAdapter(org.bukkit.Location.class, new LocationTypeAdapter())
+            .registerTypeAdapter(org.bukkit.enchantments.Enchantment.class, new EnchantmentTypeAdapter())
+            .registerTypeAdapter(org.bukkit.potion.PotionEffectType.class, new PotionEffectTypeAdapter())
             .create();
+
+    public Gson getGson() {
+        return gson;
+    }
 
     /**
      * Enables plugin; registers events, commands, settings, and features
@@ -92,13 +114,15 @@ public class OneLifePlugin extends JavaPlugin {
         try {
             settings = loadSettings();
             settings.setPlugin(this);
-            if (Objects.equals(settings, new Settings())) {
-                saveSettings();
+            Path settingsPath = Paths.get(getDataFolder() + "/settings.json");
+            if (!Files.exists(settingsPath)) {
+                saveSettingsSync();
             }
         } catch (Exception e) {
             getLogger().log(Level.SEVERE, "Failed to load settings, using defaults", e);
             settings = new Settings(); // safe fallback
             settings.setPlugin(this);
+            saveSettingsSync();
         }
 
         getServer().getPluginManager().registerEvents(em, this);
@@ -111,6 +135,7 @@ public class OneLifePlugin extends JavaPlugin {
         // Ensure settings is initialized to avoid NPE
 
         scoreData = loadScoring();
+        rm.ensureDefaultRaces();
 
         if (settings.isLuckPermsEnabled())
             lpAPI = LuckPermsProvider.get();
@@ -172,12 +197,21 @@ public class OneLifePlugin extends JavaPlugin {
         Map<UUID, PlayerScore> snapshot = new HashMap<>(scoreData);
         for (UUID uuid : snapshot.keySet()) {
             PlayerScore playerScore = snapshot.get(uuid);
+            if (playerScore == null) continue;
             Path path = Path.of(getDataFolder() + settings.getScoring().getPathToScoreData() + playerScore.getPlayerName() + " - " + playerScore.getUUID() + ".json");
             createDirectoryOrBackups(path);
             try {
-                String jsonString = gson.toJson(playerScore);
+                String jsonString;
+                if (Bukkit.isPrimaryThread()) {
+                    jsonString = gson.toJson(playerScore);
+                } else {
+                    jsonString = Bukkit.getScheduler().callSyncMethod(this, () -> gson.toJson(playerScore)).get();
+                }
                 Files.write(path, jsonString.getBytes(StandardCharsets.UTF_8));
-            } catch (IOException e) {
+            } catch (IOException | InterruptedException | ExecutionException e) {
+                if (e instanceof InterruptedException) {
+                    Thread.currentThread().interrupt();
+                }
                 scoresDirty.set(true); // retry later
                 getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
                 getLogger().log(Level.SEVERE, e.getMessage());
@@ -188,9 +222,20 @@ public class OneLifePlugin extends JavaPlugin {
 
     public void reload() {
         savePlayerScores();
-        loadSettings();
+        settings = loadSettings();
         settings.setPlugin(this);
+        rm.ensureDefaultRaces();
         loadScoring();
+        if (afkChecker != null) afkChecker.cancel();
+        if (dnChecker != null) dnChecker.cancel();
+        if (pmModifier != null) pmModifier.cancel();
+        if (autoSave != null) autoSave.cancel();
+        afkChecker = null;
+        dnChecker = null;
+        pmModifier = null;
+        autoSave = null;
+        dnc = null;
+        pmm = null;
         loadFeatures();
     }
 
@@ -206,6 +251,17 @@ public class OneLifePlugin extends JavaPlugin {
                 Files.move(path, backupPath, StandardCopyOption.REPLACE_EXISTING);
             } else {
                 Files.createDirectories(parent);
+            }
+            int backupsToKeep = settings.getBackupsToKeep();
+            if (backupsToKeep >= 0 && Files.exists(backupDir)) {
+                File[] backups = backupDir.toFile().listFiles();
+                if (backups != null && backups.length > backupsToKeep) {
+                    Arrays.sort(backups, Comparator.comparingLong(File::lastModified));
+                    for (int i = 0; i < backups.length - backupsToKeep; i++) {
+                        //noinspection ResultOfMethodCallIgnored
+                        backups[i].delete();
+                    }
+                }
             }
         } catch (IOException e) {
             getLogger().log(Level.SEVERE, Arrays.toString(e.getStackTrace()));
@@ -224,11 +280,10 @@ public class OneLifePlugin extends JavaPlugin {
                 saveTo.createNewFile();
             }
 
-            FileWriter fw = new FileWriter(saveTo, true);
-            PrintWriter pw = new PrintWriter(fw);
-            pw.println(message);
-            pw.flush();
-            pw.close();
+            try (PrintWriter pw = new PrintWriter(new FileWriter(saveTo, true))) {
+                pw.println(message);
+                pw.flush();
+            }
         } catch (IOException e) {
             this.getLogger().log(Level.SEVERE, "Failed to logToFile with Path: " + path + " & Message: " + message, e.getCause());
             this.getLogger().log(Level.INFO, "Stacktrace", e.fillInStackTrace());
@@ -356,6 +411,7 @@ public class OneLifePlugin extends JavaPlugin {
 
     private void loadFeatures() {
         //Start Day Night Checking
+        dnc = new DayNightChecker(this);
         dnChecker = dnc.runTaskTimer(this,0,20L);
 
         loadNightHostiles();
@@ -422,10 +478,13 @@ public class OneLifePlugin extends JavaPlugin {
         return loadData;
     }
 
+
     private void loadNightHostiles() {
         if (settings.getEnabledFeatures().getEnabledNightHostiles()) {
-            if (pmModifier != null)
+            if (pmModifier == null) {
+                pmm = new PassiveMobsModifier(this);
                 pmModifier = pmm.runTaskTimer(this, 0, 20L);
+            }
         }
         else if (pmModifier != null)
             pmModifier.cancel();

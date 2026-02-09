@@ -1,9 +1,17 @@
 package xyz.acyber.oneLife.Managers;
 
-import io.papermc.paper.command.brigadier.CommandSourceStack;
-import net.luckperms.api.model.user.User;
-import org.bukkit.*;
-import org.bukkit.entity.EntityType;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.stream.Collectors;
+
+import org.bukkit.GameMode;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.entity.Player;
 import org.bukkit.event.block.BlockBreakEvent;
 import org.bukkit.event.block.BlockPlaceEvent;
@@ -14,14 +22,11 @@ import org.bukkit.event.player.PlayerFishEvent;
 import org.bukkit.event.player.PlayerHarvestBlockEvent;
 import org.bukkit.inventory.ItemStack;
 import org.jetbrains.annotations.NotNull;
+
+import io.papermc.paper.command.brigadier.CommandSourceStack;
+import net.luckperms.api.model.user.User;
 import xyz.acyber.oneLife.DataObjects.PlayerScore;
 import xyz.acyber.oneLife.OneLifePlugin;
-
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 public class ScoreManager {
 
@@ -90,12 +95,12 @@ public class ScoreManager {
     }
 
     public void entityKilled(@NotNull EntityDeathEvent event) {
-        if (event.getDamageSource().getCausingEntity() != null && event.getDamageSource().getCausingEntity().getType() == EntityType.PLAYER) {
-            Player player = (Player) event.getDamageSource().getCausingEntity();
-            String gameMode = player.getGameMode().name();
-            if (playerAFK(player)) gameMode = "AFK";
-            OLP.scoreData.get(player.getUniqueId()).incrementTypeMobsKilled(event.getEntityType(),gameMode);
-        }
+        var source = event.getDamageSource();
+        var causer = source.getCausingEntity();
+        if (!(causer instanceof Player player)) return;
+        String gameMode = player.getGameMode().name();
+        if (playerAFK(player)) gameMode = "AFK";
+        OLP.scoreData.get(player.getUniqueId()).incrementTypeMobsKilled(event.getEntityType(),gameMode);
     }
 
     public void timeOnline(@NotNull Player player) {
@@ -150,7 +155,8 @@ public class ScoreManager {
                 "Items Harvested Points", "Items Caught", "Items Caught Points", "Achievements", "Achievement Points"};
         List<String[]> data = new ArrayList<>();
         for (PlayerScore playerScore : scores) {
-            data.add(new String[]{playerScore.getPlayerName(), playerScore.getTeam().getTeamName(), String.valueOf(playerScore.totalPoints()), String.valueOf(playerScore.getDeaths()), String.valueOf(playerScore.getDeathPoints()),
+            String teamName = playerScore.getTeam() != null ? playerScore.getTeam().getTeamName() : "N/A";
+            data.add(new String[]{playerScore.getPlayerName(), teamName, String.valueOf(playerScore.totalPoints()), String.valueOf(playerScore.getDeaths()), String.valueOf(playerScore.getDeathPoints()),
                     String.valueOf(playerScore.getXp()), String.valueOf(playerScore.getXpPoints()), String.valueOf(playerScore.onlineHr()), String.valueOf(playerScore.getOnlineHr().get("SURVIVAL")), String.valueOf(playerScore.getOnlineHr().get("ADVENTURE")),
                     String.valueOf(playerScore.getOnlineHr().get("AFK")), String.valueOf(playerScore.getOnlineHrPoints()), String.valueOf(playerScore.getTypeMobTotalPoints()), String.valueOf(playerScore.getBlocksMined()),
                     String.valueOf(playerScore.getDefaultBlocksMinedPoints()), String.valueOf(playerScore.getBlocksPlaced()), String.valueOf(playerScore.getDefaultBlocksPlacedPoints()), String.valueOf(playerScore.getHarvested()),
@@ -166,14 +172,17 @@ public class ScoreManager {
         teamScores.forEach((key, value) -> {
             OLP.logToFile(key + "'s Score: " + value, path);
             OLP.logToFile("--- Member Ranking ---", path);
-            scores.stream().filter(score -> Objects.equals(score.getTeam().getTeamName(), key)).forEach(score -> OLP.logToFile(score.getPlayerName() +"'s Score: " + score.totalPoints(), path));
+            scores.stream()
+                    .filter(score -> score.getTeam() != null && Objects.equals(score.getTeam().getTeamName(), key))
+                    .forEach(score -> OLP.logToFile(score.getPlayerName() +"'s Score: " + score.totalPoints(), path));
             OLP.logToFile("--- End Members ---", path);
             OLP.logToFile("",path);
         });
         OLP.logToFile("",path);
         OLP.logToFile("--- Individualised Ranking ---", path);
         for(PlayerScore playerScore : scores) {
-            OLP.logToFile(playerScore.getPlayerName() + " - Team: " + playerScore.getTeam().getTeamName() + ":", path);
+            String teamName = playerScore.getTeam() != null ? playerScore.getTeam().getTeamName() : "N/A";
+            OLP.logToFile(playerScore.getPlayerName() + " - Team: " + teamName + ":", path);
             OLP.logToFile("Total Points: " + playerScore.totalPoints(), path);
             OLP.logToFile("--- Category Totals ---", path);
             OLP.logToFile("Deaths: " + playerScore.getDeaths().get(GameMode.SURVIVAL.name()) + ", Adventure Deaths: " + playerScore.getDeaths().get(GameMode.ADVENTURE.name()), path);
@@ -181,7 +190,7 @@ public class ScoreManager {
             OLP.logToFile("AFK Penalty: " + playerScore.getAFKPointsOffset(), path);
             OLP.logToFile("Xp: " + playerScore.getXp() + ", Points: " + playerScore.getXpPoints(), path);
             OLP.logToFile("OnlineHr: " + playerScore.onlineHr() + ", Points: " + playerScore.getOnlineHrPoints(), path);
-            OLP.logToFile("SurvivalHr: " + playerScore.getOnlineHr().get("SURVIVIAL") + ", AdventureHr: " + playerScore.getOnlineHr().get("ADVENTURE") + ", AfkHr: " + playerScore.getOnlineHr().get("AFK"), path);
+            OLP.logToFile("SurvivalHr: " + playerScore.getOnlineHr().get(GameMode.SURVIVAL.name()) + ", AdventureHr: " + playerScore.getOnlineHr().get(GameMode.ADVENTURE.name()) + ", AfkHr: " + playerScore.getOnlineHr().get("AFK"), path);
             OLP.logToFile("Total MobConfig Kill Points: " + playerScore.getTypeMobTotalPoints(), path);
             OLP.logToFile("Blocks Mined: " + playerScore.getBlocksMined() + ", Points: " + playerScore.getDefaultBlocksMinedPoints(), path);
             OLP.logToFile("Blocks Placed: " + playerScore.getBlocksPlaced() + ", Points: " + playerScore.getDefaultBlocksPlacedPoints(), path);
@@ -226,7 +235,7 @@ public class ScoreManager {
         stack.getSender().sendMessage("AFK Penalty: " + playerScore.getAFKPointsOffset());
         stack.getSender().sendMessage("Xp: " + playerScore.getXp() + ", Points: " + playerScore.getXpPoints());
         stack.getSender().sendMessage("OnlineHr: " + playerScore.onlineHr() + ", Points: " + playerScore.getOnlineHrPoints());
-        stack.getSender().sendMessage("SurvivalHr: " + playerScore.getOnlineHr().get("SURVIVIAL") + ", AdventureHr: " + playerScore.getOnlineHr().get("ADVENTURE") + ", AfkHr: " + playerScore.getOnlineHr().get("AFK"));
+        stack.getSender().sendMessage("SurvivalHr: " + playerScore.getOnlineHr().get(GameMode.SURVIVAL.name()) + ", AdventureHr: " + playerScore.getOnlineHr().get(GameMode.ADVENTURE.name()) + ", AfkHr: " + playerScore.getOnlineHr().get("AFK"));
         stack.getSender().sendMessage("Total MobConfig Kill Points: " + playerScore.getTypeMobTotalPoints());
         stack.getSender().sendMessage("Blocks Mined: " + playerScore.getBlocksMined() + ", Points: " + playerScore.getDefaultBlocksMinedPoints());
         stack.getSender().sendMessage("Blocks Placed: " + playerScore.getBlocksPlaced() + ", Points: " + playerScore.getDefaultBlocksPlacedPoints());
@@ -241,13 +250,5 @@ public class ScoreManager {
         User user = OLP.lpAPI.getUserManager().getUser(player.getUniqueId());
         assert user != null;
         return user.getPrimaryGroup().equalsIgnoreCase("AFK");
-    }
-
-    private static double round(double value, int places) {
-        if (places < 0) throw new IllegalArgumentException();
-
-        BigDecimal bd = BigDecimal.valueOf(value);
-        bd = bd.setScale(places, RoundingMode.HALF_UP);
-        return bd.doubleValue();
     }
 }

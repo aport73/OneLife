@@ -6,7 +6,7 @@ import java.util.UUID;
 
 public class RepeatItem {
 
-    private UUID UUID = java.util.UUID.randomUUID();
+    private final UUID UUID = java.util.UUID.randomUUID();
     private String materialType = null;
     private int max = 0;
     private int qtyPerRepeat = 0;

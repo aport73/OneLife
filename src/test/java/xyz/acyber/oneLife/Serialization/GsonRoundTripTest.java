@@ -1,19 +1,23 @@
 package xyz.acyber.oneLife.Serialization;
 
-import com.google.gson.Gson;
-import com.google.gson.GsonBuilder;
+import java.util.HashMap;
+import java.util.UUID;
+
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
+
 import xyz.acyber.oneLife.DataObjects.PlayerScore;
 import xyz.acyber.oneLife.DataObjects.Settings;
 import xyz.acyber.oneLife.DataObjects.SubScoreData.MaterialInteractions;
 import xyz.acyber.oneLife.DataObjects.SubSettings.Team;
-
-import java.util.HashMap;
-import java.util.UUID;
-
-import static org.junit.jupiter.api.Assertions.*;
 
 class GsonRoundTripTest {
 
@@ -23,6 +27,8 @@ class GsonRoundTripTest {
                 .registerTypeAdapter(org.bukkit.Material.class, new MaterialTypeAdapter())
                 .registerTypeAdapter(org.bukkit.entity.EntityType.class, new EntityTypeAdapter())
                 .registerTypeAdapter(org.bukkit.Location.class, new LocationTypeAdapter())
+                .registerTypeAdapter(org.bukkit.enchantments.Enchantment.class, new EnchantmentTypeAdapter())
+                .registerTypeAdapter(org.bukkit.potion.PotionEffectType.class, new PotionEffectTypeAdapter())
                 .create();
     }
 
