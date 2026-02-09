@@ -1,17 +1,9 @@
 package xyz.acyber.oneLife.Managers;
 
-import java.io.IOException;
-import java.lang.reflect.Type;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
-import java.util.UUID;
-import java.util.logging.Level;
 
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
@@ -48,8 +40,6 @@ import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 
 import com.destroystokyo.paper.event.player.PlayerArmorChangeEvent;
-import com.google.gson.JsonSyntaxException;
-import com.google.gson.reflect.TypeToken;
 
 import io.papermc.paper.registry.RegistryAccess;
 import io.papermc.paper.registry.RegistryKey;
@@ -341,11 +331,12 @@ public class RaceManager {
                 item = event.getCursor();
             }
 
+            var clickedInventory = event.getClickedInventory();
             if (!stopItemDrop(item, player) ||
-                    event.getClickedInventory().getType().equals(InventoryType.PLAYER) &&
+                    clickedInventory != null && clickedInventory.getType().equals(InventoryType.PLAYER) &&
                             event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
                 if (!isRaceItem(item) ||
-                        event.getClickedInventory().getType().equals(InventoryType.PLAYER) &&
+                        clickedInventory != null && clickedInventory.getType().equals(InventoryType.PLAYER) &&
                                 event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
                     clearRaceItemEnchants(item);
                 } else {
@@ -356,7 +347,7 @@ public class RaceManager {
                 event.setCancelled(true);
             }
 
-            if (event.getClickedInventory().getType().equals(InventoryType.PLAYER) && event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
+            if (clickedInventory != null && clickedInventory.getType().equals(InventoryType.PLAYER) && event.getAction() != InventoryAction.MOVE_TO_OTHER_INVENTORY) {
                 this.applyRace(player, item);
             }
         }
@@ -383,11 +374,14 @@ public class RaceManager {
             PlayerInventory playerInventory = player.getInventory();
             playerInventory.removeItem(item);
 
-            for (ItemStack invItem : playerInventory.getContents()) {
-                if (invItem != null) {
-                    String[] invType = Objects.requireNonNull(invItem).getType().toString().split("_");
-                    if (itemType[itemType.length - 1].equalsIgnoreCase(invType[invType.length - 1])) {
-                        ++count;
+            ItemStack[] contents = playerInventory.getContents();
+            if (contents != null) {
+                for (ItemStack invItem : contents) {
+                    if (invItem != null) {
+                        String[] invType = Objects.requireNonNull(invItem).getType().toString().split("_");
+                        if (itemType[itemType.length - 1].equalsIgnoreCase(invType[invType.length - 1])) {
+                            ++count;
+                        }
                     }
                 }
             }
@@ -466,7 +460,7 @@ public class RaceManager {
         item.setItemMeta(itemMeta);
     }
 
-    private ItemStack getEnchantedItem(Player player, ItemStack item, Material assignedMaterial, List<Enchant> assignedEnchants) {
+    private ItemStack getEnchantedItem(ItemStack item, Material assignedMaterial, List<Enchant> assignedEnchants) {
 
         List<Enchant> raceAssignedEnchants = new ArrayList<>();
         List<Enchant> overriddenEnchants = new ArrayList<>();
@@ -507,22 +501,22 @@ public class RaceManager {
         if (assignedArmor.getHelmetMaterial() != null)
         {
             if (player.getInventory().getHelmet() != null) item = player.getInventory().getHelmet();
-            item = getEnchantedItem(player, item, assignedArmor.getHelmetMaterial(), assignedArmor.getHelmetEnchants());
+            item = getEnchantedItem(item, assignedArmor.getHelmetMaterial(), assignedArmor.getHelmetEnchants());
             player.getInventory().setHelmet(item);
         }
         if (assignedArmor.getChestplateMaterial() != null) {
             if(player.getInventory().getChestplate() != null) item = player.getInventory().getChestplate();
-            item = getEnchantedItem(player, item, assignedArmor.getChestplateMaterial(), assignedArmor.getChestplateEnchants());
+            item = getEnchantedItem(item, assignedArmor.getChestplateMaterial(), assignedArmor.getChestplateEnchants());
             player.getInventory().setChestplate(item);
         }
         if (assignedArmor.getLeggingsMaterial() != null) {
             if(player.getInventory().getLeggings() != null) item = player.getInventory().getLeggings();
-            item = getEnchantedItem(player, item, assignedArmor.getLeggingsMaterial(), assignedArmor.getLeggingsEnchants());
+            item = getEnchantedItem(item, assignedArmor.getLeggingsMaterial(), assignedArmor.getLeggingsEnchants());
             player.getInventory().setLeggings(item);
         }
         if (assignedArmor.getBootsMaterial() != null) {
             if (player.getInventory().getBoots() != null) item = player.getInventory().getBoots();
-            item = getEnchantedItem(player, item, assignedArmor.getBootsMaterial(), assignedArmor.getBootsEnchants());
+            item = getEnchantedItem(item, assignedArmor.getBootsMaterial(), assignedArmor.getBootsEnchants());
             player.getInventory().setBoots(item);
         }
     }
@@ -556,17 +550,20 @@ public class RaceManager {
             int amount = Math.max(1, assignedItem.getItemAmount());
 
             ItemStack existing = null;
-            for (ItemStack invItem : player.getInventory().getContents()) {
-                if (invItem != null && invItem.getType() == material) {
-                    existing = invItem;
-                    break;
+            ItemStack[] inventoryContents = player.getInventory().getContents();
+            if (inventoryContents != null) {
+                for (ItemStack invItem : inventoryContents) {
+                    if (invItem != null && invItem.getType() == material) {
+                        existing = invItem;
+                        break;
+                    }
                 }
             }
 
             ItemStack item = existing;
             List<Enchant> enchants = assignedItem.getItemEnchantments();
             if (enchants != null && !enchants.isEmpty()) {
-                item = getEnchantedItem(player, item, material, enchants);
+                item = getEnchantedItem(item, material, enchants);
             } else if (item == null) {
                 item = new ItemStack(material);
             }
@@ -606,6 +603,7 @@ public class RaceManager {
                 final int QtyPer = repeatItem.getQtyPerRepeat();
                 int TimeSec = repeatItem.getSecondsTillRepeat() * 20;
                 BukkitRunnable runnable = new BukkitRunnable() {
+                    @Override
                     public void run() {
                         Race race = OLP.settings.getPlayerRace(player);
 
@@ -623,12 +621,15 @@ public class RaceManager {
                         int inventoryCount = 0;
                         ItemStack inv = null;
 
-                        for (ItemStack i : player.getInventory().getContents()) {
-                            if (i != null && i.getType() == itemStack.getType()) {
-                                inventoryCount += i.getAmount();
-                                setIsRaceItem(i, true);
-                                inv = i;
-                                break;
+                        ItemStack[] contents = player.getInventory().getContents();
+                        if (contents != null) {
+                            for (ItemStack i : contents) {
+                                if (i != null && i.getType() == itemStack.getType()) {
+                                    inventoryCount += i.getAmount();
+                                    setIsRaceItem(i, true);
+                                    inv = i;
+                                    break;
+                                }
                             }
                         }
 
@@ -647,32 +648,6 @@ public class RaceManager {
             }
             OLP.settings.replacePlayerConfigs(playerConfig);
         }
-    }
-
-    public void ensureDefaultRaces() {
-        if (OLP.settings.getRaces() != null && !OLP.settings.getRaces().isEmpty()) return;
-        Path path = Paths.get(OLP.getDataFolder() + "/races.json");
-        List<Race> races = null;
-
-        if (Files.exists(path)) {
-            try {
-                String json = Files.readString(path, StandardCharsets.UTF_8);
-                Type listType = new TypeToken<List<Race>>() {}.getType();
-                races = OLP.getGson().fromJson(json, listType);
-            } catch (IOException | JsonSyntaxException e) {
-                OLP.getLogger().log(Level.WARNING, "Failed to read races.json, falling back to defaults", e);
-            }
-        }
-        
-        HashMap<UUID, Race> map = new HashMap<>();
-        if (races == null) races = new ArrayList<>();
-        for (Race race : races) {
-            if (race == null) continue;
-            if (race.getRaceUUID() == null) race.setRaceUUID(UUID.randomUUID());
-            map.put(race.getRaceUUID(), race);
-        }
-        OLP.settings.setRaces(map);
-        OLP.saveSettings();
     }
 
     public void applyRace(Player player, ItemStack item) {
@@ -700,8 +675,11 @@ public class RaceManager {
                 for (PotionEffect effect: race.getEffects()) {
                     player.removePotionEffect(effect.getType());
                 }
-                for (ItemStack items : player.getInventory().getContents())
-                    clearRaceItemEnchants(items);
+                ItemStack[] contents = player.getInventory().getContents();
+                if (contents != null) {
+                    for (ItemStack items : contents)
+                        clearRaceItemEnchants(items);
+                }
                 Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.SCALE)).getDefaultValue());
                 Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).setBaseValue(Objects.requireNonNull(player.getAttribute(Attribute.BLOCK_INTERACTION_RANGE)).getDefaultValue());
             }

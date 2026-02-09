@@ -1,17 +1,28 @@
 package xyz.acyber.oneLife.DataObjects;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.UUID;
 
+import org.bukkit.Material;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 import xyz.acyber.oneLife.DataObjects.SubSettings.AFKCheckerConfig;
+import xyz.acyber.oneLife.DataObjects.SubSettings.BuffedAttribute;
 import xyz.acyber.oneLife.DataObjects.SubSettings.EnabledFeatures;
 import xyz.acyber.oneLife.DataObjects.SubSettings.Lives;
 import xyz.acyber.oneLife.DataObjects.SubSettings.MobConfig;
+import xyz.acyber.oneLife.DataObjects.SubSettings.MobDrop;
 import xyz.acyber.oneLife.DataObjects.SubSettings.PlayerConfig;
 import xyz.acyber.oneLife.DataObjects.SubSettings.Race;
 import xyz.acyber.oneLife.DataObjects.SubSettings.Scoring;
@@ -79,6 +90,110 @@ public class Settings {
     }
     public void removeMob(MobConfig mobConfig) { mobs.remove(mobConfig.getMobType()); markDirty(); }
 
+    public boolean importDefaultMobConfigsFromResource() {
+        if (OLP == null) return false;
+        if (mobs != null && !mobs.isEmpty()) return false;
+
+        try (InputStream in = OLP.getResource("mobs.json")) {
+            if (in == null) return false;
+            String json = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+            JsonObject root = JsonParser.parseString(json).getAsJsonObject();
+            HashMap<String, MobConfig> defaults = new HashMap<>();
+
+            for (String rootKey : root.keySet()) {
+                JsonObject mobJson = root.getAsJsonObject(rootKey);
+                String mobType = mobJson.has("mobType") ? mobJson.get("mobType").getAsString() : rootKey;
+                MobConfig config = new MobConfig(mobType);
+
+                JsonElement noBabies = mobJson.has("noBabies") ? mobJson.get("noBabies") : mobJson.get("NOBABYS");
+                if (noBabies != null && noBabies.isJsonPrimitive()) {
+                    config.setNoBabies(noBabies.getAsBoolean());
+                }
+
+                JsonElement handMaterial = mobJson.get("handMaterial");
+                if (handMaterial != null && handMaterial.isJsonPrimitive()) {
+                    try {
+                        config.setHandMaterial(Material.valueOf(handMaterial.getAsString()));
+                    } catch (IllegalArgumentException ignored) {
+                        OLP.getLogger().warning(() -> "Invalid handMaterial for " + mobType + ": " + handMaterial.getAsString());
+                    }
+                }
+
+                List<MobDrop> drops = new ArrayList<>();
+                if (mobJson.has("drops") && mobJson.get("drops").isJsonArray()) {
+                    mobJson.getAsJsonArray("drops").forEach(dropEl -> {
+                        if (!dropEl.isJsonObject()) return;
+                        JsonObject dropObj = dropEl.getAsJsonObject();
+                        String materialName = dropObj.has("materialName") ? dropObj.get("materialName").getAsString() : null;
+                        int min = dropObj.has("min") ? dropObj.get("min").getAsInt() : 0;
+                        int max = dropObj.has("max") ? dropObj.get("max").getAsInt() : 0;
+                        if (materialName != null) drops.add(new MobDrop(materialName, min, max));
+                    });
+                } else if (mobJson.has("DROPS") && mobJson.get("DROPS").isJsonObject()) {
+                    JsonObject dropsJson = mobJson.getAsJsonObject("DROPS");
+                    for (String dropKey : dropsJson.keySet()) {
+                        JsonObject dropObj = dropsJson.getAsJsonObject(dropKey);
+                        int min = dropObj.has("MIN") ? dropObj.get("MIN").getAsInt() : 0;
+                        int max = dropObj.has("MAX") ? dropObj.get("MAX").getAsInt() : 0;
+                        drops.add(new MobDrop(dropKey, min, max));
+                    }
+                }
+                if (!drops.isEmpty()) config.setDrops(drops);
+
+                List<BuffedAttribute> buffs = new ArrayList<>();
+                if (mobJson.has("buffedAttributes") && mobJson.get("buffedAttributes").isJsonArray()) {
+                    mobJson.getAsJsonArray("buffedAttributes").forEach(buffEl -> {
+                        if (!buffEl.isJsonObject()) return;
+                        JsonObject buffObj = buffEl.getAsJsonObject();
+                        String attrName = buffObj.has("attribute") ? buffObj.get("attribute").getAsString() : null;
+                        double base = buffObj.has("base") ? buffObj.get("base").getAsDouble() : 0.0;
+                        double variance = buffObj.has("variance") ? buffObj.get("variance").getAsDouble() : 0.0;
+                        if (attrName != null) {
+                            Attribute attr = null;
+                            try {
+                                attr = org.bukkit.Registry.ATTRIBUTE.get(new org.bukkit.NamespacedKey("minecraft", attrName.toLowerCase()));
+                            } catch (IllegalArgumentException ignored) {
+                                OLP.getLogger().warning(() -> "Invalid attribute for " + mobType + ": " + attrName);
+                            }
+                            if (attr != null) {
+                                buffs.add(new BuffedAttribute(attr, base, variance));
+                            }
+                        }
+                    });
+                } else if (mobJson.has("BUFFS") && mobJson.get("BUFFS").isJsonObject()) {
+                    JsonObject buffsJson = mobJson.getAsJsonObject("BUFFS");
+                    if (buffsJson.has("SIZE")) {
+                        JsonObject size = buffsJson.getAsJsonObject("SIZE");
+                        double base = size.has("BASE") ? size.get("BASE").getAsDouble() : 0.0;
+                        double variance = size.has("VARIANCE") ? size.get("VARIANCE").getAsDouble() : 0.0;
+                        buffs.add(new BuffedAttribute(Attribute.SCALE, base, variance));
+                    }
+                    if (buffsJson.has("SPEED")) {
+                        JsonObject speed = buffsJson.getAsJsonObject("SPEED");
+                        double base = speed.has("BASE") ? speed.get("BASE").getAsDouble() : 0.0;
+                        double variance = speed.has("VARIANCE") ? speed.get("VARIANCE").getAsDouble() : 0.0;
+                        buffs.add(new BuffedAttribute(Attribute.MOVEMENT_SPEED, base, variance));
+                    }
+                }
+                if (!buffs.isEmpty()) config.setBuffedAttributes(buffs);
+
+                if (mobJson.has("ITEMS")) {
+                    OLP.getLogger().warning(() -> "mobs.json ITEMS entries are not supported by MobConfig and were ignored for: " + mobType);
+                }
+
+                defaults.put(mobType, config);
+            }
+
+            setMobs(defaults);
+            return true;
+        } catch (IOException | IllegalStateException e) {
+            if (OLP != null) {
+                OLP.getLogger().warning(() -> "Failed to import mobs.json: " + e.getMessage());
+            }
+            return false;
+        }
+    }
+
     public EnabledFeatures getEnabledFeatures() { return enabledFeatures; }
     public void setEnabledFeatures(EnabledFeatures enabledFeatures) { markDirty(); this.enabledFeatures = enabledFeatures; }
 
@@ -130,20 +245,26 @@ public class Settings {
     }
 
     public Race getPlayerRace(Player player) {
-        PlayerConfig config = playerConfigs.get(player.getUniqueId());
+        PlayerConfig config = getPlayerConfig(player);
+        if (config == null || config.getRaceUUID() == null) return null;
         return races.get(config.getRaceUUID());
     }
     public Race getPlayerRace(OfflinePlayer player) {
-        PlayerConfig config = playerConfigs.get(player.getUniqueId());
+        PlayerConfig config = getPlayerConfig(player);
+        if (config == null || config.getRaceUUID() == null) return null;
         return races.get(config.getRaceUUID());
     }
     public void setPlayerRace(Player player, Race race) {
-        PlayerConfig config = playerConfigs.get(player.getUniqueId());
+        if (race == null) return;
+        PlayerConfig config = getPlayerConfig(player);
+        if (config == null) return;
         config.setRaceUUID(race.getRaceUUID());
         markDirty();
     }
     public void setPlayerRace(OfflinePlayer player, Race race) {
-        PlayerConfig config = playerConfigs.get(player.getUniqueId());
+        if (race == null) return;
+        PlayerConfig config = getPlayerConfig(player);
+        if (config == null) return;
         config.setRaceUUID(race.getRaceUUID());
         markDirty();
     }

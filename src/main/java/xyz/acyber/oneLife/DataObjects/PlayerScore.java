@@ -1,19 +1,20 @@
 package xyz.acyber.oneLife.DataObjects;
 
-import org.bukkit.GameMode;
-import org.bukkit.Material;
-import org.bukkit.OfflinePlayer;
-import org.bukkit.entity.EntityType;
-import xyz.acyber.oneLife.DataObjects.SubScoreData.MaterialInteractions;
-import xyz.acyber.oneLife.DataObjects.SubScoreData.MobsKilled;
-import xyz.acyber.oneLife.DataObjects.SubSettings.Team;
-import xyz.acyber.oneLife.OneLifePlugin;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Objects;
 import java.util.UUID;
+
+import org.bukkit.GameMode;
+import org.bukkit.Material;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.EntityType;
+
+import xyz.acyber.oneLife.DataObjects.SubScoreData.MaterialInteractions;
+import xyz.acyber.oneLife.DataObjects.SubScoreData.MobsKilled;
+import xyz.acyber.oneLife.DataObjects.SubSettings.Team;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 public class PlayerScore {
 
@@ -96,12 +97,11 @@ public class PlayerScore {
         markDirty();
         double additionalTime;
 
-        if (unit.equals("Hr"))
-            additionalTime = 1.0;
-        else if (unit.equals("Min"))
-            additionalTime = 1.0/60;
-        else
-            additionalTime = 1.0/60/60;
+        additionalTime = switch (unit) {
+            case "Hr" -> 1.0;
+            case "Min" -> 1.0/60;
+            default -> 1.0/60/60;
+        };
 
         if (onlineHr.containsKey(gameMode))
             onlineHr.replace(gameMode, onlineHr.get(gameMode) + additionalTime);

@@ -1,0 +1,1291 @@
+{
+  "backupsToKeep": 10,
+  "autoSaveIntervalSeconds": 300,
+  "luckPermsEnabled": true,
+  "enabledFeatures": {
+    "RaceManager": true,
+    "MobManager": true,
+    "ScoreManager": true,
+    "LivesManager": true,
+    "LifeGifting": true,
+    "AFKChecker": true,
+    "NightHostiles": true
+  },
+  "afkCheckerConfig": {
+    "minutesAFK": 5,
+    "secondsInterval": 1,
+    "afkWarning": "<bold><red>You will be marked afk ing <blue>%seconds% <red>seconds",
+    "kickedReason": "<red>You have been kicked for being AFK"
+  },
+  "lives": {
+    "cap": 2,
+    "gameModeAfterLastDeath": "ADVENTURE"
+  },
+  "scoring": {
+    "pathToScoreData": "/PlayerScore/",
+    "livesBuyBackMultiplier": -20.0,
+    "defaultAFKMultiplier": -1.0,
+    "defaultMobKillMulitplier": 0.001,
+    "defaultBlocksPlacedMultiplier": 0.001,
+    "defaultBlocksMinedMultiplier": 0.001,
+    "defaultHarvestedMultiplier": 0.001,
+    "defaultCaughtMultiplier": 0.001,
+    "defaultAchievementMultiplier": 0.3,
+    "gamemodeMultipliers": {
+      "SURVIVAL": {
+        "deathMultiplier": -10.0,
+        "xpMultiplier": 0.0001,
+        "onlineHrMultiplier": 2.5,
+        "defaultGamemodeMultiplier": 1.0,
+        "mobKillMultipliers": {
+          "WARDEN": 20.0,
+          "WITHER": 20.0,
+          "ELDER_GUARDIAN": 10.0,
+          "RAVAGER": 6.0,
+          "BREEZE": 4.0,
+          "EVOKER": 3.0,
+          "PIGLIN_BRUTE": 2.0,
+          "WITHER_SKELETON": 2.0,
+          "SHULKER": 1.0,
+          "IRON_GOLEM": 1.0,
+          "VINDICATOR": 1.0,
+          "VEX": 1.0,
+          "WITCH": 0.7,
+          "ENDERMAN": 0.5,
+          "BLAZE": 0.5,
+          "GHAST": 0.5,
+          "GUARDIAN": 0.4,
+          "CAVE_SPIDER": 0.3,
+          "PIGLIN": 0.3,
+          "ZOMBIFIED_PIGLIN": 0.3,
+          "HOGLIN": 0.3,
+          "ZOGLIN": 0.3,
+          "PILLAGER": 0.3,
+          "CREEPER": 0.3,
+          "DROWNED": 0.3,
+          "MAGMA_CUBE": 0.2,
+          "STRAY": 0.2,
+          "BOGGED": 0.2,
+          "PHANTOM": 0.1,
+          "SKELETON": 0.1,
+          "ZOMBIE": 0.1,
+          "HUSK": 0.1,
+          "SPIDER": 0.1,
+          "ZOMBIE_VILLAGER": 0.1,
+          "PUFFERFISH": 0.1,
+          "ENDERMITE": 0.05,
+          "SILVERFISH": 0.05,
+          "SLIME": 0.05,
+          "PIG": 0.01,
+          "SHEEP": 0.008,
+          "COW": 0.008,
+          "CHICKEN": 0.005,
+          "SALMON": 0.005,
+          "COD": 0.005,
+          "RABBIT": 0.005,
+          "TROPICAL_FISH": 0.001,
+          "BAT": -0.05,
+          "FOX": -0.1,
+          "FROG": -0.1,
+          "GOAT": -0.2,
+          "PARROT": -0.3,
+          "ARMADILLO": -0.3,
+          "TURTLE": -0.3,
+          "DOLPHIN": -0.3,
+          "PANDA": -0.3,
+          "POLAR_BEAR": -0.3,
+          "OCELOT": -0.3,
+          "LLAMA": -0.4,
+          "BEE": -0.4,
+          "MOOSHROOM": -0.4,
+          "SKELETON_HORSE": -0.5,
+          "STRIDER": -0.5,
+          "AXOLOTL": -0.5,
+          "MULE": -0.5,
+          "DONKEY": -0.5,
+          "HORSE": -0.5,
+          "CAMEL": -0.5,
+          "CAT": -0.5,
+          "TRADER_LLAMA": -0.5,
+          "ALLAY": -1.0,
+          "WOLF": -1.0,
+          "VILLAGER": -2.0,
+          "WANDERING_TRADER": -2.0
+        },
+        "blockPlaceMultipliers": {},
+        "blockMineMultipliers": {},
+        "harvestMultipliers": {}
+      },
+      "CREATIVE": {
+        "deathMultiplier": -10.0,
+        "xpMultiplier": 0.0001,
+        "onlineHrMultiplier": 2.5,
+        "defaultGamemodeMultiplier": 1.0,
+        "mobKillMultipliers": {
+          "WARDEN": 20.0,
+          "WITHER": 20.0,
+          "ELDER_GUARDIAN": 10.0,
+          "RAVAGER": 6.0,
+          "BREEZE": 4.0,
+          "EVOKER": 3.0,
+          "PIGLIN_BRUTE": 2.0,
+          "WITHER_SKELETON": 2.0,
+          "SHULKER": 1.0,
+          "IRON_GOLEM": 1.0,
+          "VINDICATOR": 1.0,
+          "VEX": 1.0,
+          "WITCH": 0.7,
+          "ENDERMAN": 0.5,
+          "BLAZE": 0.5,
+          "GHAST": 0.5,
+          "GUARDIAN": 0.4,
+          "CAVE_SPIDER": 0.3,
+          "PIGLIN": 0.3,
+          "ZOMBIFIED_PIGLIN": 0.3,
+          "HOGLIN": 0.3,
+          "ZOGLIN": 0.3,
+          "PILLAGER": 0.3,
+          "CREEPER": 0.3,
+          "DROWNED": 0.3,
+          "MAGMA_CUBE": 0.2,
+          "STRAY": 0.2,
+          "BOGGED": 0.2,
+          "PHANTOM": 0.1,
+          "SKELETON": 0.1,
+          "ZOMBIE": 0.1,
+          "HUSK": 0.1,
+          "SPIDER": 0.1,
+          "ZOMBIE_VILLAGER": 0.1,
+          "PUFFERFISH": 0.1,
+          "ENDERMITE": 0.05,
+          "SILVERFISH": 0.05,
+          "SLIME": 0.05,
+          "PIG": 0.01,
+          "SHEEP": 0.008,
+          "COW": 0.008,
+          "CHICKEN": 0.005,
+          "SALMON": 0.005,
+          "COD": 0.005,
+          "RABBIT": 0.005,
+          "TROPICAL_FISH": 0.001,
+          "BAT": -0.05,
+          "FOX": -0.1,
+          "FROG": -0.1,
+          "GOAT": -0.2,
+          "PARROT": -0.3,
+          "ARMADILLO": -0.3,
+          "TURTLE": -0.3,
+          "DOLPHIN": -0.3,
+          "PANDA": -0.3,
+          "POLAR_BEAR": -0.3,
+          "OCELOT": -0.3,
+          "LLAMA": -0.4,
+          "BEE": -0.4,
+          "MOOSHROOM": -0.4,
+          "SKELETON_HORSE": -0.5,
+          "STRIDER": -0.5,
+          "AXOLOTL": -0.5,
+          "MULE": -0.5,
+          "DONKEY": -0.5,
+          "HORSE": -0.5,
+          "CAMEL": -0.5,
+          "CAT": -0.5,
+          "TRADER_LLAMA": -0.5,
+          "ALLAY": -1.0,
+          "WOLF": -1.0,
+          "VILLAGER": -2.0,
+          "WANDERING_TRADER": -2.0
+        },
+        "blockPlaceMultipliers": {},
+        "blockMineMultipliers": {},
+        "harvestMultipliers": {}
+      },
+      "ADVENTURE": {
+        "deathMultiplier": -5.0,
+        "xpMultiplier": 0.0001,
+        "onlineHrMultiplier": 2.5,
+        "defaultGamemodeMultiplier": 1.5,
+        "mobKillMultipliers": {
+          "WARDEN": 20.0,
+          "WITHER": 20.0,
+          "ELDER_GUARDIAN": 10.0,
+          "RAVAGER": 6.0,
+          "BREEZE": 4.0,
+          "EVOKER": 3.0,
+          "PIGLIN_BRUTE": 2.0,
+          "WITHER_SKELETON": 2.0,
+          "SHULKER": 1.0,
+          "IRON_GOLEM": 1.0,
+          "VINDICATOR": 1.0,
+          "VEX": 1.0,
+          "WITCH": 0.7,
+          "ENDERMAN": 0.5,
+          "BLAZE": 0.5,
+          "GHAST": 0.5,
+          "GUARDIAN": 0.4,
+          "CAVE_SPIDER": 0.3,
+          "PIGLIN": 0.3,
+          "ZOMBIFIED_PIGLIN": 0.3,
+          "HOGLIN": 0.3,
+          "ZOGLIN": 0.3,
+          "PILLAGER": 0.3,
+          "CREEPER": 0.3,
+          "DROWNED": 0.3,
+          "MAGMA_CUBE": 0.2,
+          "STRAY": 0.2,
+          "BOGGED": 0.2,
+          "PHANTOM": 0.1,
+          "SKELETON": 0.1,
+          "ZOMBIE": 0.1,
+          "HUSK": 0.1,
+          "SPIDER": 0.1,
+          "ZOMBIE_VILLAGER": 0.1,
+          "PUFFERFISH": 0.1,
+          "ENDERMITE": 0.05,
+          "SILVERFISH": 0.05,
+          "SLIME": 0.05,
+          "PIG": 0.01,
+          "SHEEP": 0.008,
+          "COW": 0.008,
+          "CHICKEN": 0.005,
+          "SALMON": 0.005,
+          "COD": 0.005,
+          "RABBIT": 0.005,
+          "TROPICAL_FISH": 0.001,
+          "BAT": -0.05,
+          "FOX": -0.1,
+          "FROG": -0.1,
+          "GOAT": -0.2,
+          "PARROT": -0.3,
+          "ARMADILLO": -0.3,
+          "TURTLE": -0.3,
+          "DOLPHIN": -0.3,
+          "PANDA": -0.3,
+          "POLAR_BEAR": -0.3,
+          "OCELOT": -0.3,
+          "LLAMA": -0.4,
+          "BEE": -0.4,
+          "MOOSHROOM": -0.4,
+          "SKELETON_HORSE": -0.5,
+          "STRIDER": -0.5,
+          "AXOLOTL": -0.5,
+          "MULE": -0.5,
+          "DONKEY": -0.5,
+          "HORSE": -0.5,
+          "CAMEL": -0.5,
+          "CAT": -0.5,
+          "TRADER_LLAMA": -0.5,
+          "ALLAY": -1.0,
+          "WOLF": -1.0,
+          "VILLAGER": -2.0,
+          "WANDERING_TRADER": -2.0
+        },
+        "blockPlaceMultipliers": {},
+        "blockMineMultipliers": {},
+        "harvestMultipliers": {}
+      },
+      "SPECTATOR": {
+        "deathMultiplier": -10.0,
+        "xpMultiplier": 0.0001,
+        "onlineHrMultiplier": 2.5,
+        "defaultGamemodeMultiplier": 1.0,
+        "mobKillMultipliers": {
+          "WARDEN": 20.0,
+          "WITHER": 20.0,
+          "ELDER_GUARDIAN": 10.0,
+          "RAVAGER": 6.0,
+          "BREEZE": 4.0,
+          "EVOKER": 3.0,
+          "PIGLIN_BRUTE": 2.0,
+          "WITHER_SKELETON": 2.0,
+          "SHULKER": 1.0,
+          "IRON_GOLEM": 1.0,
+          "VINDICATOR": 1.0,
+          "VEX": 1.0,
+          "WITCH": 0.7,
+          "ENDERMAN": 0.5,
+          "BLAZE": 0.5,
+          "GHAST": 0.5,
+          "GUARDIAN": 0.4,
+          "CAVE_SPIDER": 0.3,
+          "PIGLIN": 0.3,
+          "ZOMBIFIED_PIGLIN": 0.3,
+          "HOGLIN": 0.3,
+          "ZOGLIN": 0.3,
+          "PILLAGER": 0.3,
+          "CREEPER": 0.3,
+          "DROWNED": 0.3,
+          "MAGMA_CUBE": 0.2,
+          "STRAY": 0.2,
+          "BOGGED": 0.2,
+          "PHANTOM": 0.1,
+          "SKELETON": 0.1,
+          "ZOMBIE": 0.1,
+          "HUSK": 0.1,
+          "SPIDER": 0.1,
+          "ZOMBIE_VILLAGER": 0.1,
+          "PUFFERFISH": 0.1,
+          "ENDERMITE": 0.05,
+          "SILVERFISH": 0.05,
+          "SLIME": 0.05,
+          "PIG": 0.01,
+          "SHEEP": 0.008,
+          "COW": 0.008,
+          "CHICKEN": 0.005,
+          "SALMON": 0.005,
+          "COD": 0.005,
+          "RABBIT": 0.005,
+          "TROPICAL_FISH": 0.001,
+          "BAT": -0.05,
+          "FOX": -0.1,
+          "FROG": -0.1,
+          "GOAT": -0.2,
+          "PARROT": -0.3,
+          "ARMADILLO": -0.3,
+          "TURTLE": -0.3,
+          "DOLPHIN": -0.3,
+          "PANDA": -0.3,
+          "POLAR_BEAR": -0.3,
+          "OCELOT": -0.3,
+          "LLAMA": -0.4,
+          "BEE": -0.4,
+          "MOOSHROOM": -0.4,
+          "SKELETON_HORSE": -0.5,
+          "STRIDER": -0.5,
+          "AXOLOTL": -0.5,
+          "MULE": -0.5,
+          "DONKEY": -0.5,
+          "HORSE": -0.5,
+          "CAMEL": -0.5,
+          "CAT": -0.5,
+          "TRADER_LLAMA": -0.5,
+          "ALLAY": -1.0,
+          "WOLF": -1.0,
+          "VILLAGER": -2.0,
+          "WANDERING_TRADER": -2.0
+        },
+        "blockPlaceMultipliers": {},
+        "blockMineMultipliers": {},
+        "harvestMultipliers": {}
+      }
+    }
+  },
+  "mobs": {
+    "ZOMBIE": {
+      "mobType": "ZOMBIE",
+      "noBabies": true,
+      "handMaterial": "STONE_SWORD",
+      "drops": [
+        {
+          "materialName": "PORKCHOP",
+          "min": 0,
+          "max": 3
+        }
+      ]
+    },
+    "HUSK": {
+      "mobType": "HUSK",
+      "handMaterial": "STONE_SWORD",
+      "buffedAttributes": [
+        {
+          "attribute": "SCALE",
+          "base": 1.5,
+          "variance": 0.3
+        }
+      ]
+    },
+    "DROWNED": {
+      "mobType": "DROWNED",
+      "buffedAttributes": [
+        {
+          "attribute": "MOVEMENT_SPEED",
+          "base": 2.0,
+          "variance": 0.0
+        }
+      ]
+    },
+    "ALLAY": {
+      "mobType": "ALLAY",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "ARMADILLO": {
+      "mobType": "ARMADILLO",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "AXOLOTL": {
+      "mobType": "AXOLOTL",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "BAT": {
+      "mobType": "BAT",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "CAMEL": {
+      "mobType": "CAMEL",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "CAT": {
+      "mobType": "CAT",
+      "drops": [
+        {
+          "materialName": "ROTTEN_FLESH",
+          "min": 0,
+          "max": 2
+        }
+      ],
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "CHICKEN": {
+      "mobType": "CHICKEN",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "COD": {
+      "mobType": "COD",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "COW": {
+      "mobType": "COW",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "DONKEY": {
+      "mobType": "DONKEY",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "FROG": {
+      "mobType": "FROG",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "GLOW_SQUID": {
+      "mobType": "GLOW_SQUID",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "HORSE": {
+      "mobType": "HORSE",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "MOOSHROOM": {
+      "mobType": "MOOSHROOM",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "MULE": {
+      "mobType": "MULE",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "OCELOT": {
+      "mobType": "OCELOT",
+      "drops": [
+        {
+          "materialName": "ROTTEN_FLESH",
+          "min": 0,
+          "max": 2
+        }
+      ],
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "PARROT": {
+      "mobType": "PARROT",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "PIG": {
+      "mobType": "PIG",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "PUFFERFISH": {
+      "mobType": "PUFFERFISH",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "RABBIT": {
+      "mobType": "RABBIT",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "SALMON": {
+      "mobType": "SALMON",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "SHEEP": {
+      "mobType": "SHEEP",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "SKELETON_HORSE": {
+      "mobType": "SKELETON_HORSE",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "SNIFFER": {
+      "mobType": "SNIFFER",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "SNOW_GOLEM": {
+      "mobType": "SNOW_GOLEM",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "SQUID": {
+      "mobType": "SQUID",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "STRIDER": {
+      "mobType": "STRIDER",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "TADPOLE": {
+      "mobType": "TADPOLE",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "TROPICAL_FISH": {
+      "mobType": "TROPICAL_FISH",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "TURTLE": {
+      "mobType": "TURTLE",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "VILLAGER": {
+      "mobType": "VILLAGER",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "WANDERING_TRADER": {
+      "mobType": "WANDERING_TRADER",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "BEE": {
+      "mobType": "BEE",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "CAVE_SPIDER": {
+      "mobType": "CAVE_SPIDER",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "DOLPHIN": {
+      "mobType": "DOLPHIN",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "ENDERMAN": {
+      "mobType": "ENDERMAN",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "GOAT": {
+      "mobType": "GOAT",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "IRON_GOLEM": {
+      "mobType": "IRON_GOLEM",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "LLAMA": {
+      "mobType": "LLAMA",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "PIGLIN": {
+      "mobType": "PIGLIN",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "PANDA": {
+      "mobType": "PANDA",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "POLAR_BEAR": {
+      "mobType": "POLAR_BEAR",
+      "drops": [
+        {
+          "materialName": "ROTTEN_FLESH",
+          "min": 0,
+          "max": 2
+        }
+      ],
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "SPIDER": {
+      "mobType": "SPIDER",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "SPIDER_JOCKEY": {
+      "mobType": "SPIDER_JOCKEY",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "TRADER_LLAMA": {
+      "mobType": "TRADER_LLAMA",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "WOLF": {
+      "mobType": "WOLF",
+      "drops": [
+        {
+          "materialName": "ROTTEN_FLESH",
+          "min": 0,
+          "max": 2
+        }
+      ],
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    },
+    "ZOMBIFIED_PIGLIN": {
+      "mobType": "ZOMBIFIED_PIGLIN",
+      "mobHostility": {
+        "enabledDay": true,
+        "enabledNight": true,
+        "aggroRange": 35,
+        "damageAmount": 6
+      }
+    }
+  },
+  "playerConfigs": {},
+  "races": {
+    "2a42b81e-1c78-4a6d-9344-0b5c2b1a1101": {
+      "raceName": "Human",
+      "raceUUID": "2a42b81e-1c78-4a6d-9344-0b5c2b1a1101",
+      "enabled": true,
+      "scale": 1.0,
+      "reach": 5.0,
+      "fallDamageMultiplier": 1.0,
+      "flyingAttackDamageMultiplier": 1.0,
+      "fireDamageCap": 0.0,
+      "fastSneak": false,
+      "isRawFoodSafe": false,
+      "hasFreezeTicks": false,
+      "sinksInWater": true,
+      "isSlowOnLand": false,
+      "canClimbWalls": false,
+      "isWeakUnderGround": false,
+      "assignedArmor": {},
+      "assignedItem": [
+        {
+          "itemMaterial": "IRON_SWORD",
+          "itemAmount": 1,
+          "itemEnchantments": [
+            {
+              "enchantment": "minecraft:mending",
+              "level": 1
+            },
+            {
+              "enchantment": "minecraft:unbreaking",
+              "level": 3
+            }
+          ]
+        }
+      ],
+      "allowedFoods": [],
+      "effects": [],
+      "buffedFoods": [],
+      "repeatItems": [],
+      "startItems": {}
+    },
+    "5a3331f8-6a78-4c0b-b7cc-3d6b8f2b3e7a": {
+      "raceName": "Dwarven",
+      "raceUUID": "5a3331f8-6a78-4c0b-b7cc-3d6b8f2b3e7a",
+      "enabled": true,
+      "scale": 0.8,
+      "reach": 4.0,
+      "fallDamageMultiplier": 1.0,
+      "flyingAttackDamageMultiplier": 1.0,
+      "fireDamageCap": 1.0,
+      "fastSneak": false,
+      "isRawFoodSafe": false,
+      "hasFreezeTicks": false,
+      "sinksInWater": true,
+      "isSlowOnLand": false,
+      "canClimbWalls": false,
+      "isWeakUnderGround": false,
+      "assignedArmor": {},
+      "assignedItem": [
+        {
+          "itemMaterial": "IRON_PICKAXE",
+          "itemAmount": 1,
+          "itemEnchantments": [
+            {
+              "enchantment": "minecraft:mending",
+              "level": 1
+            },
+            {
+              "enchantment": "minecraft:unbreaking",
+              "level": 3
+            },
+            {
+              "enchantment": "minecraft:fortune",
+              "level": 1
+            }
+          ]
+        }
+      ],
+      "allowedFoods": [],
+      "effects": [],
+      "buffedFoods": [],
+      "repeatItems": [],
+      "startItems": {}
+    },
+    "c7b4a5d9-9a18-4d8d-9e2c-91a8b2d5c0f6": {
+      "raceName": "Elven",
+      "raceUUID": "c7b4a5d9-9a18-4d8d-9e2c-91a8b2d5c0f6",
+      "enabled": true,
+      "scale": 1.1,
+      "reach": 5.0,
+      "fallDamageMultiplier": 1.0,
+      "flyingAttackDamageMultiplier": 1.0,
+      "fireDamageCap": 0.0,
+      "fastSneak": false,
+      "isRawFoodSafe": false,
+      "hasFreezeTicks": false,
+      "sinksInWater": true,
+      "isSlowOnLand": false,
+      "canClimbWalls": false,
+      "isWeakUnderGround": false,
+      "assignedArmor": {},
+      "assignedItem": [
+        {
+          "itemMaterial": "BOW",
+          "itemAmount": 1,
+          "itemEnchantments": [
+            {
+              "enchantment": "minecraft:mending",
+              "level": 1
+            },
+            {
+              "enchantment": "minecraft:unbreaking",
+              "level": 3
+            },
+            {
+              "enchantment": "minecraft:power",
+              "level": 1
+            }
+          ]
+        }
+      ],
+      "allowedFoods": [],
+      "effects": [],
+      "buffedFoods": [],
+      "repeatItems": [
+        {
+          "UUID": "56e2f424-66f5-4242-8a77-7b7a4fd7b451",
+          "materialType": "SPECTRAL_ARROW",
+          "max": 64,
+          "qtyPerRepeat": 1,
+          "secondsTillRepeat": 90
+        }
+      ],
+      "startItems": {
+        "SPECTRAL_ARROW": 5
+      }
+    },
+    "3c1f2e3a-9b5b-4f9a-9d3e-8b9c2b4c6d10": {
+      "raceName": "Ursine",
+      "raceUUID": "3c1f2e3a-9b5b-4f9a-9d3e-8b9c2b4c6d10",
+      "enabled": true,
+      "scale": 1.8,
+      "reach": 6.0,
+      "fallDamageMultiplier": 1.0,
+      "flyingAttackDamageMultiplier": 1.0,
+      "fireDamageCap": 0.0,
+      "fastSneak": false,
+      "isRawFoodSafe": false,
+      "hasFreezeTicks": true,
+      "sinksInWater": true,
+      "isSlowOnLand": false,
+      "canClimbWalls": false,
+      "isWeakUnderGround": false,
+      "assignedArmor": {},
+      "assignedItem": [],
+      "allowedFoods": [],
+      "effects": [
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:strength",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        },
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:health_boost",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        },
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:haste",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        }
+      ],
+      "buffedFoods": [],
+      "repeatItems": [],
+      "startItems": {}
+    },
+    "e2c8f7b5-2c1a-4c4d-8b3f-6c0f6f9d1b42": {
+      "raceName": "Zora",
+      "raceUUID": "e2c8f7b5-2c1a-4c4d-8b3f-6c0f6f9d1b42",
+      "enabled": true,
+      "scale": 1.2,
+      "reach": 4.0,
+      "fallDamageMultiplier": 1.0,
+      "flyingAttackDamageMultiplier": 1.0,
+      "fireDamageCap": 0.0,
+      "fastSneak": false,
+      "isRawFoodSafe": true,
+      "hasFreezeTicks": false,
+      "sinksInWater": false,
+      "isSlowOnLand": true,
+      "canClimbWalls": false,
+      "isWeakUnderGround": false,
+      "assignedArmor": {},
+      "assignedItem": [],
+      "allowedFoods": [],
+      "effects": [
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:conduit_power",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        },
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:dolphins_grace",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        },
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:slowness",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        }
+      ],
+      "buffedFoods": [
+        {
+          "material": "COD",
+          "hungerBuff": 3.0,
+          "saturationBuff": 1.8
+        },
+        {
+          "material": "SALMON",
+          "hungerBuff": 3.0,
+          "saturationBuff": 1.8
+        },
+        {
+          "material": "TROPICAL_FISH",
+          "hungerBuff": 3.0,
+          "saturationBuff": 1.8
+        },
+        {
+          "material": "COOKED_SALMON",
+          "hungerBuff": 8.0,
+          "saturationBuff": 12.8
+        },
+        {
+          "material": "COOKED_COD",
+          "hungerBuff": 8.0,
+          "saturationBuff": 12.8
+        }
+      ],
+      "repeatItems": [],
+      "startItems": {}
+    },
+    "c8b6a7c4-2f2e-4f4f-9d38-2e1c7c2f0b6a": {
+      "raceName": "Arathim",
+      "raceUUID": "c8b6a7c4-2f2e-4f4f-9d38-2e1c7c2f0b6a",
+      "enabled": true,
+      "scale": 0.75,
+      "reach": 4.0,
+      "fallDamageMultiplier": 1.0,
+      "flyingAttackDamageMultiplier": 1.0,
+      "fireDamageCap": 0.0,
+      "fastSneak": false,
+      "isRawFoodSafe": false,
+      "hasFreezeTicks": false,
+      "sinksInWater": true,
+      "isSlowOnLand": false,
+      "canClimbWalls": true,
+      "isWeakUnderGround": false,
+      "assignedArmor": {},
+      "assignedItem": [],
+      "allowedFoods": [],
+      "effects": [
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:weaving",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        },
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:night_vision",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        },
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:weakness",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        }
+      ],
+      "buffedFoods": [],
+      "repeatItems": [
+        {
+          "UUID": "fd320619-71e2-4f1b-a1cf-0c0e259097cf",
+          "materialType": "COBWEB",
+          "max": 64,
+          "qtyPerRepeat": 1,
+          "secondsTillRepeat": 120
+        }
+      ],
+      "startItems": {}
+    },
+    "8a4c3f8e-3c7d-4e7a-9d6c-5b7f2c4a1e09": {
+      "raceName": "Aven",
+      "raceUUID": "8a4c3f8e-3c7d-4e7a-9d6c-5b7f2c4a1e09",
+      "enabled": true,
+      "scale": 0.9,
+      "reach": 3.0,
+      "fallDamageMultiplier": 1.0,
+      "flyingAttackDamageMultiplier": 1.5,
+      "fireDamageCap": 0.0,
+      "fastSneak": false,
+      "isRawFoodSafe": false,
+      "hasFreezeTicks": false,
+      "sinksInWater": true,
+      "isSlowOnLand": false,
+      "canClimbWalls": false,
+      "isWeakUnderGround": true,
+      "assignedArmor": {
+        "chestplateMaterial": "ELYTRA",
+        "chestplateEnchants": [
+          {
+            "enchantment": "minecraft:mending",
+            "level": 1
+          },
+          {
+            "enchantment": "minecraft:unbreaking",
+            "level": 3
+          },
+          {
+            "enchantment": "minecraft:binding_curse",
+            "level": 1
+          },
+          {
+            "enchantment": "minecraft:vanishing_curse",
+            "level": 1
+          }
+        ]
+      },
+      "assignedItem": [],
+      "allowedFoods": [],
+      "effects": [],
+      "buffedFoods": [],
+      "repeatItems": [
+        {
+          "UUID": "472b4237-9e13-4367-b750-11d81ab75112",
+          "materialType": "FIREWORK_ROCKET",
+          "max": 64,
+          "qtyPerRepeat": 1,
+          "secondsTillRepeat": 60
+        }
+      ],
+      "startItems": {}
+    },
+    "8b3e9a37-6a4b-4f9a-8a6a-1f7f0d5d9a21": {
+      "raceName": "Katari",
+      "raceUUID": "8b3e9a37-6a4b-4f9a-8a6a-1f7f0d5d9a21",
+      "enabled": true,
+      "scale": 0.95,
+      "reach": 5.0,
+      "fallDamageMultiplier": 1.0,
+      "flyingAttackDamageMultiplier": 1.0,
+      "fireDamageCap": 0.0,
+      "fastSneak": true,
+      "isRawFoodSafe": true,
+      "hasFreezeTicks": false,
+      "sinksInWater": true,
+      "isSlowOnLand": false,
+      "canClimbWalls": false,
+      "isWeakUnderGround": false,
+      "assignedArmor": {
+        "bootsMaterial": "LEATHER_BOOTS",
+        "bootsEnchants": [
+          {
+            "enchantment": "minecraft:feather_falling",
+            "level": 2
+          }
+        ]
+      },
+      "assignedItem": [],
+      "allowedFoods": [
+        "COOKED_CHICKEN",
+        "COOKED_COD",
+        "COOKED_MUTTON",
+        "COOKED_PORKCHOP",
+        "COOKED_RABBIT",
+        "COOKED_SALMON",
+        "COOKED_BEEF",
+        "RABBIT_STEW",
+        "BEEF",
+        "CHICKEN",
+        "COD",
+        "MUTTON",
+        "PORKCHOP",
+        "RABBIT",
+        "SALMON",
+        "ROTTEN_FLESH",
+        "SPIDER_EYE",
+        "TROPICAL_FISH"
+      ],
+      "effects": [
+        {
+          "amplifier": 1,
+          "duration": 0,
+          "type": "minecraft:speed",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        }
+      ],
+      "buffedFoods": [],
+      "repeatItems": [],
+      "startItems": {}
+    }
+  },
+  "teams": {}
+}

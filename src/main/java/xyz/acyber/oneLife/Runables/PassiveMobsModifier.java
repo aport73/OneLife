@@ -1,31 +1,37 @@
 package xyz.acyber.oneLife.Runables;
 
-import com.destroystokyo.paper.entity.Pathfinder;
+import static java.lang.Math.max;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.UUID;
+
 import org.bukkit.Bukkit;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.attribute.AttributeInstance;
 import org.bukkit.block.Block;
 import org.bukkit.damage.DamageSource;
 import org.bukkit.damage.DamageType;
-import org.bukkit.entity.*;
+import org.bukkit.entity.Entity;
+import org.bukkit.entity.Mob;
+import org.bukkit.entity.Player;
 import org.bukkit.potion.PotionEffectType;
 import org.bukkit.scheduler.BukkitRunnable;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
+import com.destroystokyo.paper.entity.Pathfinder;
+
 import xyz.acyber.oneLife.DataObjects.SubSettings.MobConfig;
 import xyz.acyber.oneLife.DataObjects.SubSettings.MobHostility;
 import xyz.acyber.oneLife.OneLifePlugin;
 
-import java.util.*;
-
-import static java.lang.Math.max;
-
 public class PassiveMobsModifier extends BukkitRunnable {
 
     private final OneLifePlugin OLP;
-    private HashMap<String, MobConfig> mobconfigs;
+    private final HashMap<String, MobConfig> mobconfigs;
     private final HashMap<Player,List<UUID>> modifiedMobs;
-    private HashMap<UUID,Player> mobsAssignedPlayers;
+    private final HashMap<UUID,Player> mobsAssignedPlayers;
     private final List<String> enabledMobs;
     private Double maxRadius = 0.0;
 
@@ -51,18 +57,19 @@ public class PassiveMobsModifier extends BukkitRunnable {
                 nearbyEntities.forEach(entity -> {
                     if (entity instanceof Mob mob) {
                         String mobType = mob.getType().name().toUpperCase();
-                        MobHostility mobHostility = mobconfigs.get(mobType).getMobHostility();
-                        if (enabledMobs.contains(mobType)) {
+                        MobConfig mobConfig = mobconfigs.get(mobType);
+                        MobHostility mobHostility = mobConfig != null ? mobConfig.getMobHostility() : null;
+                        if (mobHostility != null && enabledMobs.contains(mobType)) {
                             double dist = mob.getLocation().distanceSquared(p.getLocation());
-                            double mobRadius = mobconfigs.get(mobType).getMobHostility().getAggroRange();
+                            double mobRadius = mobHostility.getAggroRange();
                             Player target = p;
 
 
                             //MobConfig point view
                             List<Player> nearbyPlayers = new ArrayList<>();
                             mob.getNearbyEntities(maxRadius, maxRadius, maxRadius).forEach((entity1) -> {
-                                if (entity1 instanceof Player) {
-                                    nearbyPlayers.add((Player) entity1);
+                                if (entity1 instanceof Player player) {
+                                    nearbyPlayers.add(player);
                                 }
                             });
 
@@ -158,18 +165,21 @@ public class PassiveMobsModifier extends BukkitRunnable {
 
     private void updateMaxRadius() {
         for (MobConfig config: mobconfigs.values()) {
-            if (config.getMobHostility().getAggroRange() > maxRadius)
-                maxRadius = config.getMobHostility().getAggroRange();
+            MobHostility hostility = config.getMobHostility();
+            if (hostility == null) continue;
+            if (hostility.getAggroRange() > maxRadius)
+                maxRadius = hostility.getAggroRange();
         }
     }
 
     private @Nullable List<String> getEnabledMobs() {
         if (mobconfigs == null)
-            return null;
+            return new ArrayList<>();
         List<String> mobs = new ArrayList<>();
         for (MobConfig config: mobconfigs.values()) {
-           if (config.getMobHostility().getEnabledDay() || config.getMobHostility().getEnabledNight())
-               mobs.add(config.getMobType());
+            MobHostility hostility = config.getMobHostility();
+            if (hostility != null && (hostility.getEnabledDay() || hostility.getEnabledNight()))
+                mobs.add(config.getMobType());
         }
         return mobs;
     }

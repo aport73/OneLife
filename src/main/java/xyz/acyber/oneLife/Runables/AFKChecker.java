@@ -42,10 +42,16 @@ public class AFKChecker extends BukkitRunnable {
         for (Player p: Bukkit.getOnlinePlayers()) {
             sm.timeOnline(p);
             long time = System.currentTimeMillis();
-            User user = Objects.requireNonNull(lpAPI.getUserManager().getUser(p.getUniqueId()));
+            User user = lpAPI.getUserManager().getUser(p.getUniqueId());
+            if (user == null) continue;
             InheritanceNode node = InheritanceNode.builder(afk).build();
 
-            long lastIn = lastInput.get(p.getUniqueId());
+            Long lastInValue = lastInput.get(p.getUniqueId());
+            if (lastInValue == null) {
+                lastInput.put(p.getUniqueId(), time);
+                continue;
+            }
+            long lastIn = lastInValue;
             long interval = time - lastIn;
             double test = afkTime - interval;
 

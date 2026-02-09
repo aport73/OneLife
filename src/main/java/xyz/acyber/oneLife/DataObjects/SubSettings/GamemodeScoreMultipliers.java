@@ -1,15 +1,14 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
+import java.util.HashMap;
+
 import org.bukkit.Material;
 import org.bukkit.entity.EntityType;
-
-import java.util.HashMap;
 
 public class GamemodeScoreMultipliers {
     private double deathMultiplier = -10;
     private double xpMultiplier = 0.0001;
     private double onlineHrMultiplier = 2.5;
-    private double defaultGamemodeMultiplier = 1;
     private HashMap<EntityType, Double> mobKillMultipliers = new HashMap<>(); // Key is entityType, value is multiplier
     private HashMap<Material, Double> blockPlaceMultipliers = new HashMap<>(); // Key is blockType, value is multiplier
     private HashMap<Material, Double> blockMineMultipliers = new HashMap<>(); // Key is blockType, value is multiplier

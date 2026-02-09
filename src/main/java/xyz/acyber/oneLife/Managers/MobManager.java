@@ -1,17 +1,20 @@
 package xyz.acyber.oneLife.Managers;
 
-import org.bukkit.*;
+import java.util.Objects;
+import java.util.Random;
+
+import org.bukkit.Material;
 import org.bukkit.attribute.Attribute;
 import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.entity.*;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.LivingEntity;
+import org.bukkit.entity.Zombie;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.EntitySpawnEvent;
 import org.bukkit.inventory.EquipmentSlot;
 import org.bukkit.inventory.ItemStack;
-import xyz.acyber.oneLife.OneLifePlugin;
 
-import java.util.Objects;
-import java.util.Random;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 public class MobManager {
 
@@ -50,6 +53,11 @@ public class MobManager {
     public void onEntitySpawn(EntitySpawnEvent event) {
         //Handle MobConfig Adjustments from Config
         if (event.getEntity() instanceof LivingEntity spawnedEntity) {
+            var settingsMob = oneLifePlugin.settings.getMobs().get(spawnedEntity.getType().name());
+            if (settingsMob != null && settingsMob.getHandMaterial() != null) {
+                ItemStack handItem = ItemStack.of(settingsMob.getHandMaterial());
+                Objects.requireNonNull(spawnedEntity.getEquipment()).setItem(EquipmentSlot.HAND, handItem);
+            }
             ConfigurationSection mobConfig = oneLifePlugin.getConfig().getConfigurationSection("MOBS." + spawnedEntity.getType().name());
             if (mobConfig != null) {
                 if (mobConfig.getBoolean("NOBABYS")) {

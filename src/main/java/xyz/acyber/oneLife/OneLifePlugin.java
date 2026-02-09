@@ -3,6 +3,7 @@ package xyz.acyber.oneLife;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -26,6 +27,7 @@ import java.util.logging.Level;
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.attribute.Attribute;
 import org.bukkit.entity.Player;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -58,6 +60,7 @@ import xyz.acyber.oneLife.Runables.AFKChecker;
 import xyz.acyber.oneLife.Runables.AutoSaver;
 import xyz.acyber.oneLife.Runables.DayNightChecker;
 import xyz.acyber.oneLife.Runables.PassiveMobsModifier;
+import xyz.acyber.oneLife.Serialization.AttributeTypeAdapter;
 import xyz.acyber.oneLife.Serialization.EnchantmentTypeAdapter;
 import xyz.acyber.oneLife.Serialization.EntityTypeAdapter;
 import xyz.acyber.oneLife.Serialization.LocationTypeAdapter;
@@ -95,6 +98,7 @@ public class OneLifePlugin extends JavaPlugin {
     private final Gson gson = new GsonBuilder()
             .setPrettyPrinting()
             .registerTypeAdapter(org.bukkit.Material.class, new MaterialTypeAdapter())
+            .registerTypeAdapter(Attribute.class, new AttributeTypeAdapter())
             .registerTypeAdapter(org.bukkit.entity.EntityType.class, new EntityTypeAdapter())
             .registerTypeAdapter(org.bukkit.Location.class, new LocationTypeAdapter())
             .registerTypeAdapter(org.bukkit.enchantments.Enchantment.class, new EnchantmentTypeAdapter())
@@ -135,7 +139,6 @@ public class OneLifePlugin extends JavaPlugin {
         // Ensure settings is initialized to avoid NPE
 
         scoreData = loadScoring();
-        rm.ensureDefaultRaces();
 
         if (settings.isLuckPermsEnabled())
             lpAPI = LuckPermsProvider.get();
@@ -224,7 +227,6 @@ public class OneLifePlugin extends JavaPlugin {
         savePlayerScores();
         settings = loadSettings();
         settings.setPlugin(this);
-        rm.ensureDefaultRaces();
         loadScoring();
         if (afkChecker != null) afkChecker.cancel();
         if (dnChecker != null) dnChecker.cancel();
@@ -428,8 +430,17 @@ public class OneLifePlugin extends JavaPlugin {
         Settings load;
         if (!Files.exists(path)) {
             getLogger().log(Level.INFO, "settings.json does not exist. Creating new one.");
-            load = new Settings();
-            return load;
+            try (InputStream in = getResource("settings.json")) {
+                if (in != null) {
+                    Path parent = path.getParent();
+                    if (parent != null) {
+                        Files.createDirectories(parent);
+                    }
+                    Files.copy(in, path);
+                }
+            } catch (IOException e) {
+                getLogger().log(Level.WARNING, "Failed to copy default settings.json from resources", e);
+            }
         }
         try {
             String json = Files.readString(path, StandardCharsets.UTF_8);
