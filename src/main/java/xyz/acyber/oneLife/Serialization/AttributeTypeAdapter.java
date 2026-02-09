@@ -27,7 +27,7 @@ public class AttributeTypeAdapter implements JsonSerializer<Attribute>, JsonDese
     public JsonElement serialize(Attribute src, Type typeOfSrc, JsonSerializationContext context) {
         if (src == null) return null;
         NamespacedKey key = src.getKey();
-        return new JsonPrimitive(key == null ? null : key.toString());
+        return new JsonPrimitive(key.toString());
     }
 
     @Override

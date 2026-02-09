@@ -456,6 +456,7 @@ public class RaceManager {
             enchants.append(enchant.getEnchantment().getKey().getKey()).append(",").append(enchant.getLevel()).append(";");
         }
         ItemMeta itemMeta = item.getItemMeta();
+        if (itemMeta == null) return;
         itemMeta.getPersistentDataContainer().set(key, PersistentDataType.STRING, enchants.toString());
         item.setItemMeta(itemMeta);
     }
@@ -474,7 +475,7 @@ public class RaceManager {
                 if (item.getEnchantmentLevel(enchant.getEnchantment()) <= enchant.getLevel()) {
                     overriddenEnchants.add(new Enchant(enchant.getEnchantment(), item.getEnchantmentLevel(enchant.getEnchantment())));
                     raceAssignedEnchants.add(new Enchant(enchant.getEnchantment(), enchant.getLevel()));
-                    item.getEnchantments().remove(enchant.getEnchantment());
+                    item.removeEnchantment(enchant.getEnchantment());
                 }
             } else {
                 raceAssignedEnchants.add(new Enchant(enchant.getEnchantment(), enchant.getLevel()));
@@ -490,7 +491,9 @@ public class RaceManager {
         //Apply race enchantments required to Item
         for (Enchant enchant: raceAssignedEnchants) {
             if (enchant == null || enchant.getEnchantment() == null) continue;
-            item.addEnchantment(enchant.getEnchantment(), enchant.getLevel());
+            if (enchant.getEnchantment().canEnchantItem(item)) {
+                item.addEnchantment(enchant.getEnchantment(), enchant.getLevel());
+            }
         }
 
         return item;

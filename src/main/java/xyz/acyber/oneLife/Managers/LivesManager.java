@@ -1,15 +1,19 @@
 package xyz.acyber.oneLife.Managers;
 
-import net.kyori.adventure.text.Component;
+import static java.lang.Math.max;
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.*;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.RenderType;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
+
+import net.kyori.adventure.text.Component;
 import xyz.acyber.oneLife.OneLifePlugin;
-
-import java.util.Objects;
-
-import static java.lang.Math.max;
 
 public class LivesManager {
 
@@ -55,7 +59,10 @@ public class LivesManager {
     }
 
     public String getFinalGameMode() {
-        return oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath");
+        String fromConfig = oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath");
+        if (fromConfig != null) return fromConfig;
+        String fromSettings = oneLifePlugin.settings.getLives().getGameModeAfterLastDeath();
+        return fromSettings != null ? fromSettings : GameMode.ADVENTURE.name();
     }
 
     public void setFinalGameMode(GameMode mode) {
@@ -72,7 +79,13 @@ public class LivesManager {
     public void setPlayerGameMode(Player player) {
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
         if (getPlayerLivesRemaining(player) <= 0) {
-            GameMode gmAfterDeath = GameMode.valueOf(Objects.requireNonNull(oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath")).toUpperCase());
+            String gmName = getFinalGameMode();
+            GameMode gmAfterDeath;
+            try {
+                gmAfterDeath = GameMode.valueOf(gmName.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                gmAfterDeath = GameMode.ADVENTURE;
+            }
             if (gmAfterDeath != player.getGameMode() && !player.isOp()) {
                 player.setGameMode(gmAfterDeath);
                 player.sendMessage(Component.text("Sorry, You're out of lives! You can continue to play on the server in " + gmAfterDeath.name() + " Mode"));

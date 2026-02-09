@@ -186,6 +186,9 @@ public class CommandManager {
         LiteralArgumentBuilder<CommandSourceStack> cmdRaces = Commands.literal("Races")
                 .requires(sender -> settings.getEnabledFeatures().getEnabledRaceManager())
                 .then(Commands.argument("Player", ArgumentTypes.player())
+                        .then(Commands.literal("GetRace")
+                            .requires(sender -> sender.getSender().hasPermission("OneLife.Races.GetRace"))
+                            .executes(CommandManager::runGetRaceLogic))
                         .then(Commands.literal("ResetStartItems")
                                 .requires(sender -> sender.getSender().hasPermission("OneLife.Races.ResetStartItems"))
                                 .executes(CommandManager::runResetStartItemsLogic))
@@ -377,6 +380,14 @@ public class CommandManager {
         PlayerConfig pc = oneLifePlugin.settings.getPlayerConfig(player);
         pc.setGivenStartItems(false);
         ctx.getSource().getSender().sendRichMessage(player.getName() + "'s start items have been reset");
+        return Command.SINGLE_SUCCESS;
+    }
+
+    private static int runGetRaceLogic(@NotNull CommandContext<CommandSourceStack> ctx) {
+        final Player player = getPlayerArgument(ctx);
+        Race race = oneLifePlugin.settings.getPlayerRace(player);
+        String raceName = race != null ? race.getRaceName() : "None";
+        ctx.getSource().getSender().sendRichMessage(player.getName() + "'s race is: " + raceName);
         return Command.SINGLE_SUCCESS;
     }
 

@@ -1,21 +1,21 @@
 package xyz.acyber.oneLife.Runables;
 
+import java.util.HashMap;
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.types.InheritanceNode;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.OneLifePlugin;
 import xyz.acyber.oneLife.Managers.ScoreManager;
-
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.UUID;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 public class AFKChecker extends BukkitRunnable {
 

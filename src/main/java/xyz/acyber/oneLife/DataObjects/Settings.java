@@ -206,7 +206,16 @@ public class Settings {
     }
     public void initialisePlayer(OfflinePlayer player) {
         if (!playerConfigs.containsKey(player.getUniqueId()))
-             addPlayerConfigs(new PlayerConfig(player.getUniqueId(), player.getName()));
+            addPlayerConfigs(new PlayerConfig(player.getUniqueId(), player.getName()));
+
+        PlayerConfig config = playerConfigs.get(player.getUniqueId());
+        if (config != null && config.getRaceUUID() == null) {
+            Race human = getRaceByName("Human");
+            if (human != null) {
+                config.setRaceUUID(human.getRaceUUID());
+                markDirty();
+            }
+        }
     }
 
     public PlayerConfig getPlayerConfig(OfflinePlayer player) {
@@ -246,13 +255,35 @@ public class Settings {
 
     public Race getPlayerRace(Player player) {
         PlayerConfig config = getPlayerConfig(player);
-        if (config == null || config.getRaceUUID() == null) return null;
-        return races.get(config.getRaceUUID());
+        if (config == null) return null;
+        Race race = null;
+        if (config.getRaceUUID() != null) {
+            race = races.get(config.getRaceUUID());
+        }
+        if (race == null) {
+            race = getRaceByName("Human");
+            if (race != null) {
+                config.setRaceUUID(race.getRaceUUID());
+                markDirty();
+            }
+        }
+        return race;
     }
     public Race getPlayerRace(OfflinePlayer player) {
         PlayerConfig config = getPlayerConfig(player);
-        if (config == null || config.getRaceUUID() == null) return null;
-        return races.get(config.getRaceUUID());
+        if (config == null) return null;
+        Race race = null;
+        if (config.getRaceUUID() != null) {
+            race = races.get(config.getRaceUUID());
+        }
+        if (race == null) {
+            race = getRaceByName("Human");
+            if (race != null) {
+                config.setRaceUUID(race.getRaceUUID());
+                markDirty();
+            }
+        }
+        return race;
     }
     public void setPlayerRace(Player player, Race race) {
         if (race == null) return;

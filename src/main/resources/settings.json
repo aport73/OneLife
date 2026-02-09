@@ -892,7 +892,16 @@
         }
       ],
       "allowedFoods": [],
-      "effects": [],
+      "effects": [
+        {
+          "amplifier": 0,
+          "duration": 0,
+          "type": "minecraft:hero_of_the_village",
+          "ambient": true,
+          "particles": true,
+          "icon": true
+        }
+      ],
       "buffedFoods": [],
       "repeatItems": [],
       "startItems": {}
