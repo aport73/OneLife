@@ -1,0 +1,10 @@
+{
+    "java.jdt.ls.java.home": "/home/aporter/.sdkman/candidates/java/current",
+    "java.configuration.runtimes": [
+        {
+            "name": "JavaSE-21",
+            "path": "/home/aporter/.sdkman/candidates/java/current",
+            "default": true
+        }
+    ]
+}

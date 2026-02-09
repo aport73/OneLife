@@ -1,62 +1,37 @@
 package xyz.acyber.oneLife.DataObjects.SubScoreData;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
-import org.bukkit.GameMode;
 import org.bukkit.entity.EntityType;
-import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.HashMap;
 
 public class MobsKilled {
+    private EntityType entityType = null;
+    private HashMap<String, Integer> count = null; // Key is gamemode, value is number of mobs killed
 
-    private OneLifePlugin plugin;
-    private EntityType entityType;
-    private HashMap<String, Integer> count;
+    public MobsKilled() { super(); } // Default constructor
 
-    @JsonCreator
-    public MobsKilled() {} // Default constructor
-
-    @JsonIgnore
-    public MobsKilled(OneLifePlugin plugin, EntityType entityType, HashMap<String, Integer> count) {
-        this.plugin = plugin;
+    public MobsKilled(EntityType entityType, HashMap<String, Integer> count) {
         this.entityType = entityType;
         this.count = count;
     }
 
-    @JsonGetter
     public EntityType getEntityType() { return entityType; }
-    @JsonSetter
     public void setEntityType(EntityType entityType) { this.entityType = entityType; }
 
-    @JsonGetter
-    public HashMap<String, Integer> getCount() { return count; }
-    @JsonSetter
+    public HashMap<String, Integer> getCount() { if (count == null) count = new HashMap<>(); return count; }
     public void setCount(HashMap<String, Integer> count) { this.count = count; }
 
-    @JsonIgnore
-    public HashMap<String, Double> getPoints() {
-        HashMap<String, Double> points = new HashMap<>();
-        for (String key: count.keySet()) {
-            double multiplier = 0;
-            if (key.equals("AFK"))
-                multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getMobKillMultipliers().get(entityType) * plugin.settings.getAFKMultiplier();
-            else
-                multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getMobKillMultipliers().get(entityType);
-            points.put(key,(count.get(key)*multiplier));
-        }
-        return points;
+    public void incrementCount(String gameMode) {
+        if (this.count == null) this.count = new HashMap<>();
+        this.count.merge(gameMode, 1, Integer::sum);
     }
 
-    @JsonIgnore
     public int getTotalCount() {
+        if (count == null) return 0;
         int total = 0;
-        for (String key: count.keySet()) {
-            total += count.get(key);
+        for (Integer v : count.values()) {
+            total += (v == null ? 0 : v);
         }
         return total;
     }
-
 }

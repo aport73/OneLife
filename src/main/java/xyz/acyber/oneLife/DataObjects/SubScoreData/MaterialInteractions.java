@@ -1,85 +1,37 @@
 package xyz.acyber.oneLife.DataObjects.SubScoreData;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
-import org.bukkit.GameMode;
 import org.bukkit.Material;
-import xyz.acyber.oneLife.OneLifePlugin;
 
 import java.util.HashMap;
 
 public class MaterialInteractions {
 
-    private OneLifePlugin plugin;
-    private Material material;
-    private HashMap<String, Integer> count;
+    private Material material = null;
+    private HashMap<String, Integer> count = null; // Key is gamemode, value is number of interactions
 
-    /**
-     * can be any of BlocksPlaced, BlocksMined & ItemsHarvested
-     */
-    private String type;
+    public MaterialInteractions() { super(); } // Default constructor
 
-    @JsonCreator
-    public MaterialInteractions() {} // Default constructor
-
-    /**
-     * @param type can be any of BlocksPlaced, BlocksMined & ItemsHarvested
-     */
-    @JsonIgnore
-    public MaterialInteractions(OneLifePlugin plugin, Material material, HashMap<String, Integer> count, String type) {
-        this.plugin = plugin;
+    public MaterialInteractions(Material material, HashMap<String, Integer> count) {
         this.material = material;
         this.count = count;
-        this.type = type;
     }
-    @JsonGetter
+
     public Material getMaterial() { return material; }
-    @JsonSetter
     public void setMaterial(Material material) { this.material = material; }
 
-    @JsonGetter
-    public HashMap<String, Integer> getCount() { return count; }
-    @JsonSetter
+    public HashMap<String, Integer> getCount() { if (count == null) count = new HashMap<>(); return count; }
     public void setCount(HashMap<String, Integer> count) { this.count = count; }
 
-    @JsonGetter
-    public String getType() { return type; }
-    @JsonSetter
-    public void setType(String type) { this.type = type; }
-
-    @JsonIgnore
-    public HashMap<String, Double> getPoints() {
-        HashMap<String, Double> points = new HashMap<>();
-        for (String key: count.keySet()) {
-            double multiplier = 0;
-            if (type.equals("BlocksPlaced")) {
-                if (key.equals("AFK"))
-                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getBlockPlaceMultipliers().get(material) * plugin.settings.getAFKMultiplier();
-                else
-                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getBlockPlaceMultipliers().get(material);
-            } else if (type.equals("BlocksMined")) {
-                if (key.equals("AFK"))
-                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getBlockMineMultipliers().get(material) * plugin.settings.getAFKMultiplier();
-                else
-                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getBlockMineMultipliers().get(material);
-            } else if (type.equals("ItemsHarvested")) {
-                if (key.equals("AFK"))
-                    multiplier = plugin.settings.getScoring().get(GameMode.SURVIVAL.name()).getHarvestMultipliers().get(material) * plugin.settings.getAFKMultiplier();
-                else
-                    multiplier = plugin.settings.getScoring().get(GameMode.valueOf(key).name()).getHarvestMultipliers().get(material);
-            }
-            points.put(key,(count.get(key)*multiplier));
-        }
-        return points;
+    public void incrementCount(String gameMode) {
+        if (this.count == null) this.count = new HashMap<>();
+        this.count.merge(gameMode, 1, Integer::sum);
     }
 
-    @JsonIgnore
     public int getTotalCount() {
+        if (count == null) return 0;
         int total = 0;
-        for (String key: count.keySet()) {
-            total += count.get(key);
+        for (Integer v : count.values()) {
+            total += (v == null ? 0 : v);
         }
         return total;
     }
