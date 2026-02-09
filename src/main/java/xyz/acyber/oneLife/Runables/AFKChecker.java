@@ -1,21 +1,21 @@
 package xyz.acyber.oneLife.Runables;
 
+import java.util.HashMap;
+import java.util.UUID;
+
+import org.bukkit.Bukkit;
+import org.bukkit.entity.Player;
+import org.bukkit.scheduler.BukkitRunnable;
+import org.jetbrains.annotations.NotNull;
+
 import net.kyori.adventure.text.Component;
 import net.kyori.adventure.text.minimessage.MiniMessage;
 import net.luckperms.api.LuckPerms;
 import net.luckperms.api.model.group.Group;
 import net.luckperms.api.model.user.User;
 import net.luckperms.api.node.types.InheritanceNode;
-import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.scheduler.BukkitRunnable;
-import org.jetbrains.annotations.NotNull;
-import xyz.acyber.oneLife.OneLifePlugin;
 import xyz.acyber.oneLife.Managers.ScoreManager;
-
-import java.util.HashMap;
-import java.util.Objects;
-import java.util.UUID;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 public class AFKChecker extends BukkitRunnable {
 
@@ -23,7 +23,7 @@ public class AFKChecker extends BukkitRunnable {
     private final HashMap<UUID,Long> lastInput;
     private final double afkTime;
     private final Group afk;
-    private LuckPerms lpAPI;
+    private final LuckPerms lpAPI;
     ScoreManager sm;
     MiniMessage mm = MiniMessage.miniMessage();
 
@@ -42,10 +42,16 @@ public class AFKChecker extends BukkitRunnable {
         for (Player p: Bukkit.getOnlinePlayers()) {
             sm.timeOnline(p);
             long time = System.currentTimeMillis();
-            User user = Objects.requireNonNull(lpAPI.getUserManager().getUser(p.getUniqueId()));
+            User user = lpAPI.getUserManager().getUser(p.getUniqueId());
+            if (user == null) continue;
             InheritanceNode node = InheritanceNode.builder(afk).build();
 
-            long lastIn = lastInput.get(p.getUniqueId());
+            Long lastInValue = lastInput.get(p.getUniqueId());
+            if (lastInValue == null) {
+                lastInput.put(p.getUniqueId(), time);
+                continue;
+            }
+            long lastIn = lastInValue;
             long interval = time - lastIn;
             double test = afkTime - interval;
 

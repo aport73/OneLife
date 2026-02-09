@@ -20,26 +20,28 @@ repositories {
 dependencies {
     compileOnly 'net.luckperms:api:5.5'
     //noinspection GrUnresolvedAccess
-    paperweight.paperDevBundle("1.21.10-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.21.11-R0.1-SNAPSHOT")
 
-    // https://mvnrepository.com/artifact/tools.jackson.core/jackson-core
-    implementation 'tools.jackson.core:jackson-core:3.0.4'
-    // https://mvnrepository.com/artifact/tools.jackson.core/jackson-databind
-    implementation 'tools.jackson.core:jackson-databind:3.0.4'
-    // https://mvnrepository.com/artifact/tools.jackson.dataformat/jackson-dataformat-yaml
-    implementation 'tools.jackson.dataformat:jackson-dataformat-yaml:3.0.4'
+    // Gson for JSON (replaces Jackson usage)
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
 }
 
 tasks {
+    test {
+        useJUnitPlatform()
+    }
     runServer {
         //Download required plugins automatically
         downloadPlugins {
-            url("https://download.luckperms.net/1605/bukkit/loader/LuckPerms-Bukkit-5.5.16.jar")
+            url("https://download.luckperms.net/1620/bukkit/loader/LuckPerms-Bukkit-5.5.32.jar")
         }
         // Configure the Minecraft version for our task.
         // This is the only required configuration besides applying the plugin.
         // Your plugin's jar (or shadowJar if present) will be used automatically.
-        minecraftVersion("1.21.10")
+        minecraftVersion("1.21.11")
     }
 }
 

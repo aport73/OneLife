@@ -1,12 +1,11 @@
 name: OneLife
 version: '2-Beta-20'
 main: xyz.acyber.oneLife.OneLifePlugin
-api-version: '1.21.8'
+api-version: '1.21.10'
 dependencies:
   server:
     # Add a required "RequiredPlugin" dependency, which will load AFTER your plugin.
     LuckPerms:
       load: BEFORE
       required: true
-      # This means that your plugin will not have access to their classpath
       join-classpath: true

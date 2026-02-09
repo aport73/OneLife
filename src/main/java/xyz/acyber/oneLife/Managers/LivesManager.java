@@ -1,13 +1,19 @@
 package xyz.acyber.oneLife.Managers;
 
-import net.kyori.adventure.text.Component;
+import static java.lang.Math.max;
+
 import org.bukkit.Bukkit;
 import org.bukkit.GameMode;
 import org.bukkit.entity.Player;
-import org.bukkit.scoreboard.*;
-import xyz.acyber.oneLife.OneLifePlugin;
+import org.bukkit.scoreboard.Criteria;
+import org.bukkit.scoreboard.DisplaySlot;
+import org.bukkit.scoreboard.Objective;
+import org.bukkit.scoreboard.RenderType;
+import org.bukkit.scoreboard.Scoreboard;
+import org.bukkit.scoreboard.ScoreboardManager;
 
-import java.util.Objects;
+import net.kyori.adventure.text.Component;
+import xyz.acyber.oneLife.OneLifePlugin;
 
 public class LivesManager {
 
@@ -53,7 +59,10 @@ public class LivesManager {
     }
 
     public String getFinalGameMode() {
-        return oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath");
+        String fromConfig = oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath");
+        if (fromConfig != null) return fromConfig;
+        String fromSettings = oneLifePlugin.settings.getLives().getGameModeAfterLastDeath();
+        return fromSettings != null ? fromSettings : GameMode.ADVENTURE.name();
     }
 
     public void setFinalGameMode(GameMode mode) {
@@ -61,12 +70,26 @@ public class LivesManager {
         oneLifePlugin.saveConfig();
     }
 
+    public int getPlayerLivesRemaining(Player player) {
+        Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
+        int lives = oneLifePlugin.getConfig().getInt("Lives.cap") - getPlayerScore(getObjective("deaths",scoreboard), player);
+        return max(lives, 0);
+    }
+
     public void setPlayerGameMode(Player player) {
         Scoreboard scoreboard = scoreboardManager.getMainScoreboard();
-        // Causes server crashes oneLifePlugin.sendMsgOps(String.valueOf(getPlayerScore(getObjective("deaths",scoreboard), player)));
-        if (getPlayerScore(getObjective("deaths",scoreboard), player) >= oneLifePlugin.getConfig().getInt("Lives.cap")) {
-            player.setGameMode(GameMode.valueOf(Objects.requireNonNull(oneLifePlugin.getConfig().getString("Lives.gameModeAfterLastDeath")).toUpperCase()));
-            player.sendMessage(Component.text("Sorry, You're out of lives! You can continue to play on the server in Adventure Mode"));
+        if (getPlayerLivesRemaining(player) <= 0) {
+            String gmName = getFinalGameMode();
+            GameMode gmAfterDeath;
+            try {
+                gmAfterDeath = GameMode.valueOf(gmName.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                gmAfterDeath = GameMode.ADVENTURE;
+            }
+            if (gmAfterDeath != player.getGameMode() && !player.isOp()) {
+                player.setGameMode(gmAfterDeath);
+                player.sendMessage(Component.text("Sorry, You're out of lives! You can continue to play on the server in " + gmAfterDeath.name() + " Mode"));
+            }
         }
         else
             player.setGameMode(GameMode.SURVIVAL);

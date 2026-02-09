@@ -1,72 +1,71 @@
 package xyz.acyber.oneLife.DataObjects.SubSettings;
 
-import com.fasterxml.jackson.annotation.JsonCreator;
-import com.fasterxml.jackson.annotation.JsonGetter;
-import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.fasterxml.jackson.annotation.JsonSetter;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.OfflinePlayer;
+import org.bukkit.entity.Interaction;
+import org.bukkit.entity.Player;
+import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
+import org.jetbrains.annotations.NotNull;
+import org.jline.utils.ShutdownHooks;
+import xyz.acyber.oneLife.OneLifePlugin;
 
-import javax.annotation.Nullable;
+import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
 
 public class PlayerConfig {
 
-    private @Nullable UUID uuid;
-    private @Nullable String name;
-    private @Nullable Team team;
-    private @Nullable Race race;
-    private boolean givenStartItems;
-    private @Nullable BukkitTask repeatItemsTask;
-    private boolean climbingEnabled;
-    private @Nullable String playerClimbVines;
+    private UUID uuid = null;
+    private String name = "";
+    private UUID teamUUID = null;
+    private UUID raceUUID = null;
+    private boolean givenStartItems = false;
+    private boolean climbingEnabled = false;
+    private List<Location> climbingData = null;
 
-    @JsonCreator
+    private HashMap<Integer, UUID> runningTasks = null;
+
     public PlayerConfig() { super(); } // Default constructor
 
-    @JsonIgnore
-    public PlayerConfig(@org.jetbrains.annotations.Nullable UUID uuid, @org.jetbrains.annotations.Nullable String name) {
+    public PlayerConfig(UUID uuid, String name) {
         this.uuid = uuid;
         this.name = name;
     }
 
-    @JsonGetter
-    public @Nullable Team getTeam() { return team; }
-    @JsonSetter
-    public void setTeam(@Nullable Team team) { this.team = team; }
+    public PlayerConfig(@NotNull OfflinePlayer player) {
+        this.uuid = player.getUniqueId();
+        this.name = player.getName();
+    }
 
-    @JsonGetter
+    public UUID getTeamUUID() { return teamUUID; }
+    public void setTeamUUID(UUID teamUUID) { this.teamUUID = teamUUID; }
+
     public UUID getUUID() { return uuid; }
-    @JsonSetter
     public void setUUID(UUID uuid) { this.uuid = uuid; }
 
-    @JsonGetter
-    public @org.jetbrains.annotations.Nullable String getName() { return name; }
-    @JsonSetter
-    public void setName(@org.jetbrains.annotations.Nullable String name) { this.name = name; }
+    public String getName() { return name; }
+    public void setName(String name) { this.name = name; }
 
-    @JsonGetter
-    public @Nullable Race getRace() { return race; }
-    @JsonSetter
-    public void setRace(@Nullable Race race) { this.race = race; }
+    public UUID getRaceUUID() { return raceUUID; }
+    public void setRaceUUID(UUID raceUUID) { this.raceUUID = raceUUID; }
 
-    @JsonGetter
-    public boolean isGivenStartItems() { return givenStartItems; }
-    @JsonSetter
+    public boolean getGivenStartItems() { return givenStartItems; }
     public void setGivenStartItems(boolean givenStartItems) { this.givenStartItems = givenStartItems; }
 
-    @JsonGetter
-    public @Nullable BukkitTask getRepeatItemsTask() { return repeatItemsTask; }
-    @JsonSetter
-    public void setRepeatItemsTask(@Nullable BukkitTask bukkitTask) { this.repeatItemsTask = bukkitTask; }
-
-    @JsonGetter
     public boolean isClimbingEnabled() { return climbingEnabled; }
-    @JsonSetter
     public void setClimbingEnabled(boolean enabled) { this.climbingEnabled = enabled; }
 
-    @JsonGetter
-    public @org.jetbrains.annotations.Nullable String getPlayerClimbVines() { return playerClimbVines; }
-    @JsonSetter
-    public void setPlayerClimbVines(@org.jetbrains.annotations.Nullable String playerClimbVines) {  this.playerClimbVines = playerClimbVines; }
+    public List<Location> getClimbingData() { return climbingData; }
+    public void setClimbingData(List<Location> climbingData) { this.climbingData = climbingData; }
+    public void appendClimbingData(Location vine) { if (climbingData == null) climbingData = new java.util.ArrayList<>(); climbingData.add(vine); }
+    public void removeClimbingData(Location vine) { if (climbingData != null) climbingData.remove(vine); }
+    public void resetClimbingData() { climbingData = null; }
+
+    public HashMap<Integer, UUID> getRunningTasks() { if (runningTasks == null) runningTasks = new HashMap<>(); return runningTasks; }
+    public void setRunningTasks(HashMap<Integer, UUID> runningTasks) { this.runningTasks = runningTasks; }
+    public void addRunningTask(Integer taskId, UUID taskUUID) { if (runningTasks == null) runningTasks = new HashMap<>(); runningTasks.put(taskId, taskUUID); }
+    public void removeRunningTask(Integer taskId) { if (runningTasks != null) runningTasks.remove(taskId); }
 
 }
